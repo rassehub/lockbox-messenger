@@ -10,7 +10,7 @@ services:
     volumes:
       - ./backend:/usr/src/app
     depends_on:
-      - sqlite
+      - sqlcipher
 
   frontend:
     build:
@@ -21,7 +21,9 @@ services:
     volumes:
       - ./frontend:/app
 
-  sqlite:
-    image: nouchka/sqlite3
+  sqlcipher:
+    build:
+      context: ./data
+      dockerfile: Dockerfile
     volumes:
       - ./data:/data

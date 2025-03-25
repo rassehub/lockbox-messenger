@@ -1,0 +1,84 @@
+@startuml
+
+class User {
+    +String loginName
+    +String username
+    +String passwordHash
+    +register()
+    +login()
+    +resetPassword()
+}
+
+class ChatList {
+    +List<Chat> chatList
+
+}
+
+class ApiClient {
+    +sendData(String encryptedData)
+    +receiveData(String encryptedData)
+    +login(User credentials)
+    +register(User credentials)
+    +resetPassword(User credentials)
+}
+
+class Chat {
+    +String chatID
+    +User recipient
+    +List<Message> messages
+    +sendMessage(Message msg)
+    +receiveMessage(Message msg)
+}
+
+class Message {
+    +String MessageID
+    +String ChatID
+    +String textContents
+    +Date timestamp
+    +Date timeReceived
+    +Date timeRead
+    +User senderID
+    +User recipientID
+    +encryptMessage()
+}
+
+class EncryptedMessage {
+    +String data
+    +String senderID
+    +String recipientID
+    +sealSender()
+    +decryptMessage()
+}
+
+class SealedMessage {
+    +String data
+    +String recipientID
+    +sendData()
+    +decryptSender()
+}
+
+class Encryption {
+    +String encrypt(String data)
+    +EncryptedMessage encryptMessage(Message)
+    +SealedMessage sealSender(EncryptedMessage)
+    +String decrypt(String data)
+    +String generateKeyPair(recipient)
+}
+
+class Storage {
+    +saveToSecureStorage(String key, String value)
+    +String readFromSecureStorage(String key)
+}
+
+User "1" -- "*" Chat
+ChatList "1" -- "*" Chat
+Chat "1" -- "*" Message
+EncryptedMessage --> Encryption : uses
+SealedMessage --> Encryption : uses
+Message <|-- EncryptedMessage
+EncryptedMessage <|-- SealedMessage
+SealedMessage --> ApiClient
+ApiClient --> Encryption : Encrypts Data Before Sending
+Storage "1" --> "*" Message
+
+@enduml
