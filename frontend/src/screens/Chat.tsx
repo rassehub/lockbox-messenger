@@ -7,6 +7,20 @@ import React, { useState } from "react";
 const ChatScreen = ({route}: any) => {
     const [text, onChangeText] = useState('Message');
 
+    const createMessageId = () => {
+        let result = '';
+        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        const charactersLength = characters.length;
+        let counter = 0;
+        while (counter < 5) {
+            result += characters.charAt(Math.floor(Math.random() * charactersLength));
+            counter += 1;
+        }
+        return result;
+    };
+
+    //const messageId = createMessageId();
+
     const chatId = route.params.chatId;
     const filteredMessages = dummyMessages.filter(
         (message) => message.chatID === chatId
@@ -26,6 +40,15 @@ const ChatScreen = ({route}: any) => {
                 style={styles.textInput}
                 onChangeText={onChangeText}
                 value={text}
+                onSubmitEditing={() => {
+                    filteredMessages.push({
+                        messageID: createMessageId(),
+                        chatID: chatId,
+                        senderID: 'llll',
+                        contents: text,
+                        timeStamp: new Date().toString()
+                    });
+                }}
             />
         </View>
     );

@@ -4,6 +4,6 @@ export type Message = {
     senderID: string;
     contents: string;
     timeStamp: string;
-    timeReceived: string;
+    timeReceived?: string;
     timeRead?: string;
 }
