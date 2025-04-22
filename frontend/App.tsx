@@ -16,11 +16,15 @@ import HomeScreen from './src/screens/Home';
 import ProfileScreen from './src/screens/Profile';
 import NavBar from './src/components/NavBar';
 import ChatScreen from './src/screens/Chat';
+import NewChatScreen from './src/screens/NewChat';
+import FriendProfileScreen from './src/screens/FriendProfile';
 
 export type StackParams = {
   Home: undefined;
   Profile: {userId: string};
   Chat: {chatId: string};
+  NewChat: undefined;
+  FriendProfile: {userId: string};
 }
 
 const Stack = createNativeStackNavigator<StackParams>();
@@ -43,6 +47,17 @@ function App(): React.JSX.Element {
         <Stack.Screen 
           name="Chat"
           component={ChatScreen}
+          options={{
+            headerTitle: 'Name Placeholder',
+          }}
+        />
+        <Stack.Screen 
+          name="NewChat"
+          component={NewChatScreen}
+        />
+        <Stack.Screen 
+          name='FriendProfile'
+          component={FriendProfileScreen}
         />
       </Stack.Navigator>
       <NavBar />

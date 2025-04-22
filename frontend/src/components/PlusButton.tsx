@@ -1,14 +1,18 @@
-import { Alert, Button, Image, Pressable, StyleSheet, Text, View } from "react-native"
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { Alert, Image, Pressable, StyleSheet, Text, View } from "react-native"
+import { StackParams } from "../../App";
 
 const plus = require('../assets/plus.png');
 
 const PlusButton = () => {
+    const navigation = useNavigation<NativeStackNavigationProp<StackParams>>();
 
     return (
         <Pressable 
             style={styles.button}
             onPress={() => {
-                Alert.alert('Button pressed')
+                navigation.navigate('NewChat')
             }}>
             <Image source={plus} style={styles.buttonIcon}/>
         </Pressable>
