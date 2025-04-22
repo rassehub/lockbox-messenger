@@ -1,7 +1,7 @@
 import { FlatList, StyleSheet } from "react-native"
 import { dummyChats } from "../mockData/ChatItems";
 import ChatListItem from "./ChatListItem";
-import { ChatItem } from "../types/ChatItem";
+import { ChatItem } from "../types/ChatListItem";
 
 const ChatList = () => {
     const renderItem = ({ item } : { item: ChatItem }) => <ChatListItem chat={item} />

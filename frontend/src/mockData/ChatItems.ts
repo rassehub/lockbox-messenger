@@ -1,4 +1,4 @@
-import { ChatItem } from "../types/ChatItem"
+import { ChatItem } from "../types/ChatListItem"
 
 export const dummyChats: ChatItem[] = [
     {

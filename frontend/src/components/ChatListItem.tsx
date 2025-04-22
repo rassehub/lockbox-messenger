@@ -1,17 +1,28 @@
-import { Image, StyleSheet, Text, View } from "react-native";
-import { ChatItem } from "../types/ChatItem";
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { ChatItem } from "../types/ChatListItem";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { StackParams } from "../../App";
 
 type ChatListItemProps = {
     chat: ChatItem;
 }
 
 const ChatListItem: React.FC<ChatListItemProps> = ({chat}) => {
+    const navigation = useNavigation<NativeStackNavigationProp<StackParams>>()
     const avatarSource = chat.avatarUrl
         ? { uri: chat.avatarUrl}
         : require('../assets/avatar.png');
 
     return (
-        <View style={styles.chatListItem}>
+        <Pressable 
+            onPress={() => {
+                navigation.navigate('Chat', {
+                    chatId: chat.chatId
+                })
+            }}
+            style={styles.chatListItem}
+        >
             <Image source={avatarSource} style={styles.avatar}/>
             <View>
                 <View style={styles.chatInfo}>
@@ -25,7 +36,7 @@ const ChatListItem: React.FC<ChatListItemProps> = ({chat}) => {
                 </View>
                 <Text style={styles.lastMessage}>{chat.lastMessage}</Text>
             </View>
-        </View>
+        </Pressable>
     )
 }
 
