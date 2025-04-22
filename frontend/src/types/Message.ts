@@ -5,5 +5,5 @@ export type Message = {
     contents: string;
     timeStamp: string;
     timeReceived: string;
-    timeRead: string;
+    timeRead?: string;
 }

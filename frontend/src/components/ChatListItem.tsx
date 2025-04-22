@@ -1,5 +1,6 @@
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { ChatItem } from "../types/ChatListItem";
+import { Contact } from "../types/Contact";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { StackParams } from "../../App";
@@ -9,22 +10,33 @@ type ChatListItemProps = {
 }
 
 const ChatListItem: React.FC<ChatListItemProps> = ({chat}) => {
-    const navigation = useNavigation<NativeStackNavigationProp<StackParams>>()
+    const navigation = useNavigation<NativeStackNavigationProp<StackParams>>();
     const avatarSource = chat.avatarUrl
         ? { uri: chat.avatarUrl}
         : require('../assets/avatar.png');
 
+    const lastMessage = chat.message[chat.message.length - 1];
+    const lastSenderID = lastMessage?.senderID || 'Unknown';
+    const lastContents = lastMessage?.contents || 'No message';
+
+    console.log(`SenderID: ${lastSenderID}, Contents: ${lastContents}`);
+
     return (
-        <Pressable 
-            onPress={() => {
-                navigation.navigate('Chat', {
-                    chatId: chat.chatId
-                })
-            }}
-            style={styles.chatListItem}
-        >
-            <Image source={avatarSource} style={styles.avatar}/>
-            <View>
+        <View style={styles.chatListItem}>
+            <Pressable
+                onPress={() => {
+                    navigation.navigate('FriendProfile', {
+                        userId: lastSenderID,
+                    })
+                }}>
+                <Image source={avatarSource} style={styles.avatar}/>
+            </Pressable>
+            <Pressable
+                onPress={() => {
+                    navigation.navigate('Chat', {
+                        chatId: chat.chatId
+                    })
+                }}>
                 <View style={styles.chatInfo}>
                     <Text style={styles.recipient}>{chat.recipient}</Text>
                     <Text style={styles.time}>
@@ -34,9 +46,9 @@ const ChatListItem: React.FC<ChatListItemProps> = ({chat}) => {
                         })}
                     </Text>
                 </View>
-                <Text style={styles.lastMessage}>{chat.lastMessage}</Text>
-            </View>
-        </Pressable>
+                <Text style={styles.lastMessage}>{lastContents}</Text>
+            </Pressable>
+        </View>
     )
 }
 
