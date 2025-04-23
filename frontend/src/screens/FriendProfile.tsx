@@ -50,6 +50,8 @@ const styles = StyleSheet.create({
     mainContainer: {
         padding: '5%',
         alignItems: 'center',
+        flex: 1,
+        backgroundColor: '#FFFFFF',
     },
     profilePicture: {
         

@@ -12,15 +12,15 @@ const ProfileScreen = ({route}: any) => {
 
     return (
         <View style={styles.mainContainer}>
-            <Image style={styles.profilePicture} source={profilePicture}/>
+            <Image style={styles.profilePicture} source={profilePicture} />
             <Text style={styles.name}>{user[0].displayName ? user[0].displayName : user[0].userName}</Text>
-            <SettingItem category='Account' description='Security notifications'/>
-            <SettingItem category='Privacy' description='Block contacts, dissapearing messages'/>
-            <SettingItem category='Notifications' description='Message sound'/>
-            <SettingItem category='Chats' description='Theme, wallpaper'/>
-            <SettingItem category='Setting Category' description='Type of setting'/>
-            <SettingItem category='Setting Category' description='Type of setting'/>
-            <SettingItem category='Setting Category' description='Type of setting'/>
+            <SettingItem category='Account' description='Security notifications' />
+            <SettingItem category='Privacy' description='Block contacts, dissapearing messages' />
+            <SettingItem category='Notifications' description='Message sound' />
+            <SettingItem category='Chats' description='Theme, wallpaper' />
+            <SettingItem category='Setting Category' description='Type of setting' />
+            <SettingItem category='Setting Category' description='Type of setting' />
+            <SettingItem category='Setting Category' description='Type of setting' />
         </View>
     )
 }
@@ -30,6 +30,8 @@ const styles = StyleSheet.create({
         paddingTop: '15%',
         paddingHorizontal: '15%',
         alignItems: 'center',
+        flex: 1,
+        backgroundColor: '#FFFFFF',
     },
     profilePicture: {
 

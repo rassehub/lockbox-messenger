@@ -6,8 +6,10 @@ type SettingItemProps = {
 }
 
 const SettingItem = ({category, description}: SettingItemProps) => {
+
     return(
-        <Pressable style={styles.settingItem}>
+        <Pressable 
+            style={styles.settingItem}>
             <Text style={styles.title}>{category}</Text>
             <Text style={styles.description}>{description}</Text>
         </Pressable>

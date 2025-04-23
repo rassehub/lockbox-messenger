@@ -58,6 +58,7 @@ const styles = StyleSheet.create({
     mainContainer: {
         flex: 1,
         padding: '5%',
+        backgroundColor: '#FFFFFF'
     },
     list: {
 
