@@ -21,7 +21,7 @@ import FriendProfileScreen from './src/screens/FriendProfile';
 
 export type StackParams = {
   Home: undefined;
-  Profile: undefined;
+  Profile: {userId: string};
   Chat: {chatId: string};
   NewChat: undefined;
   FriendProfile: {userId: string};
