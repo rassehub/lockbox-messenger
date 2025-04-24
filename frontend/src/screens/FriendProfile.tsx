@@ -2,6 +2,7 @@ import { Image, StyleSheet, View, Text, Alert } from "react-native";
 import { dummyContacts } from "../mockData/Contatcs";
 import SwitchSetting from "../components/SwitchSetting";
 import { useState } from "react";
+import DropdownRadio from "../components/DropdownRadio";
 
 const profilePicture = require('../assets/avatar-big.png');
 
@@ -10,6 +11,28 @@ const FriendProfileScreen = ({route}: any) => {
     const contact = dummyContacts.filter(
         (contact) => contact.userId === senderId
     );
+
+    const formConfiguration = {
+        fields: [
+            {
+                name: "disapearingMessages",
+                type: "radio",
+                options: [
+                    { label: "Never", value: "never" },
+                    { label: "After reading", value: "afterReading" },
+                    { label: "In 24 hours", value: "in24hours" },
+                ]
+            }
+        ]
+    }
+    
+    const initialValues = {
+        disapearingMessages: "never",
+    }
+    
+    const handleSubmit = () => {
+        console.log("handle submit");
+    }
 
     const [switchState, setSwitchState] = useState(false);
     const [secondSwitchState, setSecondSwitchState] = useState(false);
@@ -33,6 +56,12 @@ const FriendProfileScreen = ({route}: any) => {
             <Image style={styles.profilePicture} source={profilePicture}/>
             <Text style={styles.name}>{contact[0].name}</Text>
             <View>
+                <DropdownRadio 
+                    dropdownTitle="Disappearing messages"
+                    formConfiguration={formConfiguration}
+                    initialValues={initialValues}
+                    onSubmit={handleSubmit}
+                />
                 <SwitchSetting
                     settingText={"Setting switch on"}
                     onHandlePressed={handleSwitch}
@@ -59,6 +88,7 @@ const styles = StyleSheet.create({
     name: {
         fontSize: 18,
         color: '#594EFF',
+        fontWeight: 'bold',
     },
 })
 

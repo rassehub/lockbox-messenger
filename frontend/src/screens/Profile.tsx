@@ -1,10 +1,11 @@
-import { Image, View, Text, StyleSheet, Pressable } from 'react-native'
 import React from 'react'
-import { dummyUsers } from '../mockData/Users';
-import SettingItem from '../components/SettingCategoryItem';
+import { Image, View, Text, StyleSheet, Pressable } from 'react-native'
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { StackParams } from '../../App';
+import SettingItem from '../components/SettingCategoryItem';
+
+import { dummyUsers } from '../mockData/Users';
 
 const profilePicture = require('../assets/avatar-big.png');
 
