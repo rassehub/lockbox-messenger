@@ -1,16 +1,8 @@
 import React from 'react';
-import type {PropsWithChildren} from 'react';
-import {
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
-  View,
-} from 'react-native';
+import { StyleSheet, Text, TouchableOpacity } from 'react-native';
 
-import {NavigationContainer} from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import {NavigationContainer, useNavigation} from '@react-navigation/native';
+import { createNativeStackNavigator, NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import HomeScreen from './src/screens/Home';
 import ProfileScreen from './src/screens/Profile';
@@ -22,6 +14,7 @@ import AccountSettings from './src/screens/settings/Account';
 import PrivacySettings from './src/screens/settings/Privacy';
 import NotificationSettings from './src/screens/settings/Notifications';
 import ChatSettings from './src/screens/settings/Chats';
+import { dummyContacts } from './src/mockData/Contatcs';
 
 export type StackParams = {
   Home: undefined;
@@ -41,7 +34,16 @@ function App(): React.JSX.Element {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName='Home'>
+      <Stack.Navigator 
+        initialRouteName='Home'
+        screenOptions={{
+          headerTitleStyle: {
+            color: '#594EFF',
+          },
+          headerTintColor: '#594EFF',
+          
+        }}
+      >
         <Stack.Screen
           name="Home"
           component={HomeScreen}
@@ -55,33 +57,64 @@ function App(): React.JSX.Element {
         <Stack.Screen 
           name="Chat"
           component={ChatScreen}
-          options={{
-            headerTitle: 'Name Placeholder',
-          }}
+          options={({ navigation, route }) => ({
+            headerTitle: () => {
+              const { chatId } = route.params;
+              const userId = dummyContacts.find(contact => contact.chatId === chatId)?.userId || 'Unknown';
+              const name = dummyContacts.find(contact => contact.chatId === chatId)?.name || 'Unknown';
+
+              return (
+                <TouchableOpacity
+                  onPress={() => {
+                    navigation.navigate('FriendProfile', { userId });
+                  }}
+                >
+                  <Text style={{ color: '#594EFF', fontWeight: 'bold', fontSize: 18 }}>
+                    {name}
+                  </Text>
+                </TouchableOpacity>
+              );
+            },
+          })}
         />
         <Stack.Screen 
           name="NewChat"
           component={NewChatScreen}
+          options={{headerTitle: "New Chat"}}
         />
         <Stack.Screen 
           name='FriendProfile'
           component={FriendProfileScreen}
+          options={({ route }) => ({
+            headerTitle: () => {
+              const { userId } = route.params;
+              const name = dummyContacts.find(contact => contact.userId === userId)?.name || 'Unknown';
+
+              return(
+                <Text style={{ color: '#594EFF', fontWeight: 'bold', fontSize: 18 }}>{name}</Text>
+              );
+            }
+          })}
         />
         <Stack.Screen 
           name='AccountSettings'
           component={AccountSettings}
+          options={{headerTitle: "Account settings"}}
         />
         <Stack.Screen 
           name='PrivacySettings'
           component={PrivacySettings}
+          options={{headerTitle: "Privacy settings"}}
         />
         <Stack.Screen 
           name='NotificationSettings'
           component={NotificationSettings}
+          options={{headerTitle: "Notification settings"}}
         />
         <Stack.Screen 
           name='ChatSettings'
           component={ChatSettings}
+          options={{headerTitle: "Chat settings"}}
         />
       </Stack.Navigator>
       <NavBar />

@@ -5,11 +5,13 @@ import { ChatItem } from "../types/ChatListItem";
 
 const ChatList = () => {
     const renderItem = ({ item } : { item: ChatItem }) => <ChatListItem chat={item} />
+    const filteredChats = dummyChats.filter((chat) => chat.chatId !== null);
+    console.log(filteredChats);
 
     return(
         <FlatList
             style={styles.chatList}
-            data={dummyChats}
+            data={filteredChats}
             renderItem={renderItem}
             keyExtractor={(item) => item.chatId}
         />

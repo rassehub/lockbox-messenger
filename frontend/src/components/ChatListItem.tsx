@@ -1,9 +1,9 @@
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { ChatItem } from "../types/ChatListItem";
-import { Contact } from "../types/Contact";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { StackParams } from "../../App";
+import { dummyContacts } from "../mockData/Contatcs";
 
 type ChatListItemProps = {
     chat: ChatItem;
@@ -16,18 +16,17 @@ const ChatListItem: React.FC<ChatListItemProps> = ({chat}) => {
         : require('../assets/avatar.png');
 
     const lastMessage = chat.message[chat.message.length - 1];
-    const lastSenderID = lastMessage?.senderID || 'Unknown';
+    const chatId = chat.chatId;
+    const userId = dummyContacts.find(contact => contact.chatId === chatId)?.userId || 'Unknown';
     const lastContents = lastMessage?.contents || 'No message';
 
-    console.log(`SenderID: ${lastSenderID}, Contents: ${lastContents}`);
+    console.log(`SenderID: ${userId}, Contents: ${lastContents}`);
 
     return (
         <View style={styles.chatListItem}>
             <Pressable
                 onPress={() => {
-                    navigation.navigate('FriendProfile', {
-                        userId: lastSenderID,
-                    })
+                    navigation.navigate('FriendProfile', { userId })
                 }}>
                 <Image source={avatarSource} style={styles.avatar}/>
             </Pressable>

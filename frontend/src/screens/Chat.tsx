@@ -3,6 +3,7 @@ import { dummyMessages } from "../mockData/Messages";
 import ChatBubble from "../components/ChatBubble";
 import { Message } from "../types/Message";
 import React, { useState } from "react";
+import { dummyChats } from "../mockData/ChatItems";
 
 const ChatScreen = ({route}: any) => {
     const [text, onChangeText] = useState('Message');
@@ -19,12 +20,14 @@ const ChatScreen = ({route}: any) => {
         return result;
     };
 
-    //const messageId = createMessageId();
-
     const chatId = route.params.chatId;
     const filteredMessages = dummyMessages.filter(
         (message) => message.chatID === chatId
     )
+    const filteredMessages2 = dummyChats.filter(
+        (message) => message.chatId === chatId
+    )
+    console.log(filteredMessages2)
 
     const renderMessage = ({ item }: { item: Message }) => ( <ChatBubble message={item} /> );
 

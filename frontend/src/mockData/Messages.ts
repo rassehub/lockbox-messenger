@@ -28,4 +28,22 @@ export const dummyMessages: Message[] = [
         timeReceived: '2025-04-21T13:20:00Z',
         timeRead: '2025-04-21T13:21:00Z',
     },
+    {
+        messageID: 'thth',
+        chatID: 'hmnb',
+        senderID: '1',
+        contents: 'Fuck you!',
+        timeStamp: '2025-04-21T13:20:00Z',
+        timeReceived: '2025-04-21T13:20:00Z',
+        timeRead: '2025-04-21T13:21:00Z',
+    },
+    {
+        messageID: 'ghgh',
+        chatID: 'hmnb',
+        senderID: '2',
+        contents: 'Yep!',
+        timeStamp: '2025-04-21T13:20:00Z',
+        timeReceived: '2025-04-21T13:20:00Z',
+        timeRead: '2025-04-21T13:21:00Z',
+    },
 ]

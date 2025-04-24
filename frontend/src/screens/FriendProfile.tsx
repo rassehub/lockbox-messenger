@@ -11,6 +11,7 @@ const FriendProfileScreen = ({route}: any) => {
     const contact = dummyContacts.filter(
         (contact) => contact.userId === senderId
     );
+    console.log(contact)
 
     const formConfiguration = {
         fields: [
