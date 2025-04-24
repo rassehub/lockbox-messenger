@@ -28,7 +28,7 @@ const ContactListItem: React.FC<ContactListItemProps> = ({contact}) => {
         return result;
     };
 
-    const chatId = contact.chaId ? contact.chaId : createChatId();
+    const chatId = contact.chatId ? contact.chatId : createChatId();
 
     return (
         <Pressable 

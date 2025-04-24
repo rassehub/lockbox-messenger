@@ -3,5 +3,5 @@ export type Contact = {
     name: string;
     lastSeen?: string;
     avatarUrl?: string;
-    chaId?: string;
+    chatId?: string;
 }
