@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text } from "react-native"
+import { StyleSheet, Text, View } from "react-native"
 
 type SettingItemProps = {
     category: string;
@@ -8,11 +8,11 @@ type SettingItemProps = {
 const SettingItem = ({category, description}: SettingItemProps) => {
 
     return(
-        <Pressable 
+        <View 
             style={styles.settingItem}>
             <Text style={styles.title}>{category}</Text>
             <Text style={styles.description}>{description}</Text>
-        </Pressable>
+        </View>
     )
 }
 
