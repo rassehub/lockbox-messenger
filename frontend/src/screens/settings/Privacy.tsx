@@ -55,6 +55,7 @@ const PrivacySettings = () => {
             />
             <Text style={styles.categoryText}>Privacy settings</Text>
             <SwitchSetting 
+                initialState={false}
                 settingText="Disappearing messages"
                 onHandlePressed={handledisappearingMessages}
             />
@@ -65,7 +66,6 @@ const PrivacySettings = () => {
 const styles = StyleSheet.create({
     mainContainer: {
         flex: 1,
-        backgroundColor: '#FFFFFF',
         paddingTop: '10%',
         paddingHorizontal: '10%',
     },

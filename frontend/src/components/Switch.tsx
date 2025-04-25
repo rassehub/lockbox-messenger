@@ -2,16 +2,15 @@ import { useState } from "react";
 import { Animated, Pressable, StyleSheet } from "react-native";
 
 type SwitchProps = {
+    initialState: boolean;
     onHandlePressed: () => boolean
 }
 
-const Switch = ({onHandlePressed}: SwitchProps) => {
-    //const initState = onHandlePressed;
-    const [isEnabled, setIsEnabled] = useState(false);
+const Switch = ({initialState, onHandlePressed}: SwitchProps) => {
+    const [isEnabled, setIsEnabled] = useState(initialState);
 
     return (
         <Pressable onPress={() => {
-            //setIsEnabled(!isEnabled)
             const newState = onHandlePressed();
             setIsEnabled(newState);
         }}>

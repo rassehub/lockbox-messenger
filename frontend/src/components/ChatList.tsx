@@ -6,7 +6,6 @@ import { ChatItem } from "../types/ChatListItem";
 const ChatList = () => {
     const renderItem = ({ item } : { item: ChatItem }) => <ChatListItem chat={item} />
     const filteredChats = dummyChats.filter((chat) => chat.chatId !== null);
-    console.log(filteredChats);
 
     return(
         <FlatList

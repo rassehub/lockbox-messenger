@@ -54,8 +54,6 @@ const ChatScreen = ({route}: any) => {
 const styles = StyleSheet.create({
     mainContainer: {
         flex: 1,
-        padding: '5%',
-        backgroundColor: '#FFFFFF'
     },
     list: {
 
@@ -65,13 +63,13 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         width: '100%',
         backgroundColor: '#EBEAFF',
-        marginTop: '5%',
         borderRadius: 40,
-        paddingVertical: '2%',
+        marginTop: '5%',
+        paddingVertical: '4%',
         paddingHorizontal: '5%',
         color: '#A8A5FF',
         position: 'absolute',
-        bottom: 100,
+        bottom: 90,
         alignSelf: 'center'
     },
 });

@@ -3,12 +3,14 @@ import React from "react";
 import SearchBar from "../components/SearchBar";
 import ChatList from "../components/ChatList";
 import PlusButton from "../components/PlusButton";
+import { useTheme } from "../ThemeContext";
 
 const HomeScreen = () => {
+    const { isDarkTheme } = useTheme();
 
     return (
         <View style={styles.mainContainer}>
-            <Text style={styles.title}>Messages</Text>
+            <Text style={[styles.title, { color: isDarkTheme ? '#A8A5FF' : '#594EFF' }]}>Messages</Text>
             <SearchBar />
             <ChatList />
             <View style={styles.buttonContainer}>
@@ -21,22 +23,18 @@ const HomeScreen = () => {
 const styles = StyleSheet.create({
     mainContainer: {
         flex: 1,
-        paddingHorizontal: '5%',
-        paddingTop: '25%',
-        paddingBottom: '5%',
-        backgroundColor: '#FFFFFF',
+        paddingTop: '20%',
     },
     title: {
         fontSize: 32,
         fontWeight: 'bold',
         alignSelf: 'center',
-        color: '#594EFF',
     },
     buttonContainer: {
         justifyContent: 'flex-end',
         position: 'absolute',
         bottom: 100,
-        right: 40,
+        right: 10,
     }
 })
 

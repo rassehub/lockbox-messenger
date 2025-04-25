@@ -3,11 +3,14 @@ import React from "react";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { StackParams } from "../../App";
+import { useTheme } from "../ThemeContext";
 
 const chat = require('../assets/chat.png');
+const chatDark = require('../assets/chat-dark-temp.png');
 const profile = require('../assets/profile.png');
 
 const NavBar = () => {
+    const { isDarkTheme } = useTheme();
     const navigation = useNavigation<NativeStackNavigationProp<StackParams>>()
 
     return (
@@ -18,7 +21,7 @@ const NavBar = () => {
                     onPress={() => {
                         navigation.navigate('Home')
                     }}>
-                    <Image source={chat} />
+                    <Image source={isDarkTheme ? chatDark : chat} />
                 </TouchableOpacity>
                 <TouchableOpacity
                     style={styles.navItem}

@@ -2,10 +2,13 @@ import { Image, Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import SearchBar from "../components/SearchBar";
 import ContactList from "../components/ContactsList";
 import { useState } from "react";
+import { useTheme } from "../ThemeContext";
 
 const avatar = require('../assets/new.png');
+const avatarDark = require('../assets/new-dark.png');
 
 const NewChatScreen = () => {
+    const { isDarkTheme } = useTheme();
     const [modalVisible, setModalVisible] = useState(false)
 
     return(
@@ -18,8 +21,11 @@ const NewChatScreen = () => {
                     setModalVisible(!modalVisible);
                 }}>
                 <View style={styles.centeredView}>
-                    <View style={styles.modalView}>
-                        <Text style={styles.modalText}>Add new contact</Text>
+                    <View style={[styles.modalView, {
+                        backgroundColor: isDarkTheme ? '#1E1E1E' : '#FFFFFF',
+                        shadowColor: isDarkTheme ? '#A8A5FF' :'#000',
+                    }]}>
+                        <Text style={[styles.modalText, {color: isDarkTheme ? '#A8A5FF' : '#594EFF'}]}>Add new contact</Text>
                         <SearchBar />
                         <Pressable
                             style={styles.button}
@@ -35,8 +41,8 @@ const NewChatScreen = () => {
                     setModalVisible(true);
                 }}
                 style={styles.newContact}>
-                <Image style={styles.icon} source={avatar}/>
-                <Text style={styles.newContactText}>New Contact</Text>
+                <Image style={styles.icon} source={isDarkTheme ? avatarDark : avatar}/>
+                <Text style={[styles.newContactText, { color: isDarkTheme ? '#A8A5FF' : '#594EFF' }]}>New Contact</Text>
             </Pressable>
             <Text style={styles.title}>My contacts</Text>
             <ContactList />
@@ -46,11 +52,8 @@ const NewChatScreen = () => {
 
 const styles = StyleSheet.create({
     mainContainer: {
-        paddingHorizontal: '5%',
-        paddingTop: '10%',
-        paddingBottom: '5%',
+        paddingTop: '5%',
         flex: 1,
-        backgroundColor: '#FFFFFF',
     },
     newContact: {
         flexDirection: 'row',
@@ -65,7 +68,6 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: 'bold',
         alignSelf: 'center',
-        color: '#594EFF',
         paddingLeft: '2%',
     },
     title: {
@@ -84,7 +86,6 @@ const styles = StyleSheet.create({
         backgroundColor: 'white',
         borderRadius: 20,
         padding: 35,
-        shadowColor: '#000',
         shadowOffset: {
           width: 0,
           height: 2,

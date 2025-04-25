@@ -1,8 +1,8 @@
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, useColorScheme } from 'react-native';
 
-import {NavigationContainer, useNavigation} from '@react-navigation/native';
-import { createNativeStackNavigator, NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import HomeScreen from './src/screens/Home';
 import ProfileScreen from './src/screens/Profile';
@@ -15,6 +15,7 @@ import PrivacySettings from './src/screens/settings/Privacy';
 import NotificationSettings from './src/screens/settings/Notifications';
 import ChatSettings from './src/screens/settings/Chats';
 import { dummyContacts } from './src/mockData/Contatcs';
+import { useTheme } from './src/ThemeContext';
 
 export type StackParams = {
   Home: undefined;
@@ -31,30 +32,34 @@ export type StackParams = {
 const Stack = createNativeStackNavigator<StackParams>();
 
 function App(): React.JSX.Element {
+  const { isDarkTheme } = useTheme();
 
   return (
     <NavigationContainer>
-      <Stack.Navigator 
+      <Stack.Navigator
         initialRouteName='Home'
         screenOptions={{
-          headerTitleStyle: {
-            color: '#594EFF',
-          },
-          headerTintColor: '#594EFF',
-          
+          headerStyle: { backgroundColor: isDarkTheme ? '#1E1E1E' : '#FFFFFF' },
+          headerTitleStyle: { color: isDarkTheme ? '#A8A5FF' : '#594EFF' },
+          headerTintColor: isDarkTheme ? '#A8A5FF' : '#594EFF',
+          contentStyle: {
+            backgroundColor: isDarkTheme ? '#1E1E1E' : '#FFFFFF',
+            paddingHorizontal: '8%',
+            paddingVertical: '5%',
+          }
         }}
       >
         <Stack.Screen
           name="Home"
           component={HomeScreen}
-          options={{headerShown: false}}
+          options={{ headerShown: false }}
         />
         <Stack.Screen
           name="Profile"
           component={ProfileScreen}
-          options={{headerShown: false}}
+          options={{ headerShown: false }}
         />
-        <Stack.Screen 
+        <Stack.Screen
           name="Chat"
           component={ChatScreen}
           options={({ navigation, route }) => ({
@@ -69,7 +74,7 @@ function App(): React.JSX.Element {
                     navigation.navigate('FriendProfile', { userId });
                   }}
                 >
-                  <Text style={{ color: '#594EFF', fontWeight: 'bold', fontSize: 18 }}>
+                  <Text style={{ color: isDarkTheme ? '#A8A5FF' : '#594EFF', fontWeight: 'bold', fontSize: 18 }}>
                     {name}
                   </Text>
                 </TouchableOpacity>
@@ -77,12 +82,12 @@ function App(): React.JSX.Element {
             },
           })}
         />
-        <Stack.Screen 
+        <Stack.Screen
           name="NewChat"
           component={NewChatScreen}
-          options={{headerTitle: "New Chat"}}
+          options={{ headerTitle: "New Chat" }}
         />
-        <Stack.Screen 
+        <Stack.Screen
           name='FriendProfile'
           component={FriendProfileScreen}
           options={({ route }) => ({
@@ -90,31 +95,31 @@ function App(): React.JSX.Element {
               const { userId } = route.params;
               const name = dummyContacts.find(contact => contact.userId === userId)?.name || 'Unknown';
 
-              return(
-                <Text style={{ color: '#594EFF', fontWeight: 'bold', fontSize: 18 }}>{name}</Text>
+              return (
+                <Text style={{ color: isDarkTheme ? '#A8A5FF' : '#594EFF', fontWeight: 'bold', fontSize: 18 }}>{name}</Text>
               );
             }
           })}
         />
-        <Stack.Screen 
+        <Stack.Screen
           name='AccountSettings'
           component={AccountSettings}
-          options={{headerTitle: "Account settings"}}
+          options={{ headerTitle: "Account settings" }}
         />
-        <Stack.Screen 
+        <Stack.Screen
           name='PrivacySettings'
           component={PrivacySettings}
-          options={{headerTitle: "Privacy settings"}}
+          options={{ headerTitle: "Privacy settings" }}
         />
-        <Stack.Screen 
+        <Stack.Screen
           name='NotificationSettings'
           component={NotificationSettings}
-          options={{headerTitle: "Notification settings"}}
+          options={{ headerTitle: "Notification settings" }}
         />
-        <Stack.Screen 
+        <Stack.Screen
           name='ChatSettings'
           component={ChatSettings}
-          options={{headerTitle: "Chat settings"}}
+          options={{ headerTitle: "Chat settings" }}
         />
       </Stack.Navigator>
       <NavBar />

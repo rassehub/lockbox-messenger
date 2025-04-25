@@ -6,10 +6,13 @@ import { StackParams } from '../../App';
 import SettingItem from '../components/SettingCategoryItem';
 
 import { dummyUsers } from '../mockData/Users';
+import { useTheme } from '../ThemeContext';
 
 const profilePicture = require('../assets/avatar-big.png');
+const profilePictureDark = require('../assets/avatar-big-dark.png')
 
 const ProfileScreen = ({route}: any) => {
+    const { isDarkTheme } = useTheme();
     const navigation = useNavigation<NativeStackNavigationProp<StackParams>>();
 
     const userId = route.params.userId;
@@ -17,8 +20,8 @@ const ProfileScreen = ({route}: any) => {
 
     return (
         <View style={styles.mainContainer}>
-            <Image style={styles.profilePicture} source={profilePicture} />
-            <Text style={styles.name}>{user[0].displayName ? user[0].displayName : user[0].userName}</Text>
+            <Image style={styles.profilePicture} source={isDarkTheme ? profilePictureDark : profilePicture} />
+            <Text style={[styles.name, { color: isDarkTheme ? '#A8A5FF' : '#594EFF' }]}>{user[0].displayName ? user[0].displayName : user[0].userName}</Text>
             <View style={styles.settingsContainer}>
                 <Pressable onPress={() => {navigation.navigate('AccountSettings')}}>
                     <SettingItem category='Account' description='Security notifications' />
@@ -49,18 +52,16 @@ const ProfileScreen = ({route}: any) => {
 const styles = StyleSheet.create({
     mainContainer: {
         width: '100%',
-        paddingTop: '15%',
-        paddingHorizontal: '15%',
+        paddingTop: '10%',
+        paddingHorizontal: '10%',
         alignItems: 'center',
         flex: 1,
-        backgroundColor: '#FFFFFF',
     },
     profilePicture: {
 
     },
     name: {
         fontSize: 18,
-        color: '#594EFF',
         fontWeight: 'bold',
         paddingBottom: '20%',
     },

@@ -1,16 +1,18 @@
 import { StyleSheet, Text, View } from "react-native"
+import { useTheme } from "../ThemeContext";
 
 type SettingItemProps = {
     category: string;
     description: string;
 }
 
-const SettingItem = ({category, description}: SettingItemProps) => {
+const SettingCategoryItem = ({category, description}: SettingItemProps) => {
+    const { isDarkTheme } = useTheme();
 
     return(
         <View 
             style={styles.settingItem}>
-            <Text style={styles.title}>{category}</Text>
+            <Text style={[styles.title, { color: isDarkTheme ? '#A8A5FF' : '#594EFF' }]}>{category}</Text>
             <Text style={styles.description}>{description}</Text>
         </View>
     )
@@ -24,7 +26,6 @@ const styles = StyleSheet.create({
     },
     title: {
         fontSize: 16,
-        color: '#594EFF',
         fontWeight: 'bold',
     },
     description: {
@@ -33,4 +34,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default SettingItem;
+export default SettingCategoryItem;

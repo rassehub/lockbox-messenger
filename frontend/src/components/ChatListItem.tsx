@@ -4,16 +4,18 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { StackParams } from "../../App";
 import { dummyContacts } from "../mockData/Contatcs";
+import { useTheme } from "../ThemeContext";
 
 type ChatListItemProps = {
     chat: ChatItem;
 }
 
 const ChatListItem: React.FC<ChatListItemProps> = ({chat}) => {
+    const { isDarkTheme } = useTheme();
     const navigation = useNavigation<NativeStackNavigationProp<StackParams>>();
     const avatarSource = chat.avatarUrl
         ? { uri: chat.avatarUrl}
-        : require('../assets/avatar.png');
+        : isDarkTheme ? require('../assets/avatar-dark.png') : require('../assets/avatar.png');
 
     const lastMessage = chat.message[chat.message.length - 1].contents;
     const chatId = chat.chatId;
@@ -34,7 +36,7 @@ const ChatListItem: React.FC<ChatListItemProps> = ({chat}) => {
                     })
                 }}>
                 <View style={styles.chatInfo}>
-                    <Text style={styles.recipient}>{chat.recipient}</Text>
+                    <Text style={[styles.recipient, { color: isDarkTheme ? '#A8A5FF' : '#594EFF' }]}>{chat.recipient}</Text>
                     <Text style={styles.time}>
                         {new Date(chat.timeStamp).toLocaleTimeString([], {
                         hour: '2-digit',
@@ -68,7 +70,6 @@ const styles = StyleSheet.create({
     recipient: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: '#594EFF',
     },
     time: {
         fontSize: 12,
