@@ -1,5 +1,4 @@
 import { FlatList, StyleSheet, TextInput, View } from "react-native";
-import { dummyMessages } from "../mockData/Messages";
 import ChatBubble from "../components/ChatBubble";
 import { Message } from "../types/Message";
 import React, { useState } from "react";
@@ -21,21 +20,16 @@ const ChatScreen = ({route}: any) => {
     };
 
     const chatId = route.params.chatId;
-    const filteredMessages = dummyMessages.filter(
-        (message) => message.chatID === chatId
-    )
-    const filteredMessages2 = dummyChats.filter(
-        (message) => message.chatId === chatId
-    )
-    console.log(filteredMessages2)
+    const chat = dummyChats.find((chat) => chat.chatId === chatId);
+    const messagesFromChat = chat ? chat.message : [];
 
-    const renderMessage = ({ item }: { item: Message }) => ( <ChatBubble message={item} /> );
+    const renderMessage = ({ item }: { item: Message }) => ( <ChatBubble message={item} senderID={messagesFromChat[0].senderID} /> );
 
     return (
         <View style={styles.mainContainer}>
             <FlatList
                 style={styles.list}
-                data={filteredMessages}
+                data={messagesFromChat}
                 renderItem={renderMessage}
                 keyExtractor={(item) => item.messageID}
             />
@@ -44,10 +38,10 @@ const ChatScreen = ({route}: any) => {
                 onChangeText={onChangeText}
                 value={text}
                 onSubmitEditing={() => {
-                    filteredMessages.push({
+                    messagesFromChat.push({
                         messageID: createMessageId(),
                         chatID: chatId,
-                        senderID: 'llll',
+                        senderID: '2',
                         contents: text,
                         timeStamp: new Date().toString()
                     });

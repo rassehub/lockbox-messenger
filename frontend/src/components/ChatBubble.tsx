@@ -3,11 +3,12 @@ import { Message } from "../types/Message";
 
 type MessageProps = {
     message: Message;
+    senderID: string;
 }
 
-const ChatBubble: React.FC<MessageProps> = ({message}) => {
+const ChatBubble: React.FC<MessageProps> = ({message, senderID}) => {
     return (
-        <View style={message.senderID == '1' ? styles.receivedBubble : styles.sentBubble}>
+        <View style={message.senderID == senderID ? styles.receivedBubble : styles.sentBubble}>
             <Text style={styles.message}>{message.contents}</Text>
         </View>
     )

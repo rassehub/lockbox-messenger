@@ -15,12 +15,9 @@ const ChatListItem: React.FC<ChatListItemProps> = ({chat}) => {
         ? { uri: chat.avatarUrl}
         : require('../assets/avatar.png');
 
-    const lastMessage = chat.message[chat.message.length - 1];
+    const lastMessage = chat.message[chat.message.length - 1].contents;
     const chatId = chat.chatId;
     const userId = dummyContacts.find(contact => contact.chatId === chatId)?.userId || 'Unknown';
-    const lastContents = lastMessage?.contents || 'No message';
-
-    console.log(`SenderID: ${userId}, Contents: ${lastContents}`);
 
     return (
         <View style={styles.chatListItem}>
@@ -45,7 +42,7 @@ const ChatListItem: React.FC<ChatListItemProps> = ({chat}) => {
                         })}
                     </Text>
                 </View>
-                <Text style={styles.lastMessage}>{lastContents}</Text>
+                <Text style={styles.lastMessage}>{lastMessage}</Text>
             </Pressable>
         </View>
     )
