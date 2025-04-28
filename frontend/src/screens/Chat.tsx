@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: '5%',
         color: '#A8A5FF',
         position: 'absolute',
-        bottom: 90,
+        bottom: 0,
         alignSelf: 'center'
     },
 });

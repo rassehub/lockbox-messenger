@@ -18,8 +18,8 @@ const NavBar = () => {
 
     const {width} = Dimensions.get('window');
     const positions = [
-        ((width / 2) / 2) - 20,
-        ((width / 2) / 2) + 122,
+        ((width / 2) / 2) - 20.5,
+        ((width / 2) / 2) + 146,
     ];
 
     console.log(positions)
@@ -43,7 +43,7 @@ const NavBar = () => {
                     styles.roundedView1, 
                     {
                         borderTopRightRadius: 18,
-                        width: selected === 'home' ? '20%' : '56.3%',
+                        width: selected === 'home' ? '20%' : '62.3%',
                     }
                 ]}/>
 
@@ -51,7 +51,7 @@ const NavBar = () => {
                     styles.roundedView2,
                     {
                         borderTopLeftRadius: 18,
-                        width: selected === 'profile' ? '20%' : '56.4%',
+                        width: selected === 'profile' ? '20%' : '62.5%',
                     }
                 ]}/>
             </View>
@@ -139,18 +139,18 @@ const styles = StyleSheet.create({
         width: '20%',
         height: 80,
         bottom: -20,
-        borderTopLeftRadius: 10, 
+        borderTopLeftRadius: 15, 
     },
     backgroundView: {
         borderBottomLeftRadius: '50%',
         borderBottomRightRadius: '50%',
-        width: '24%',
+        width: '18%',
         height: 60,
         position: 'absolute',
         zIndex: 20,
     },
     iconContainerView: {
-        width: '40%',
+        width: '30%',
         height: 60,
         borderBottomLeftRadius: '50%',
         borderBottomRightRadius: '50%',
@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#A8A5FF',
         height: 80,
         bottom: -20,
-        borderTopRightRadius: 10, 
+        borderTopRightRadius: 15, 
     },
     bottomLayer: {
         position: 'absolute',
