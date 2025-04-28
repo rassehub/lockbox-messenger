@@ -33,7 +33,7 @@ const styles = StyleSheet.create({
     buttonContainer: {
         justifyContent: 'flex-end',
         position: 'absolute',
-        bottom: 100,
+        bottom: 0,
         right: 10,
     }
 })
