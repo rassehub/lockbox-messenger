@@ -5,6 +5,7 @@ const searchIcon = require('../assets/search.png');
 
 const SearchBar = () => {
     const [text, onChangeText] = React.useState('Search');
+
     return (
         <View style={styles.searchBar}>
             <TextInput 

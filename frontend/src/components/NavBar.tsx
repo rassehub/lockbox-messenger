@@ -14,7 +14,7 @@ const NavBar = () => {
     const { isDarkTheme } = useTheme();
     const navigation = useNavigation<NativeStackNavigationProp<StackParams>>()
 
-    const [selected, setSelected] = useState('profile');
+    const [selected, setSelected] = useState('home');
 
     const {width} = Dimensions.get('window');
     const positions = [
@@ -25,15 +25,12 @@ const NavBar = () => {
     console.log(positions)
 
     const animated = useRef(new Animated.Value(0)).current;
-    const isMounted = useRef(false);
 
     useEffect(() => {
         Animated.spring(animated, {
             toValue: selected === 'home' ? positions[0] : positions[1],
             useNativeDriver: true,
         }).start();
-        
-        console.log('valittu: ', selected);
     }, [selected]);
 
     return (
