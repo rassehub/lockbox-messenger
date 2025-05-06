@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, useColorScheme } from 'react-native';
 
 import { NavigationContainer } from '@react-navigation/native';
@@ -16,8 +16,13 @@ import NotificationSettings from './src/screens/settings/Notifications';
 import ChatSettings from './src/screens/settings/Chats';
 import { dummyContacts } from './src/mockData/Contatcs';
 import { useTheme } from './src/ThemeContext';
+import LoginScreen from './src/screens/Login';
+import SignUpScreen from './src/screens/SignUp';
+import { useAuthentication } from './src/AuthContext';
 
 export type StackParams = {
+  Login: undefined;
+  SignUp: undefined;
   Home: undefined;
   Profile: {userId: string};
   Chat: {chatId: string};
@@ -33,11 +38,12 @@ const Stack = createNativeStackNavigator<StackParams>();
 
 function App(): React.JSX.Element {
   const { isDarkTheme } = useTheme();
+  const { isAuthenticated } = useAuthentication();
 
   return (
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName='Home'
+        initialRouteName={isAuthenticated ? 'Home' : 'Login'}
         screenOptions={{
           headerStyle: { backgroundColor: isDarkTheme ? '#1E1E1E' : '#FFFFFF' },
           headerTitleStyle: { color: isDarkTheme ? '#A8A5FF' : '#594EFF' },
@@ -49,6 +55,16 @@ function App(): React.JSX.Element {
           }
         }}
       >
+        <Stack.Screen 
+          name="Login"
+          component={LoginScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen 
+          name='SignUp'
+          component={SignUpScreen}
+          options={{ headerShown: false }}
+        />
         <Stack.Screen
           name="Home"
           component={HomeScreen}
@@ -122,7 +138,7 @@ function App(): React.JSX.Element {
           options={{ headerTitle: "Chat settings" }}
         />
       </Stack.Navigator>
-      <NavBar />
+      {isAuthenticated && <NavBar />}
     </NavigationContainer>
   );
 }

@@ -4,6 +4,7 @@ import SearchBar from "../components/SearchBar";
 import ChatList from "../components/ChatList";
 import PlusButton from "../components/PlusButton";
 import { useTheme } from "../ThemeContext";
+import LoginScreen from "./Login";
 
 const HomeScreen = () => {
     const { isDarkTheme } = useTheme();
