@@ -20,8 +20,8 @@ const ChatSettings = () => {
 const styles = StyleSheet.create({
     mainContainer: {
         flex: 1,
-        paddingTop: '10%',
-        paddingHorizontal: '10%',
+        paddingTop: '5%',
+        paddingHorizontal: '5%',
     },
     categoryText: {
         color: '#A8A5FF',
