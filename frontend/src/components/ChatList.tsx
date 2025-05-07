@@ -3,14 +3,17 @@ import { dummyChats } from "../mockData/ChatItems";
 import ChatListItem from "./ChatListItem";
 import { ChatItem } from "../types/ChatListItem";
 
-const ChatList = () => {
+type ChatListProps = {
+    chats: ChatItem[];
+}
+
+const ChatList = ({chats}: ChatListProps) => {
     const renderItem = ({ item } : { item: ChatItem }) => <ChatListItem chat={item} />
-    const filteredChats = dummyChats.filter((chat) => chat.chatId !== null);
 
     return(
         <FlatList
             style={styles.chatList}
-            data={filteredChats}
+            data={chats}
             renderItem={renderItem}
             keyExtractor={(item) => item.chatId}
         />

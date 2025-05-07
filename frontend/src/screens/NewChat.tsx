@@ -3,13 +3,30 @@ import SearchBar from "../components/SearchBar";
 import ContactList from "../components/ContactsList";
 import { useState } from "react";
 import { useTheme } from "../ThemeContext";
+import { dummyContacts } from "../mockData/Contatcs";
 
 const avatar = require('../assets/new.png');
 const avatarDark = require('../assets/new-dark.png');
 
 const NewChatScreen = () => {
     const { isDarkTheme } = useTheme();
-    const [modalVisible, setModalVisible] = useState(false)
+    const [modalVisible, setModalVisible] = useState(false);
+    const initialContacts = dummyContacts;
+    const [contacts, setContacts] = useState(initialContacts);
+    console.log('new chat: ', contacts);
+
+    const handleModalSearch = (searchText: string) => {
+        console.log('modal search');
+    }
+
+    const handleSearch = (searchText: string) => {
+        const updatedContacts = !searchText
+            ? initialContacts
+            : initialContacts.filter((contact) => contact.name.toLowerCase().includes(searchText.toLowerCase()));
+        setContacts(updatedContacts);
+        console.log(updatedContacts);
+        console.log('Search text: ', searchText);
+    }
 
     return(
         <View style={styles.mainContainer}>
@@ -26,7 +43,7 @@ const NewChatScreen = () => {
                         shadowColor: isDarkTheme ? '#A8A5FF' :'#000',
                     }]}>
                         <Text style={[styles.modalText, {color: isDarkTheme ? '#A8A5FF' : '#594EFF'}]}>Add new contact</Text>
-                        <SearchBar />
+                        <SearchBar onSearch={handleModalSearch}/>
                         <Pressable
                             style={styles.button}
                             onPress={() => setModalVisible(!modalVisible)}>
@@ -35,7 +52,7 @@ const NewChatScreen = () => {
                     </View>
                 </View>
             </Modal>
-            <SearchBar />
+            <SearchBar onSearch={handleSearch}/>
             <Pressable 
                 onPress={() => {
                     setModalVisible(true);
@@ -45,7 +62,7 @@ const NewChatScreen = () => {
                 <Text style={[styles.newContactText, { color: isDarkTheme ? '#A8A5FF' : '#594EFF' }]}>New Contact</Text>
             </Pressable>
             <Text style={styles.title}>My contacts</Text>
-            <ContactList />
+            <ContactList contacts={contacts}/>
         </View>
     )
 }
