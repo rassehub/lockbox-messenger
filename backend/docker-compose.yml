@@ -1,0 +1,23 @@
+services:
+  db:
+    image: postgres:16
+    restart: always
+    container_name: lockbox-db
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: dbuser
+      POSTGRES_PASSWORD: dbpass
+      POSTGRES_DB: lockbox_dev
+    volumes:
+      - ./db/data:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+  cache:
+    image: redis:6.2-alpine
+    restart: always
+    container_name: lockbox-cache
+    ports:
+      - '6379:6379'
+    command: redis-server --save 20 1 --loglevel debug --requirepass cachepass
+    volumes:
+      - ./cache:/data

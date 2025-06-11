@@ -1,0 +1,26 @@
+{
+  "name": "lockbox-server",
+  "version": "1.0.0",
+  "description": "websocket server for lockbox messenger",
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "start": "node ./src/server/index.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "express-session": "^1.18.1",
+    "uuid": "^11.1.0",
+    "winston": "^3.17.0",
+    "ws": "^8.18.2"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "optionalDependencies": {
+    "bufferutil": "^4.0.9"
+  }
+}
