@@ -1,7 +1,7 @@
 import http from 'http';
-import { app, sessionParser, map } from './expressApp';
-import setupWebSocketServer from './wss';
-import logger from '../services/logger';
+import { app, sessionParser, map } from './config/expressApp';
+import setupWebSocketServer from './config/wss';
+import logger from './utils/logger';
 
 const PORT = process.env.PORT || 3000;
 

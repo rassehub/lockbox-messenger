@@ -1,7 +1,7 @@
 import http from 'http';
 import { WebSocket } from 'ws';
-import setupWebSocketServer from '../../src/server/wss';
-import { app, sessionParser, map } from '../../src/server/expressApp';
+import setupWebSocketServer from '@/config/wss';
+import { app, sessionParser, map } from '@/config/expressApp';
 import request from 'supertest';
 
 
@@ -11,7 +11,7 @@ jest.mock('typeorm', () => ({
   })),
 }));
 
-jest.mock('../../src/services/logger', () => ({
+jest.mock('../../src/utils/logger', () => ({
   info: jest.fn(),
   error: jest.fn(),
 }));

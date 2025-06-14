@@ -1,32 +1,14 @@
 import express from 'express';
 import session from 'express-session';
 import { v4 as uuidv4 } from 'uuid';
-import logger from '../services/logger';
+import logger from '../utils/logger';
 import { WebSocket } from 'ws';
+import sessionParser from '../middleware/session';
+import { isAuthenticated } from '../middleware/auth';
 
-// Create interface for your session data
-declare module 'express-session' {
-  interface SessionData {
-    userId: string;
-  }
-}
-
-// Create interface for your custom request with user
-declare global {
-  namespace Express {
-    interface Request {
-      session: session.Session & Partial<session.SessionData>;
-    }
-  }
-}
 
 const map = new Map<string, WebSocket>(); // Exported for shared access
 
-const sessionParser = session({
-  saveUninitialized: false,
-  secret: '$eCuRiTy',
-  resave: false
-});
 
 const app = express();
 

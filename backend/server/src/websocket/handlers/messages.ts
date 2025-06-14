@@ -1,13 +1,13 @@
 import { Request, Response } from "express";
-import { addMessage, getMessages } from "../services/redis";
-import { AppDataSource } from "../db";
-import { User } from "../models/User";
+import { addMessage, getMessages } from "@/services/redis";
+import { getRepository} from "@/db";
+import { User } from "@/models/User";
 
 export async function sendMessage(req: Request, res: Response) {
   const { recipientUsername, ciphertext } = req.body;
 
   // 1. Fetch recipient's ID from PostgreSQL
-  const userRepo = AppDataSource.getRepository(User);
+  const userRepo = getRepository(User);
   const recipient = await userRepo.findOne({ where: { username: recipientUsername } });
   if (!recipient) return res.status(404).send("User not found");
 

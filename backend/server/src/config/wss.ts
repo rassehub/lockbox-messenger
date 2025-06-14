@@ -1,5 +1,5 @@
 import { WebSocketServer, WebSocket } from 'ws';
-import logger from '../services/logger';
+import logger from '../utils/logger';
 import { IncomingMessage } from 'http';
 import session from 'express-session';
 import * as http from 'http';

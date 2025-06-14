@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import { DataSource } from "typeorm";
+import { DataSource, EntityTarget, ObjectLiteral } from "typeorm";
 import { User } from "./models/User";
 
 export const AppDataSource = new DataSource({
@@ -14,7 +14,12 @@ export const AppDataSource = new DataSource({
   entities: [User],
 });
 
+export function getRepository<T extends ObjectLiteral>(entity: EntityTarget<T>) {
+  return AppDataSource.getRepository(entity);
+}
+
 // Initialize connection
 AppDataSource.initialize()
   .then(() => console.log("PostgreSQL connected"))
   .catch(console.error);
+

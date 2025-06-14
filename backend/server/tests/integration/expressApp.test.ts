@@ -1,9 +1,9 @@
 import request from 'supertest';
-import { app } from '../../src/server/expressApp';
-import logger from '../../src/services/logger';
+import { app } from '../../src/config/expressApp';
+import logger from '../../src/utils/logger';
 
 // Mock the logger to avoid console output during tests
-jest.mock('../../src/services/logger', () => ({
+jest.mock('../../src/utils/logger', () => ({
   info: jest.fn(),
   error: jest.fn(),
 }));
