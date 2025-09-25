@@ -49,6 +49,8 @@ const styles = StyleSheet.create({
         paddingHorizontal: '5%',
         paddingTop: '10%',
         paddingBottom: '5%',
+        flex: 1,
+        backgroundColor: '#FFFFFF',
     },
     newContact: {
         flexDirection: 'row',
