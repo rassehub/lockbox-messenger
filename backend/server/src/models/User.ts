@@ -1,7 +1,7 @@
 // src/models/User.ts
 import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
 
-@Entity()
+@Entity("users")
 export class User {
   @PrimaryGeneratedColumn("uuid")
   id!: string;
@@ -10,7 +10,7 @@ export class User {
   username!: string;
 
   @Column({ type: "text", unique: true })
-  email!: string;
+  display_name!: string;
 
   @Column({ type: "text" })
   password_hash!: string;

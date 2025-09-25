@@ -1,6 +1,6 @@
-import { login, logout } from '../../../src/controllers/authController';
+import { login, logout } from '@/controllers/authController';
 
-jest.mock('../../../src/db', () => ({
+jest.mock('@/db', () => ({
   getRepository: jest.fn(() => ({
     findOne: jest.fn().mockResolvedValue({ username: 'admin', password_hash: 'password' }),
   })),

@@ -1,15 +1,15 @@
 import { sendMessage, fetchMessages } from "@/websocket/handlers/messages";
 
-jest.mock('../../../src/utils/logger', () => ({
+jest.mock('@/utils/logger', () => ({
   info: jest.fn(),
   error: jest.fn(),
 }));
-jest.mock('../../../src/db', () => ({
+jest.mock('@/db', () => ({
   getRepository: jest.fn(() => ({
     findOne: jest.fn().mockResolvedValue({ id: 'recipient-id', username: 'recipient' }),
   })),
 }));
-jest.mock('../../../src/services/redis', () => ({
+jest.mock('@/services/redis', () => ({
   addMessage: jest.fn(),
   getMessages: jest.fn().mockResolvedValue([]),
 }));
@@ -24,7 +24,7 @@ describe('WebSocket Message Handlers', () => {
     } as any;
     it('should send a message successfully', async () => {
         const req = {
-        user: { id: 'test-user-id' },
+          user: { id: 'test-user-id' },
         body: {
             recipientUsername: 'recipient',
             ciphertext: 'encrypted-message',

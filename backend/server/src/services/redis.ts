@@ -1,21 +1,60 @@
-import Redis from "ioredis";
+import Redis from 'ioredis';
+import logger from '../utils/logger';
 
-const redis = new Redis();
+let client: Redis | undefined;
 
-// Add message to recipient's queue
+export async function initCache() {
+  if (client) return client;
+  client = new Redis({
+    host: process.env.REDIS_HOST || "localhost",
+    port: 6379,
+    password: "cachepass",
+  });
+  client.on('error', (e: Error) => logger.error(e));
+  await new Promise<void>((resolve, reject) => {
+    client!.once('ready', () => resolve());
+    client!.once('error', (err) => reject(err));
+  });
+  return client;
+}
+
+export async function closeCache() {
+  if (client) {
+    await client.quit();
+  }
+  client = undefined;
+}
+
+function ensure() {
+  if (!client) throw new Error('Redis not initialized');
+  return client;
+}
+
+
 export async function addMessage(recipientId: string, message: any) {
-  await redis.lpush(`user:${recipientId}:messages`, JSON.stringify(message));
-  await redis.expire(`user:${recipientId}:messages`, 86400); // Expire in 1 day
+  try {
+    const r = ensure();
+    const key = `user:${recipientId}:messages`;
+    await r.lpush(key, JSON.stringify(message));
+    await r.expire(key, 86400);
+  } catch (e) {
+    // swallow for WS path (forwarding already done)
+    logger.error(e as Error);
+  }
 }
 
-// Get all pending messages for a user
 export async function getMessages(recipientId: string) {
-  const messages = await redis.lrange(`user:${recipientId}:messages`, 0, -1);
-  await redis.del(`user:${recipientId}:messages`); // Clear after retrieval
-  return messages.map((msg) => JSON.parse(msg));
+  const r = ensure();
+  const key = `user:${recipientId}:messages`;
+  const messages = await r.lrange(key, 0, -1);
+  await r.del(key);
+  return messages.map(m => JSON.parse(m));
 }
 
-// Track online status
 export async function setUserOnline(userId: string) {
-  await redis.set(`user:${userId}:status`, "online", "EX", 30); // Expires in 30s
+  const r = ensure();
+  const key = `user:${userId}:status`;
+  await r.set(key, 'online');
+  await r.expire(key, 30);
 }
+
