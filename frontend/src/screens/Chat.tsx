@@ -1,8 +1,8 @@
 import { FlatList, StyleSheet, TextInput, View } from "react-native";
-import { dummyMessages } from "../mockData/Messages";
 import ChatBubble from "../components/ChatBubble";
 import { Message } from "../types/Message";
 import React, { useState } from "react";
+import { dummyChats } from "../mockData/ChatItems";
 
 const ChatScreen = ({route}: any) => {
     const [text, onChangeText] = useState('Message');
@@ -19,20 +19,17 @@ const ChatScreen = ({route}: any) => {
         return result;
     };
 
-    //const messageId = createMessageId();
-
     const chatId = route.params.chatId;
-    const filteredMessages = dummyMessages.filter(
-        (message) => message.chatID === chatId
-    )
+    const chat = dummyChats.find((chat) => chat.chatId === chatId);
+    const messagesFromChat = chat ? chat.message : [];
 
-    const renderMessage = ({ item }: { item: Message }) => ( <ChatBubble message={item} /> );
+    const renderMessage = ({ item }: { item: Message }) => ( <ChatBubble message={item} senderID={messagesFromChat[0].senderID} /> );
 
     return (
         <View style={styles.mainContainer}>
             <FlatList
                 style={styles.list}
-                data={filteredMessages}
+                data={messagesFromChat}
                 renderItem={renderMessage}
                 keyExtractor={(item) => item.messageID}
             />
@@ -41,10 +38,10 @@ const ChatScreen = ({route}: any) => {
                 onChangeText={onChangeText}
                 value={text}
                 onSubmitEditing={() => {
-                    filteredMessages.push({
+                    messagesFromChat.push({
                         messageID: createMessageId(),
                         chatID: chatId,
-                        senderID: 'llll',
+                        senderID: '2',
                         contents: text,
                         timeStamp: new Date().toString()
                     });
@@ -57,8 +54,6 @@ const ChatScreen = ({route}: any) => {
 const styles = StyleSheet.create({
     mainContainer: {
         flex: 1,
-        padding: '5%',
-        backgroundColor: '#FFFFFF'
     },
     list: {
 
@@ -68,13 +63,13 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         width: '100%',
         backgroundColor: '#EBEAFF',
-        marginTop: '5%',
         borderRadius: 40,
-        paddingVertical: '2%',
+        marginTop: '5%',
+        paddingVertical: '4%',
         paddingHorizontal: '5%',
         color: '#A8A5FF',
         position: 'absolute',
-        bottom: 100,
+        bottom: 0,
         alignSelf: 'center'
     },
 });

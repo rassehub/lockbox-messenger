@@ -3,13 +3,18 @@ import { dummyContacts } from "../mockData/Contatcs"
 import ContactListItem from "./ContactListItem"
 import { Contact } from "../types/Contact"
 
-const ContactList = () => {
+type ContactListProps = {
+    contacts: Contact[];
+}
+
+const ContactList = ({contacts}: ContactListProps) => {
     const renderContact = ({ item } : { item: Contact }) => <ContactListItem contact={item} />
+    console.log('testi: ', contacts);
 
     return (
         <FlatList 
             style={styles.contactList}
-            data={dummyContacts}
+            data={contacts}
             renderItem={renderContact}
             keyExtractor={(item) => item.userId}
         />

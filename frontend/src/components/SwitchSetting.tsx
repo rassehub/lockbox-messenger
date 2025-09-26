@@ -1,16 +1,20 @@
 import { StyleSheet, Text, View } from "react-native";
 import Switch from "./Switch";
+import { useTheme } from "../ThemeContext";
 
 type SwitchSettingProps = {
+    initialState: boolean;
     settingText: string;
     onHandlePressed: () => boolean;
 }
 
-const SwitchSetting = ({ settingText, onHandlePressed }: SwitchSettingProps) => {
+const SwitchSetting = ({ initialState, settingText, onHandlePressed }: SwitchSettingProps) => {
+    const { isDarkTheme } = useTheme();
+
     return(
         <View style={styles.mainContainer}>
-            <Text style={styles.settingText}>{settingText}</Text>
-            <Switch onHandlePressed={onHandlePressed}/>
+            <Text style={[styles.settingText, { color: isDarkTheme ? '#A8A5FF' : '#594EFF' }]}>{settingText}</Text>
+            <Switch initialState={initialState} onHandlePressed={onHandlePressed}/>
         </View>
     )
 }
@@ -24,7 +28,6 @@ const styles = StyleSheet.create({
     },
     settingText: {
         width: '80%',
-        color: '#594EFF',
         fontSize: 16,
         fontWeight: 'bold',
     },

@@ -3,4 +3,5 @@ export type User = {
     userName: string;
     password: string;
     displayName?: string;
+    chatIds?: string[];
 }

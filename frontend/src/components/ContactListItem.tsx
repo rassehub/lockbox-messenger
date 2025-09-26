@@ -3,16 +3,19 @@ import { Contact } from "../types/Contact";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { StackParams } from "../../App";
+import { useTheme } from "../ThemeContext";
 
 type ContactListItemProps = {
     contact: Contact;
 }
 
 const ContactListItem: React.FC<ContactListItemProps> = ({contact}) => {
+    const { isDarkTheme } = useTheme();
+
     const navigation = useNavigation<NativeStackNavigationProp<StackParams>>();
     const avatarSource = contact.avatarUrl
         ? { uri: contact.avatarUrl }
-        : require('../assets/avatar.png');
+        : isDarkTheme ? require('../assets/avatar-dark.png') : require('../assets/avatar.png');
     const lastSeen = contact.lastSeen
         ? contact.lastSeen
         : '';
@@ -28,7 +31,7 @@ const ContactListItem: React.FC<ContactListItemProps> = ({contact}) => {
         return result;
     };
 
-    const chatId = contact.chaId ? contact.chaId : createChatId();
+    const chatId = contact.chatId ? contact.chatId : createChatId();
 
     return (
         <Pressable 
@@ -40,7 +43,7 @@ const ContactListItem: React.FC<ContactListItemProps> = ({contact}) => {
             style={styles.contactListItem}>
             <Image source={avatarSource} style={styles.avatar} />
             <View>
-                <Text style={styles.name}>{contact.name}</Text>
+                <Text style={[styles.name, { color: isDarkTheme ? '#A8A5FF' : '#594EFF' }]}>{contact.name}</Text>
                 <Text style={styles.lastSeen}>
                     {new Date(lastSeen).toLocaleDateString([], {
                     hour: '2-digit',
@@ -65,7 +68,6 @@ const styles = StyleSheet.create({
     name: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: '#594EFF',
     },
     lastSeen: {
         fontSize: 12,

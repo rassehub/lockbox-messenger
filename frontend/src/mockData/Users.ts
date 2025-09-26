@@ -6,5 +6,9 @@ export const dummyUsers: User[] = [
         userName: 'Jorma Korhonen',
         password: '1234',
         displayName: 'John Doe',
+        chatIds: [
+            'sbgf', 
+            'hmnb',
+        ]
     },
 ]

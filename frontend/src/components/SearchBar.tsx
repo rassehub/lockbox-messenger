@@ -3,14 +3,22 @@ import { StyleSheet, View, TextInput, Image } from "react-native";
 
 const searchIcon = require('../assets/search.png');
 
-const SearchBar = () => {
-    const [text, onChangeText] = React.useState('Search');
+type SearchBarProps = {
+    onSearch: (searchText: string) => void;
+}
+
+const SearchBar = ({onSearch}: SearchBarProps) => {
+    const [searchText, setSearchText] = React.useState('Search');
+
     return (
         <View style={styles.searchBar}>
             <TextInput 
                 style={styles.input}
-                onChangeText={onChangeText}
-                value={text}
+                onChangeText={(text) => {
+                    setSearchText(text);
+                    onSearch(text);
+                }}
+                value={searchText}
             />
             <Image source={searchIcon} style={styles.searchIcon}/>
         </View>

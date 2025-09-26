@@ -2,10 +2,13 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Alert, Image, Pressable, StyleSheet, Text, View } from "react-native"
 import { StackParams } from "../../App";
+import { useTheme } from "../ThemeContext";
 
 const plus = require('../assets/plus.png');
+const plusDark = require('../assets/plus-dark.png')
 
 const PlusButton = () => {
+    const { isDarkTheme } = useTheme();
     const navigation = useNavigation<NativeStackNavigationProp<StackParams>>();
 
     return (
@@ -14,7 +17,7 @@ const PlusButton = () => {
             onPress={() => {
                 navigation.navigate('NewChat')
             }}>
-            <Image source={plus} style={styles.buttonIcon}/>
+            <Image source={isDarkTheme ? plusDark : plus} style={styles.buttonIcon}/>
         </Pressable>
     )
 }
