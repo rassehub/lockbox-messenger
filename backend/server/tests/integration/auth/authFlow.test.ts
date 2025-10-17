@@ -2,7 +2,6 @@
 import http from 'http';
 import request from 'supertest';
 import { createServer } from '@/createServer';
-import { initDb, closeDb } from '@/db';
 
 
 // Mock the logger to avoid console output during tests
@@ -20,7 +19,6 @@ describe('Auth flows (register, login, logout)', () => {
 
   beforeAll(async () => {
     jest.spyOn(console, 'log').mockImplementation(() => {});
-    await initDb();
     ({ server } = createServer());
     await new Promise<void>(resolve => {
       server.listen(0, () => {
@@ -32,8 +30,9 @@ describe('Auth flows (register, login, logout)', () => {
   });
 
   afterAll(async () => {
-    await new Promise<void>(resolve => server.close(() => resolve()));
-    await closeDb();
+    if (server) {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
   });
 
   const authUsername = uniqueUsername('auth');

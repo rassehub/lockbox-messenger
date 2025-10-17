@@ -2,8 +2,6 @@ import http from 'http';
 import request from 'supertest';
 import { WebSocket } from 'ws';
 import { createServer } from '@/createServer';
-import { initCache, closeCache } from '@/services/redis';
-import { initDb, closeDb } from '@/db';
 
 jest.mock('@/utils/logger', () => ({
   info: jest.fn(),
@@ -21,8 +19,6 @@ describe('WSS messages', () => {
 
   beforeAll(async () => {
     jest.spyOn(console, 'log').mockImplementation(() => {});
-    await initDb();              // IMPORTANT: init DB for /register and /login
-    await initCache();           // if you really want Redis; or mock it in this suite
     ({ server, wss, map } = createServer());
     await new Promise<void>((resolve) => {
       server.listen(0, () => {
@@ -43,8 +39,6 @@ describe('WSS messages', () => {
     if (server) {
       await new Promise<void>((resolve) => server.close(() => resolve()));
     }
-    await closeDb();             // close DB after server stops
-    await closeCache();          // close Redis after server stops
   });
 
   afterEach(() => {

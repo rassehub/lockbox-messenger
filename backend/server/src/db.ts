@@ -23,7 +23,7 @@ let initPromise: Promise<DataSource> | null = null;
 
 export async function initDb(): Promise<DataSource> {
 
-
+  console.trace('initDb called from:');
   if (initPromise) {
     return initPromise;
   }
@@ -55,4 +55,5 @@ export async function closeDb() {
   if (AppDataSource.isInitialized) {
     await AppDataSource.destroy();
   }
+  initPromise = null;
 }

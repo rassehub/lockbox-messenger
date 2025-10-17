@@ -2,14 +2,11 @@ import express from 'express';
 import logger from '../utils/logger';
 import { WebSocket } from 'ws';
 import sessionParser from '../middleware/session';
-// Add these imports
 import bcrypt from 'bcrypt';
-import { AppDataSource } from '../db';
+import { getRepository } from '../db'; // ✅ Use the helper
 import { User } from '../models/User';
 
-
-const map = new Map<string, WebSocket>(); // Exported for shared access
-
+const map = new Map<string, WebSocket>();
 
 const app = express();
 
@@ -25,7 +22,7 @@ app.post('/login', async (req, res) => {
   }
 
   try {
-    const repo = AppDataSource.getRepository(User);
+    const repo = getRepository(User); // ✅ Changed from AppDataSource.getRepository
     const user = await repo.findOne({ where: { username } });
     if (!user) {
       res.status(401).json({ error: 'Invalid credentials' });
@@ -47,7 +44,6 @@ app.post('/login', async (req, res) => {
   }
 });
 
-// Replace register with DB-backed creation
 app.post('/register', async (req, res) => {
   const { username, displayName, password } = req.body ?? {};
   if (!username || !displayName || !password) {
@@ -56,7 +52,7 @@ app.post('/register', async (req, res) => {
   }
 
   try {
-    const repo = AppDataSource.getRepository(User);
+    const repo = getRepository(User); // ✅ Changed from AppDataSource.getRepository
     const existing = await repo.findOne({ where: { username } });
     if (existing) {
       res.status(409).json({ error: 'username already registered' });
@@ -83,6 +79,7 @@ app.get('/me', (req, res) => {
   }
   res.json({ userId: req.session.userId });
 });
+
 app.delete('/logout', (req, res) => {
   if (!req.session.userId) {
     res.status(401).json({ error: 'Unauthorized' });

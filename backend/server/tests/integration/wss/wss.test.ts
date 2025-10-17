@@ -2,7 +2,6 @@ import http from 'http';
 import request from 'supertest';
 import { WebSocket } from 'ws';
 import { createServer } from '@/createServer';
-import { initDb, closeDb } from '@/db';
 
 // Silence app logger
 jest.mock('@/utils/logger', () => ({
@@ -27,7 +26,6 @@ describe('WebSocket Server', () => {
 
   beforeAll(async () => {
     jest.spyOn(console, 'log').mockImplementation(() => {});
-    await initDb(); // IMPORTANT: initialize DB before server/routes use it
     ({ server, wss, map } = createServer());
     await new Promise<void>((resolve) => {
       server.listen(0, () => {
@@ -41,9 +39,12 @@ describe('WebSocket Server', () => {
     // terminate any leftover sockets then close wss/server
     for (const [, ws] of map) { try { ws.terminate(); } catch {} }
     map.clear();
-    await new Promise<void>((resolve) => wss.close(() => resolve()));
-    await new Promise<void>((resolve) => server.close(() => resolve()));
-    await closeDb(); // close DB after server stops
+    if (wss) {
+      await new Promise<void>((resolve) => wss.close(() => resolve()));
+    }
+    if (server) {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
   });
 
   afterEach(() => {
