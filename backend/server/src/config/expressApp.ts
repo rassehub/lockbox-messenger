@@ -84,7 +84,12 @@ app.get('/me', (req, res) => {
   res.json({ userId: req.session.userId });
 });
 app.delete('/logout', (req, res) => {
-  const ws = map.get(req.session.userId!);
+  if (!req.session.userId) {
+    res.status(401).json({ error: 'Unauthorized' });
+    return;
+  }
+
+  const ws = map.get(req.session.userId);
 
   logger.info('Destroying session', { userId: req.session.userId });
   req.session.destroy(() => {

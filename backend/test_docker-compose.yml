@@ -13,7 +13,7 @@ services:
     environment:
       NODE_ENV: test
     env_file:
-      - ./server/.env
+      - ./server/.env_test
     depends_on:
       - db_test
       - cache_test

@@ -19,15 +19,35 @@ export function getRepository<T extends ObjectLiteral>(entity: EntityTarget<T>) 
   return AppDataSource.getRepository(entity);
 }
 
-export async function initDb() {
+let initPromise: Promise<DataSource> | null = null;
+
+export async function initDb(): Promise<DataSource> {
+
+
+  if (initPromise) {
+    return initPromise;
+  }
+
+  // Already initialized
+  if (AppDataSource.isInitialized) {
+    return AppDataSource;
+  }
 
   if (process.env.NODE_ENV === 'development') {
     AppDataSource.setOptions({ logging: false }); // or logging: []
   }
-  if (!AppDataSource.isInitialized) {
-    await AppDataSource.initialize();
-    logger.info("PostgreSQL connected");
-  }
+  initPromise = AppDataSource.initialize()
+    .then(() => {
+      logger.info('PostgreSQL connected');
+      return AppDataSource;
+    })
+    .catch((err) => {
+      logger.error('DB initialization failed', err);
+      initPromise = null; // Reset on failure
+      throw err;
+    });
+
+  return initPromise
 }
 
 // Export a destroyer for cleanup

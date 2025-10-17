@@ -2,7 +2,6 @@ import http from 'http';
 import request from 'supertest';
 import { WebSocket } from 'ws';
 import { createServer } from '@/createServer';
-import { map } from '@/config/expressApp';
 import { initCache, closeCache } from '@/services/redis';
 import { initDb, closeDb } from '@/db';
 
@@ -17,13 +16,14 @@ const uniqueUsername = (prefix: string) =>
 describe('WSS messages', () => {
   let server: http.Server;
   let wss: any;
+  let map = new Map();
   let baseUrl: string;
 
   beforeAll(async () => {
     jest.spyOn(console, 'log').mockImplementation(() => {});
     await initDb();              // IMPORTANT: init DB for /register and /login
     await initCache();           // if you really want Redis; or mock it in this suite
-    ({ server, wss } = createServer());
+    ({ server, wss, map } = createServer());
     await new Promise<void>((resolve) => {
       server.listen(0, () => {
         const { port } = server.address() as { port: number };
@@ -36,10 +36,15 @@ describe('WSS messages', () => {
   afterAll(async () => {
     for (const [, ws] of map) { try { ws.terminate(); } catch {} }
     map.clear();
-    await closeCache().catch(() => {});
-    await new Promise<void>((resolve) => wss.close(() => resolve()));
-    await new Promise<void>((resolve) => server.close(() => resolve()));
+    // Guard against undefined wss/server if beforeAll failed
+    if (wss) {
+      await new Promise<void>((resolve) => wss.close(() => resolve()));
+    }
+    if (server) {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
     await closeDb();             // close DB after server stops
+    await closeCache();          // close Redis after server stops
   });
 
   afterEach(() => {

@@ -2,7 +2,6 @@ import http from 'http';
 import request from 'supertest';
 import { WebSocket } from 'ws';
 import { createServer } from '@/createServer';
-import { map } from '@/config/expressApp';
 import { initDb, closeDb } from '@/db';
 
 // Silence app logger
@@ -23,12 +22,13 @@ jest.mock('@/services/redis', () => ({
 describe('WebSocket Server', () => {
   let server: http.Server;
   let wss: any;
+  let map = new Map();
   let baseUrl: string;
 
   beforeAll(async () => {
     jest.spyOn(console, 'log').mockImplementation(() => {});
     await initDb(); // IMPORTANT: initialize DB before server/routes use it
-    ({ server, wss } = createServer());
+    ({ server, wss, map } = createServer());
     await new Promise<void>((resolve) => {
       server.listen(0, () => {
         baseUrl = `http://127.0.0.1:${(server.address() as any).port}`;

@@ -13,7 +13,7 @@
     "test:coverage": "jest --coverage",
     "build": "tsc",
     "start": "node dist/server.js",
-    "dev": "ts-node src/server/server.ts"
+    "dev": "ts-node src/server.ts"
   },
   "dependencies": {
     "express": "^5.1.0",
