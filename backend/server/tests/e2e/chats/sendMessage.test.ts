@@ -46,8 +46,8 @@ describe('WSS messages', () => {
     map.clear();
   });
 
-  const login = async (username: string, password: string) => {
-    const res = await request(baseUrl).post('/login').send({ username, password }).expect(200);
+  const login = async (phoneNumber: string, password: string) => {
+    const res = await request(baseUrl).post('/login').send({ phoneNumber, password }).expect(200);
     const raw = res.headers['set-cookie'] || [];
     const arr = Array.isArray(raw) ? raw : [raw];
     const cookie = arr.map((c: string) => c.split(';')[0]).join('; ');
@@ -55,19 +55,19 @@ describe('WSS messages', () => {
     return { cookie, userId: me.body.userId as string };
   };
 
-  const register = async (username: string, displayName: string, password: string) => {
-    await request(baseUrl).post('/register').send({ username, displayName, password }).expect(201);
+  const register = async (username: string, phoneNumer: string, password: string) => {
+    await request(baseUrl).post('/register').send({ username, phoneNumer, password }).expect(201);
   };
 
   it('forwards message to an online recipient', async () => {
     const senderUsername = uniqueUsername('u');
     const recipientUsername = uniqueUsername('r');
-    const senderDisplayName = uniqueUsername('sender');
-    const recipientDisplayName = uniqueUsername('recipient');
-    await register(senderUsername, senderDisplayName, 'pw');
-    await register(recipientUsername, recipientDisplayName, 'pw');
-    const sender = await login(senderUsername, 'pw');
-    const recipient = await login(recipientUsername, 'pw');
+    const senderphoneNumer = uniqueUsername('sender');
+    const recipientphoneNumer = uniqueUsername('recipient');
+    await register(senderUsername, senderphoneNumer, 'pw');
+    await register(recipientUsername, recipientphoneNumer, 'pw');
+    const sender = await login(senderphoneNumer, 'pw');
+    const recipient = await login(recipientphoneNumer, 'pw');
 
     const port = (server.address() as { port: number }).port;
 
@@ -124,12 +124,12 @@ describe('WSS messages', () => {
   it('delivers queued message when recipient connects later', async () => {
     const senderUsername = uniqueUsername('u');
     const recipientUsername = uniqueUsername('r');
-      const senderDisplayName = uniqueUsername('sender');
-    const recipientDisplayName = uniqueUsername('recipient');
-    await register(senderUsername, senderDisplayName, 'pw');
-    await register(recipientUsername, recipientDisplayName, 'pw');
-    const sender = await login(senderUsername, 'pw');
-    const recipient = await login(recipientUsername, 'pw');
+    const senderphoneNumer = uniqueUsername('sender');
+    const recipientphoneNumer = uniqueUsername('recipient');
+    await register(senderUsername, senderphoneNumer, 'pw');
+    await register(recipientUsername, recipientphoneNumer, 'pw');
+    const sender = await login(senderphoneNumer, 'pw');
+    const recipient = await login(recipientphoneNumer, 'pw');
 
     const port = (server.address() as { port: number }).port;
 

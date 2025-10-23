@@ -10,7 +10,7 @@ export class User {
   username!: string;
 
   @Column({ type: "text" })
-  display_name!: string;
+  phone_number!: string;
 
   @Column({ type: "text" })
   password_hash!: string;

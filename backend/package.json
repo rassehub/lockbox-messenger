@@ -16,12 +16,13 @@
     "dev": "ts-node src/server.ts"
   },
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "express": "^5.1.0",
     "express-session": "^1.18.1",
     "ioredis": "^5.6.1",
     "pg": "^8.16.0",
     "reflect-metadata": "^0.2.2",
-    "typeorm": "^0.3.24",
+    "typeorm": "^0.3.27",
     "uuid": "^11.1.0",
     "winston": "^3.17.0",
     "ws": "^8.18.2"

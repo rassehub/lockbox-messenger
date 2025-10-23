@@ -3,6 +3,7 @@ docker-compose.override.yml
 .env
 backend/db/data
 backend/cache/dump.rdb
+backend/node_modules
 
 # macOS
 .DS_Store
