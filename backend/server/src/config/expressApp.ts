@@ -45,9 +45,9 @@ app.post('/login', async (req, res) => {
 });
 
 app.post('/register', async (req, res) => {
-  const { username, phoneNumer, password } = req.body ?? {};
-  if (!username || !phoneNumer || !password) {
-    res.status(400).json({ error: 'Missing username, phoneNumer or password' });
+  const { username, phoneNumber, password } = req.body ?? {};
+  if (!username || !phoneNumber || !password) {
+    res.status(400).json({ error: 'Missing username, phoneNumber or password' });
     return;
   }
 
@@ -58,14 +58,14 @@ app.post('/register', async (req, res) => {
       res.status(409).json({ error: 'username already registered' });
       return;
     }
-    const existingNumber = await repo.findOne({ where: { phone_number: phoneNumer } });
+    const existingNumber = await repo.findOne({ where: { phone_number: phoneNumber } });
     if (existingNumber) {
-      res.status(409).json({ error: 'phoneNumer already registered' });
+      res.status(409).json({ error: 'phoneNumber already registered' });
       return;
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
-    const user = repo.create({ username, password_hash: passwordHash, phone_numer: phoneNumer, public_key: "" });
+    const user = repo.create({ username, password_hash: passwordHash, phone_number: phoneNumber, public_key: "" });
     const saved = await repo.save(user as User);
 
     req.session.userId = String(saved.id);

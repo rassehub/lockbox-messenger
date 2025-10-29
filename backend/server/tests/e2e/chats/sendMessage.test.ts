@@ -55,19 +55,19 @@ describe('WSS messages', () => {
     return { cookie, userId: me.body.userId as string };
   };
 
-  const register = async (username: string, phoneNumer: string, password: string) => {
-    await request(baseUrl).post('/register').send({ username, phoneNumer, password }).expect(201);
+  const register = async (username: string, phoneNumber: string, password: string) => {
+    await request(baseUrl).post('/register').send({ username, phoneNumber, password }).expect(201);
   };
 
   it('forwards message to an online recipient', async () => {
     const senderUsername = uniqueUsername('u');
     const recipientUsername = uniqueUsername('r');
-    const senderphoneNumer = uniqueUsername('sender');
-    const recipientphoneNumer = uniqueUsername('recipient');
-    await register(senderUsername, senderphoneNumer, 'pw');
-    await register(recipientUsername, recipientphoneNumer, 'pw');
-    const sender = await login(senderphoneNumer, 'pw');
-    const recipient = await login(recipientphoneNumer, 'pw');
+    const senderphoneNumber = uniqueUsername('sender');
+    const recipientphoneNumber = uniqueUsername('recipient');
+    await register(senderUsername, senderphoneNumber, 'pw');
+    await register(recipientUsername, recipientphoneNumber, 'pw');
+    const sender = await login(senderphoneNumber, 'pw');
+    const recipient = await login(recipientphoneNumber, 'pw');
 
     const port = (server.address() as { port: number }).port;
 
@@ -124,12 +124,12 @@ describe('WSS messages', () => {
   it('delivers queued message when recipient connects later', async () => {
     const senderUsername = uniqueUsername('u');
     const recipientUsername = uniqueUsername('r');
-    const senderphoneNumer = uniqueUsername('sender');
-    const recipientphoneNumer = uniqueUsername('recipient');
-    await register(senderUsername, senderphoneNumer, 'pw');
-    await register(recipientUsername, recipientphoneNumer, 'pw');
-    const sender = await login(senderphoneNumer, 'pw');
-    const recipient = await login(recipientphoneNumer, 'pw');
+    const senderphoneNumber = uniqueUsername('sender');
+    const recipientphoneNumber = uniqueUsername('recipient');
+    await register(senderUsername, senderphoneNumber, 'pw');
+    await register(recipientUsername, recipientphoneNumber, 'pw');
+    const sender = await login(senderphoneNumber, 'pw');
+    const recipient = await login(recipientphoneNumber, 'pw');
 
     const port = (server.address() as { port: number }).port;
 
