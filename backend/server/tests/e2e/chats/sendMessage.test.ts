@@ -2,9 +2,6 @@ import http from 'http';
 import request from 'supertest';
 import { WebSocket } from 'ws';
 import { createServer } from '@/createServer';
-import { map } from '@/config/expressApp';
-import { initCache, closeCache } from '@/services/redis';
-import { initDb, closeDb } from '@/db';
 
 jest.mock('@/utils/logger', () => ({
   info: jest.fn(),
@@ -17,13 +14,12 @@ const uniqueUsername = (prefix: string) =>
 describe('WSS messages', () => {
   let server: http.Server;
   let wss: any;
+  let map = new Map();
   let baseUrl: string;
 
   beforeAll(async () => {
     jest.spyOn(console, 'log').mockImplementation(() => {});
-    await initDb();              // IMPORTANT: init DB for /register and /login
-    await initCache();           // if you really want Redis; or mock it in this suite
-    ({ server, wss } = createServer());
+    ({ server, wss, map } = createServer());
     await new Promise<void>((resolve) => {
       server.listen(0, () => {
         const { port } = server.address() as { port: number };
@@ -36,10 +32,13 @@ describe('WSS messages', () => {
   afterAll(async () => {
     for (const [, ws] of map) { try { ws.terminate(); } catch {} }
     map.clear();
-    await closeCache().catch(() => {});
-    await new Promise<void>((resolve) => wss.close(() => resolve()));
-    await new Promise<void>((resolve) => server.close(() => resolve()));
-    await closeDb();             // close DB after server stops
+    // Guard against undefined wss/server if beforeAll failed
+    if (wss) {
+      await new Promise<void>((resolve) => wss.close(() => resolve()));
+    }
+    if (server) {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
   });
 
   afterEach(() => {
@@ -47,8 +46,8 @@ describe('WSS messages', () => {
     map.clear();
   });
 
-  const login = async (username: string, password: string) => {
-    const res = await request(baseUrl).post('/login').send({ username, password }).expect(200);
+  const login = async (phoneNumber: string, password: string) => {
+    const res = await request(baseUrl).post('/login').send({ phoneNumber, password }).expect(200);
     const raw = res.headers['set-cookie'] || [];
     const arr = Array.isArray(raw) ? raw : [raw];
     const cookie = arr.map((c: string) => c.split(';')[0]).join('; ');
@@ -56,19 +55,19 @@ describe('WSS messages', () => {
     return { cookie, userId: me.body.userId as string };
   };
 
-  const register = async (username: string, displayName: string, password: string) => {
-    await request(baseUrl).post('/register').send({ username, displayName, password }).expect(201);
+  const register = async (username: string, phoneNumber: string, password: string) => {
+    await request(baseUrl).post('/register').send({ username, phoneNumber, password }).expect(201);
   };
 
   it('forwards message to an online recipient', async () => {
     const senderUsername = uniqueUsername('u');
     const recipientUsername = uniqueUsername('r');
-    const senderDisplayName = uniqueUsername('sender');
-    const recipientDisplayName = uniqueUsername('recipient');
-    await register(senderUsername, senderDisplayName, 'pw');
-    await register(recipientUsername, recipientDisplayName, 'pw');
-    const sender = await login(senderUsername, 'pw');
-    const recipient = await login(recipientUsername, 'pw');
+    const senderphoneNumber = uniqueUsername('sender');
+    const recipientphoneNumber = uniqueUsername('recipient');
+    await register(senderUsername, senderphoneNumber, 'pw');
+    await register(recipientUsername, recipientphoneNumber, 'pw');
+    const sender = await login(senderphoneNumber, 'pw');
+    const recipient = await login(recipientphoneNumber, 'pw');
 
     const port = (server.address() as { port: number }).port;
 
@@ -125,12 +124,12 @@ describe('WSS messages', () => {
   it('delivers queued message when recipient connects later', async () => {
     const senderUsername = uniqueUsername('u');
     const recipientUsername = uniqueUsername('r');
-      const senderDisplayName = uniqueUsername('sender');
-    const recipientDisplayName = uniqueUsername('recipient');
-    await register(senderUsername, senderDisplayName, 'pw');
-    await register(recipientUsername, recipientDisplayName, 'pw');
-    const sender = await login(senderUsername, 'pw');
-    const recipient = await login(recipientUsername, 'pw');
+    const senderphoneNumber = uniqueUsername('sender');
+    const recipientphoneNumber = uniqueUsername('recipient');
+    await register(senderUsername, senderphoneNumber, 'pw');
+    await register(recipientUsername, recipientphoneNumber, 'pw');
+    const sender = await login(senderphoneNumber, 'pw');
+    const recipient = await login(recipientphoneNumber, 'pw');
 
     const port = (server.address() as { port: number }).port;
 

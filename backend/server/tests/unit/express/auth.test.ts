@@ -2,14 +2,14 @@ import { login, logout } from '@/controllers/authController';
 
 jest.mock('@/db', () => ({
   getRepository: jest.fn(() => ({
-    findOne: jest.fn().mockResolvedValue({ username: 'admin', password_hash: 'password' }),
+    findOne: jest.fn().mockResolvedValue({ phoneNumber: '12345', password_hash: 'password' }),
   })),
 }));
 
 describe ('Auth Controller', () => {
   it('should log in successfully with valid credentials', async () => {
     const req = {
-      body: { username: 'admin', password: 'password' },
+      body: { phoneNumber: '12345', password: 'password' },
       session: {}
     } as any;
     const res = {
@@ -25,7 +25,7 @@ describe ('Auth Controller', () => {
 
   it('should fail to log in with invalid credentials', async () => {
     const req = {
-      body: { username: 'admin', password: 'wrongpassword' },
+      body: { phoneNumber: '12345', password: 'wrongpassword' },
       session: {}
     } as any;
     const res = {

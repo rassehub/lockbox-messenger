@@ -18,6 +18,10 @@ export async function initCache() {
   return client;
 }
 
+export function getCache() {
+  return ensure();
+}
+
 export async function closeCache() {
   if (client) {
     await client.quit();

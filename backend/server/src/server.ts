@@ -5,7 +5,7 @@ import logger from './utils/logger';
 import { initDb, closeDb } from './db';
 import { initCache, closeCache } from './services/redis';
 
-const PORT = process.env.PORT || 3000;
+const PORT = parseInt(process.env.PORT || '3000', 10);
 
 (async () => {
   try {
@@ -15,7 +15,7 @@ const PORT = process.env.PORT || 3000;
     const server = http.createServer(app);
     const wss = setupWebSocketServer(server, sessionParser as any, map);
 
-    server.listen(PORT, () => {
+    server.listen(PORT, '0.0.0.0', () => {
       logger.info(`Server running on http://localhost:${PORT}`);
     });
 

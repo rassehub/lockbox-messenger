@@ -9,8 +9,8 @@ export class User {
   @Column({ type: "text", unique: true })
   username!: string;
 
-  @Column({ type: "text", unique: true })
-  display_name!: string;
+  @Column({ type: "text" })
+  phone_number!: string;
 
   @Column({ type: "text" })
   password_hash!: string;

@@ -2,14 +2,11 @@ import express from 'express';
 import logger from '../utils/logger';
 import { WebSocket } from 'ws';
 import sessionParser from '../middleware/session';
-// Add these imports
 import bcrypt from 'bcrypt';
-import { AppDataSource } from '../db';
+import { getRepository } from '../db'; // ✅ Use the helper
 import { User } from '../models/User';
 
-
-const map = new Map<string, WebSocket>(); // Exported for shared access
-
+const map = new Map<string, WebSocket>();
 
 const app = express();
 
@@ -18,15 +15,15 @@ app.use(express.static('public'));
 app.use(sessionParser);
 
 app.post('/login', async (req, res) => {
-  const { username, password } = req.body ?? {};
-  if (!username || !password) {
+  const { phoneNumber, password } = req.body ?? {};
+  if (!phoneNumber || !password) {
     res.status(400).json({ error: 'Missing username or password' });
     return;
   }
 
   try {
-    const repo = AppDataSource.getRepository(User);
-    const user = await repo.findOne({ where: { username } });
+    const repo = getRepository(User);
+    const user = await repo.findOne({ where: { phone_number: phoneNumber } });
     if (!user) {
       res.status(401).json({ error: 'Invalid credentials' });
       return;
@@ -39,7 +36,7 @@ app.post('/login', async (req, res) => {
     }
 
     req.session.userId = String(user.id);
-    logger.info('Updating session', { userId: req.session.userId, username });
+    logger.info('Updating session', { userId: req.session.userId, phoneNumber });
     res.status(200).send({ result: 'OK', message: 'Session updated', userId: user.id });
   } catch (e) {
     logger.error(e as Error);
@@ -47,24 +44,28 @@ app.post('/login', async (req, res) => {
   }
 });
 
-// Replace register with DB-backed creation
 app.post('/register', async (req, res) => {
-  const { username, displayName, password } = req.body ?? {};
-  if (!username || !displayName || !password) {
-    res.status(400).json({ error: 'Missing username, displayName or password' });
+  const { username, phoneNumber, password } = req.body ?? {};
+  if (!username || !phoneNumber || !password) {
+    res.status(400).json({ error: 'Missing username, phoneNumber or password' });
     return;
   }
 
   try {
-    const repo = AppDataSource.getRepository(User);
-    const existing = await repo.findOne({ where: { username } });
-    if (existing) {
+    const repo = getRepository(User);
+    const existingName = await repo.findOne({ where: { username } });
+    if (existingName) {
       res.status(409).json({ error: 'username already registered' });
+      return;
+    }
+    const existingNumber = await repo.findOne({ where: { phone_number: phoneNumber } });
+    if (existingNumber) {
+      res.status(409).json({ error: 'phoneNumber already registered' });
       return;
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
-    const user = repo.create({ username, password_hash: passwordHash, display_name: displayName, public_key: "" });
+    const user = repo.create({ username, password_hash: passwordHash, phone_number: phoneNumber, public_key: "" });
     const saved = await repo.save(user as User);
 
     req.session.userId = String(saved.id);
@@ -83,8 +84,14 @@ app.get('/me', (req, res) => {
   }
   res.json({ userId: req.session.userId });
 });
+
 app.delete('/logout', (req, res) => {
-  const ws = map.get(req.session.userId!);
+  if (!req.session.userId) {
+    res.status(401).json({ error: 'Unauthorized' });
+    return;
+  }
+
+  const ws = map.get(req.session.userId);
 
   logger.info('Destroying session', { userId: req.session.userId });
   req.session.destroy(() => {

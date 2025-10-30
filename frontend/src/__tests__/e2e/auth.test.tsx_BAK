@@ -1,0 +1,62 @@
+import { AuthService } from '../../services/auth';
+
+describe('AuthService', () => {
+    let authService: AuthService;
+
+    beforeEach(() => {
+        authService = new AuthService();
+    });
+
+    describe('register', () => {
+        it('should successfully register a new user', async () => {
+            const username = `testuser_${Date.now()}`;
+            const displayName = `Test User ${Date.now()}`;
+            const password = 'testpassword123';
+
+            const result = await authService.register(username, displayName, password);
+
+            expect(result).toBeDefined();
+            expect(result.success || result.message).toBeDefined();
+        });
+
+        it('should handle registration with existing username', async () => {
+            const username = 'existinguser';
+            const password = 'testpassword123';
+            const displayName = 'Existing User';
+
+            await authService.register(username, displayName, password);
+            const result = await authService.register(username, displayName, password);
+
+            expect(result).toBeDefined();
+        });
+    });
+
+    describe('login', () => {
+        it('should successfully login with valid credentials', async () => {
+            const username = `loginuser_${Date.now()}`;
+            const password = 'testpassword123';
+            const displayName = `Login User ${Date.now()}`;
+
+            await authService.register(username, displayName, password);
+            const result = await authService.login(username, displayName, password);
+
+            expect(result).toBeDefined();
+            expect(result.success).toBeDefined();
+        });
+
+        it('should fail to login with invalid credentials', async () => {
+            const result = await authService.login('nonexistent', 'Nonexistent User', 'wrongpassword');
+
+            expect(result).toBeDefined();
+            expect(result.success).toBe(false);
+        });
+    });
+
+    describe('logout', () => {
+        it('should successfully logout', async () => {
+            const result = await authService.logout();
+
+            expect(result).toBeDefined();
+        });
+    });
+});

@@ -1,5 +1,4 @@
 # backend/test_docker-compose.yml
-version: '3.8'
 services:
   test:
     build:
@@ -13,7 +12,7 @@ services:
     environment:
       NODE_ENV: test
     env_file:
-      - ./server/.env
+      - ./server/test.env
     depends_on:
       - db_test
       - cache_test

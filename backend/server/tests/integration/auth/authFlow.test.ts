@@ -2,7 +2,6 @@
 import http from 'http';
 import request from 'supertest';
 import { createServer } from '@/createServer';
-import { initDb, closeDb } from '@/db';
 
 
 // Mock the logger to avoid console output during tests
@@ -20,7 +19,6 @@ describe('Auth flows (register, login, logout)', () => {
 
   beforeAll(async () => {
     jest.spyOn(console, 'log').mockImplementation(() => {});
-    await initDb();
     ({ server } = createServer());
     await new Promise<void>(resolve => {
       server.listen(0, () => {
@@ -32,34 +30,35 @@ describe('Auth flows (register, login, logout)', () => {
   });
 
   afterAll(async () => {
-    await new Promise<void>(resolve => server.close(() => resolve()));
-    await closeDb();
+    if (server) {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
   });
 
   const authUsername = uniqueUsername('auth');
-  const authDisplayName = uniqueUsername('Auth User');
+  const authphoneNumber = uniqueUsername('Auth User');
 
   it('registers a new user', async () => {
-    await request(baseUrl).post('/register').send({ username: authUsername, displayName: authDisplayName, password: 'pw' }).expect(201);
+    await request(baseUrl).post('/register').send({ username: authUsername, phoneNumber: authphoneNumber, password: 'pw' }).expect(201);
   });
   it('cant register the same user twice', async () => {
-    await request(baseUrl).post('/register').send({ username: authUsername, displayName: authDisplayName, password: 'pw' }).expect(409);
+    await request(baseUrl).post('/register').send({ username: authUsername, phoneNumber: authphoneNumber, password: 'pw' }).expect(409);
   });
 
   it('logs in and sets session cookie', async () => {
     const agent = request.agent(baseUrl);
-    await agent.post('/login').send({ username: authUsername, password: 'pw' }).expect(200);
+    await agent.post('/login').send({ phoneNumber: authphoneNumber, password: 'pw' }).expect(200);
     await agent.get('/me').expect(200);
   });
 
   it('cant log in with wrong password', async () => {
     const agent = request.agent(baseUrl);
-    await agent.post('/login').send({ username: authUsername, password: 'wrongpw' }).expect(401);
+    await agent.post('/login').send({ phoneNumber: authphoneNumber, password: 'wrongpw' }).expect(401);
   });
 
   it('logs out and invalidates session', async () => {
     const agent = request.agent(baseUrl);
-    await agent.post('/login').send({ username: authUsername, password: 'pw' }).expect(200);
+    await agent.post('/login').send({ phoneNumber: authphoneNumber, password: 'pw' }).expect(200);
     await agent.delete('/logout').expect(200);
     await agent.get('/me').expect(401);
   });

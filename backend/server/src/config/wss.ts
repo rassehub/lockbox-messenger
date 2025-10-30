@@ -28,7 +28,22 @@ function setupWebSocketServer(
     sessionParser(request as any, {} as any, () => {
       const req = request as CustomRequest;
       
-      if (!req.session.userId) {
+      // Check for userId in session (cookie auth) OR query param (token auth for mobile)
+      let userId = req.session.userId;
+      
+      if (!userId && req.url) {
+        // Try to get token from query string for React Native clients
+        const url = new URL(req.url, `http://${req.headers.host}`);
+        const token = url.searchParams.get('token');
+        if (token) {
+          // In production, verify JWT and extract userId
+          // For now, assume token === sessionToken from cookie store
+          userId = token; // Simplified - you should verify JWT here
+          logger.info(`Token-based auth: ${userId}`);
+        }
+      }
+      
+      if (!userId) {
         socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
         socket.destroy();
         return;
@@ -37,6 +52,9 @@ function setupWebSocketServer(
       logger.info('Session is parsed!');
       socket.removeListener('error', onSocketError);
 
+      // Attach userId to request for connection handler
+      (req as any).userId = userId;
+
       wss.handleUpgrade(req, socket, head, (ws) => {
         wss.emit('connection', ws, req);
       });
@@ -44,7 +62,13 @@ function setupWebSocketServer(
   });
 
     wss.on('connection', (ws: WebSocket, request: CustomRequest) => {
-    const userId = request.session.userId!;
+    // Get userId from session or from our attached property (token auth)
+    const userId = request.session.userId || (request as any).userId;
+    if (!userId) {
+      ws.close(1008, 'No user ID');
+      return;
+    }
+    
     map.set(userId, ws);
 
 

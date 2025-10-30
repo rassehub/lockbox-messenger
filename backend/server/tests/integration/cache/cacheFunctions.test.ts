@@ -1,5 +1,3 @@
-import './setupCache'; // Ensures cache is initialized before tests
-
 import { addMessage, getMessages } from '@/services/redis';
 
 
