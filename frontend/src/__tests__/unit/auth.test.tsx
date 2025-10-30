@@ -53,12 +53,12 @@ describe('login', () => {
       json: async () => mockResponse,
     });
 
-    const result = await authService.login('testuser', 'Test User', 'password123');
+    const result = await authService.login('12345', 'password123');
 
     expect(global.fetch).toHaveBeenCalledWith('http://127.0.0.1:3000/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: 'testuser', password: 'password123' }),
+      body: JSON.stringify({ phoneNumber: '12345', password: 'password123' }),
     });
     
     // Expect the response to include sessionCookie
@@ -77,7 +77,7 @@ describe('login', () => {
     });
 
     await expect(
-      authService.login('testuser', 'Test User', 'wrongpassword')
+      authService.login('12345', 'wrongpassword')
     ).rejects.toThrow('Invalid credentials');
   });
 });
@@ -90,8 +90,8 @@ describe('getMe', () => {
       headers: new Headers({ 'set-cookie': 'sessionToken=abc123; Path=/' }),
       json: async () => ({ result: 'OK', userId: '123' }),
     });
-    
-    await authService.login('testuser', 'Test User', 'password123');
+
+    await authService.login('12345', 'password123');
 
     // Then mock getMe
     (global.fetch as jest.Mock).mockResolvedValueOnce({

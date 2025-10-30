@@ -24,10 +24,10 @@ describe('Auth API Integration', () => {
   describe('POST /register', () => {
     it('creates a new user and returns success', async () => {
       const username = `user_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-      const displayName = `User ${Date.now()}`;
+      const phoneNumber = `User ${Date.now()}`;
       const password = 'password123';
 
-      const result = await authService.register(username, displayName, password);
+      const result = await authService.register(username, phoneNumber, password);
 
       expect(result).toMatchObject({
         result: 'Created',
@@ -37,14 +37,14 @@ describe('Auth API Integration', () => {
 
     it('returns 409 when username already exists', async () => {
       const username = `duplicate_${Date.now()}`;
-      const displayName = 'Duplicate User';
+      const phoneNumber = `User ${Date.now()}`;
       const password = 'password123';
 
-      await authService.register(username, displayName, password);
-      
+      await authService.register(username, phoneNumber, password);
+
       // Second registration should fail
       await expect(
-        authService.register(username, displayName, password)
+        authService.register(username, phoneNumber, password)
       ).rejects.toThrow(/409|already registered/i);
     });
 
@@ -58,14 +58,14 @@ describe('Auth API Integration', () => {
   describe('POST /login', () => {
     it('returns session token for valid credentials', async () => {
       const username = `login_${Date.now()}`;
-      const displayName = `Login User ${Date.now()}`;
+      const phoneNumber = `User ${Date.now()}`;
       const password = 'password123';
 
       // First register
-      await authService.register(username, displayName, password);
+      await authService.register(username, phoneNumber, password);
 
       // Then login
-      const result = await authService.login(username, displayName, password);
+      const result = await authService.login(phoneNumber, password);
 
       expect(result).toMatchObject({
         result: 'OK',
@@ -75,7 +75,7 @@ describe('Auth API Integration', () => {
 
     it('returns 401 for invalid credentials', async () => {
       await expect(
-        authService.login('nonexistent', 'Nonexistent', 'wrongpass')
+        authService.login('nonexistent', 'wrongpass')
       ).rejects.toThrow(/401|invalid/i);
     });
   });
@@ -83,11 +83,11 @@ describe('Auth API Integration', () => {
   describe('DELETE /logout', () => {
     it('destroys session successfully', async () => {
       const username = `logout_${Date.now()}`;
-      const displayName = `Logout User ${Date.now()}`;
+      const phoneNumber = `User ${Date.now()}`;
       const password = 'password123';
 
-      await authService.register(username, displayName, password);
-      await authService.login(username, displayName, password);
+      await authService.register(username, phoneNumber, password);
+      await authService.login(phoneNumber, password);
 
       const result = await authService.logout();
 
@@ -100,11 +100,11 @@ describe('Auth API Integration', () => {
 describe('GET /me', () => {
   it('returns user info when authenticated', async () => {
     const username = `me_${Date.now()}`;
-    const displayName = `Me User ${Date.now()}`;
+    const phoneNumber = `User ${Date.now()}`;
     const password = 'password123';
 
     // First register (sets session cookie internally)
-    await authService.register(username, displayName, password);
+    await authService.register(username, phoneNumber, password);
 
     // Then getMe (uses stored cookie)
     const result = await authService.getMe();

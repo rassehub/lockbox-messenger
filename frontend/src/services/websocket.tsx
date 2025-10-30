@@ -3,9 +3,8 @@ class WebSocketService {
   private messageHandlers = new Map<string, (data: any) => void>();
 
   connect(token: string) {
-    this.ws = new WebSocket('ws://127.0.0.1:3000', [], {
-      headers: { Cookie: `sessionToken=${token}` }
-    });
+    // React Native WebSocket doesn't support headers, use query param instead
+    this.ws = new WebSocket(`ws://127.0.0.1:3000?token=${encodeURIComponent(token)}`);
     
     this.ws.onmessage = (event) => {
       const data = JSON.parse(event.data);

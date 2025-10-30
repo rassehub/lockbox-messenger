@@ -1,5 +1,6 @@
 class AuthService {
   private sessionCookie: string | null = null;
+  
 
   private async handleResponse(response: Response) {
     const data = await response.json();
@@ -28,11 +29,11 @@ class AuthService {
     return headers;
   }
 
-  async register(username: string, displayName: string, password: string) {
+  async register(username: string, phoneNumber: string, password: string) {
     const response = await fetch('http://127.0.0.1:3000/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, displayName, password })
+      body: JSON.stringify({ username, phoneNumber, password })
     });
     
     const cookie = this.extractCookie(response);
@@ -41,11 +42,11 @@ class AuthService {
     return { ...data, sessionCookie: cookie }; // Return cookie
   }
 
-  async login(username: string, displayName: string, password: string) {
+  async login( phoneNumber: string, password: string) {
     const response = await fetch('http://127.0.0.1:3000/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password })
+      body: JSON.stringify({ phoneNumber, password })
     });
     
     const cookie = this.extractCookie(response);

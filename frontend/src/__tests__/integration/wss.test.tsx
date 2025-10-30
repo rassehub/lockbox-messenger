@@ -53,12 +53,12 @@ describe('WebSocket Integration', () => {
 
 it('accepts authenticated connections', async () => {
   const username = `ws_${Date.now()}`;
-  const displayName = `WS User ${Date.now()}`;
+  const phoneNumber = `User ${Date.now()}`;
   const password = 'password123';
 
-  await authService.register(username, displayName, password);
-  const loginResult = await authService.login(username, displayName, password);
-  
+  await authService.register(username, phoneNumber, password);
+  const loginResult = await authService.login(phoneNumber, password);
+
   // Use the returned cookie
   const ws = new WebSocket(WS_URL, {
     headers: { Cookie: loginResult.sessionCookie }
@@ -74,12 +74,14 @@ it('accepts authenticated connections', async () => {
       // Create two users
       const sender = `sender_${Date.now()}`;
       const recipient = `recipient_${Date.now()}`;
+      const senderPhoneNumber = `senderphone_queue_${Date.now()}`;
+      const recipientPhoneNumber = `recipientphone_queue_${Date.now()}`;
 
-      await authService.register(sender, 'Sender', 'pw');
-      await authService.register(recipient, 'Recipient', 'pw');
+      await authService.register(sender, senderPhoneNumber, 'pw');
+      await authService.register(recipient, recipientPhoneNumber, 'pw');
 
-      const senderAuth = await authService.login(sender, 'Sender', 'pw');
-      const recipientAuth = await authService.login(recipient, 'Recipient', 'pw');
+      const senderAuth = await authService.login(senderPhoneNumber, 'pw');
+      const recipientAuth = await authService.login(recipientPhoneNumber, 'pw');
 
       // Connect both via WebSocket
       const senderWs = new WebSocket(WS_URL, {
@@ -115,8 +117,9 @@ it('accepts authenticated connections', async () => {
 
     it('receives ACK after sending message', async () => {
       const username = `ack_${Date.now()}`;
-      await authService.register(username, 'ACK User', 'pw');
-      const auth = await authService.login(username, 'ACK User', 'pw');
+      const phoneNumber = `ACK User ${Date.now()}`;
+      await authService.register(username, phoneNumber, 'pw');
+      const auth = await authService.login(phoneNumber, 'pw');
 
       const ws = new WebSocket(WS_URL, {
         headers: { Cookie: auth.sessionCookie }
@@ -144,12 +147,14 @@ it('accepts authenticated connections', async () => {
     it('queues messages for offline users', async () => {
       const sender = `queue_sender_${Date.now()}`;
       const recipient = `queue_recipient_${Date.now()}`;
+      const senderPhoneNumber = `senderphone_${Date.now()}`;
+      const recipientPhoneNumber = `recipientphone_${Date.now()}`;
 
-      await authService.register(sender, 'Queue Sender', 'pw');
-      await authService.register(recipient, 'Queue Recipient', 'pw');
+      await authService.register(sender, senderPhoneNumber, 'pw');
+      await authService.register(recipient, recipientPhoneNumber, 'pw');
 
-      const senderAuth = await authService.login(sender, 'Queue Sender', 'pw');
-      const recipientAuth = await authService.login(recipient, 'Queue Recipient', 'pw');
+      const senderAuth = await authService.login(senderPhoneNumber, 'pw');
+      const recipientAuth = await authService.login(recipientPhoneNumber, 'pw');
 
       // Connect sender only
       const senderWs = new WebSocket(WS_URL, {

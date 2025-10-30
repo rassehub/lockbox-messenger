@@ -15,9 +15,7 @@ describe('WebSocketService', () => {
     ws.sendMessage('user123', 'hello');
     
     expect(WebSocket).toHaveBeenCalledWith(
-      'ws://127.0.0.1:3000',
-      [],
-      { headers: { Cookie: 'sessionToken=test-token' } }
+      `ws://127.0.0.1:3000?token=test-token`
     );
   });
 });

@@ -17,7 +17,7 @@
     "@react-navigation/native-stack": "^7.3.10",
     "@testing-library/jest-native": "^5.4.3",
     "formik": "^2.4.6",
-    "react": "19.0.0",
+    "react": "^19.0.0",
     "react-native": "0.79.1",
     "react-native-reanimated": "^3.17.4",
     "react-native-safe-area-context": "^5.4.0",

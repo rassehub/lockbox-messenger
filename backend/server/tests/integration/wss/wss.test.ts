@@ -62,6 +62,7 @@ describe('WebSocket Server', () => {
       })
     ).resolves.toBeDefined();
   });
+  
 
   it('accepts authenticated connections', async () => {
     // Use real HTTP auth flow: register then login (username/password)
