@@ -11,6 +11,7 @@ export const AppDataSource = new DataSource({
   password: "dbpass",
   database: "lockbox_dev",
   synchronize: true, // Auto-creates tables (disable in prod)
+  dropSchema: process.env.NODE_ENV === 'test', // Clean slate for each test run
   logging: true,
   entities: [User],
 });
@@ -19,21 +20,30 @@ export function getRepository<T extends ObjectLiteral>(entity: EntityTarget<T>) 
   return AppDataSource.getRepository(entity);
 }
 
+export function getDataSource(): DataSource {
+  if (!AppDataSource.isInitialized) {
+    throw new Error('DataSource is not initialized. Call initDb() first.');
+  }
+  return AppDataSource;
+}
+
 let initPromise: Promise<DataSource> | null = null;
 
 export async function initDb(): Promise<DataSource> {
 
   console.trace('initDb called from:');
+  
+  // If already initialized, return immediately
+  if (AppDataSource.isInitialized) {
+    return AppDataSource;
+  }
+  
+  // If initialization is in progress, wait for it
   if (initPromise) {
     return initPromise;
   }
 
-  // Already initialized
-  if (AppDataSource.isInitialized) {
-    return AppDataSource;
-  }
-
-  if (process.env.NODE_ENV === 'development') {
+  if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
     AppDataSource.setOptions({ logging: false }); // or logging: []
   }
   initPromise = AppDataSource.initialize()

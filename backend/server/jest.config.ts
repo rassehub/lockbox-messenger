@@ -12,6 +12,7 @@ const config: Config = {
   },
   testTimeout: 10000,
   silent: true,
+  maxWorkers: 1, // Run tests sequentially to avoid DB initialization race conditions
   projects: [
     {
       displayName: 'unit',

@@ -16,7 +16,7 @@ beforeAll(async () => {
 // This runs once after all test suites
 afterAll(async () => {
   try {
-  await closeCache();
+    await closeCache();
     await closeDb();
   } catch (error) {
     console.error('Error closing connections:', error);
