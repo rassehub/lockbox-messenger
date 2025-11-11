@@ -55,7 +55,7 @@ describe('login', () => {
 
     const result = await authService.login('12345', 'password123');
 
-    expect(global.fetch).toHaveBeenCalledWith('http://127.0.0.1:3000/login', {
+    expect(global.fetch).toHaveBeenCalledWith('http://127.0.0.1:3000/api/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ phoneNumber: '12345', password: 'password123' }),
@@ -104,7 +104,7 @@ describe('getMe', () => {
 
     // Verify Cookie header was sent
     expect(global.fetch).toHaveBeenLastCalledWith(
-      'http://127.0.0.1:3000/me',
+      'http://127.0.0.1:3000/api/me',
       expect.objectContaining({
         headers: expect.objectContaining({
           Cookie: 'sessionToken=abc123'

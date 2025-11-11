@@ -5,7 +5,7 @@
 
 import { Router } from "express";
 
-import { uploadKeyBundle, getKeyBundle, getKeyStatistics, checkPreKeys, addPreKeys, rotateSignedPreKey } from "@/controllers/keyControllers";
+import { uploadKeyBundle, getKeyBundle, getKeyStatistics, checkPreKeys, addPreKeys, rotateSignedPreKey } from "../controllers/keyControllers";
 const router = Router();
 
 

@@ -1,8 +1,18 @@
+/// <reference path="../types/express.d.ts" />
+
 import { Request, Response } from 'express';
 import { SignalKeyService } from "../services/signalKeyService";
 import { getDataSource } from "../db";
 
-const keyService = new SignalKeyService(getDataSource());
+// Lazy initialization - create service only when first accessed
+let keyService: SignalKeyService | null = null;
+
+function getKeyService(): SignalKeyService {
+  if (!keyService) {
+    keyService = new SignalKeyService(getDataSource());
+  }
+  return keyService;
+}
 
 export const uploadKeyBundle = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -26,7 +36,7 @@ export const uploadKeyBundle = async (req: Request, res: Response): Promise<void
       return;
     }
 
-    await keyService.uploadKeyBundle(userId, keyBundle);
+    await getKeyService().uploadKeyBundle(userId, keyBundle);
 
     res.json({
       success: true,
@@ -42,7 +52,7 @@ export const getKeyBundle = async (req: Request, res: Response): Promise<void> =
       try {
     const { userId } = req.params;
 
-    const keyBundle = await keyService.getKeyBundle(userId);
+    const keyBundle = await getKeyService().getKeyBundle(userId);
 
     res.json({
       success: true,
@@ -71,7 +81,7 @@ export const getKeyStatistics = async (req: Request, res: Response): Promise<voi
       return;
     }
 
-    const stats = await keyService.getKeyStats(userId);
+    const stats = await getKeyService().getKeyStats(userId);
 
     res.json({
       success: true,
@@ -91,8 +101,8 @@ export const checkPreKeys = async (req: Request, res: Response): Promise<void> =
       return;
     }
 
-    const needsMore = await keyService.needsMorePreKeys(userId, 10);
-    const count = await keyService.getAvailablePreKeyCount(userId);
+    const needsMore = await getKeyService().needsMorePreKeys(userId, 10);
+    const count = await getKeyService().getAvailablePreKeyCount(userId);
 
     res.json({
       success: true,
@@ -121,9 +131,9 @@ export const addPreKeys = async (req: Request, res: Response): Promise<void> => 
       return;
     }
 
-    await keyService.addOneTimePreKeys(userId, preKeys);
+    await getKeyService().addOneTimePreKeys(userId, preKeys);
 
-    const newCount = await keyService.getAvailablePreKeyCount(userId);
+    const newCount = await getKeyService().getAvailablePreKeyCount(userId);
 
     res.json({
       success: true,
@@ -156,7 +166,7 @@ export const rotateSignedPreKey = async (req: Request, res: Response): Promise<v
       return;
     }
 
-    await keyService.rotateSignedPreKey(userId, signedPreKey);
+    await getKeyService().rotateSignedPreKey(userId, signedPreKey);
 
     res.json({
       success: true,

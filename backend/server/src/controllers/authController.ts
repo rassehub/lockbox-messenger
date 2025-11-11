@@ -4,7 +4,7 @@ import bcrypt from 'bcrypt';
 import logger from '../utils/logger';
 import { getRepository } from "../db";
 import { User } from "../models/User";
-import { map } from '@/config/expressApp';
+import { map } from '../config/expressApp';
 
 
 export const login = async (req: Request, res: Response) => {

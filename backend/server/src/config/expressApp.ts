@@ -3,6 +3,7 @@ import { WebSocket } from 'ws';
 
 import sessionParser from '../middleware/session';
 import authRoutes from '../routes/auth';
+import keyRoutes from '../routes/keys';
 
 const map = new Map<string, WebSocket>();
 
@@ -12,6 +13,8 @@ app.use(express.json());
 app.use(express.static('public'));
 app.use(sessionParser);
 
-app.use('/', authRoutes);
+app.use('/api', authRoutes);
+app.use('/keys', keyRoutes);
+
 
 export { app, sessionParser, map };

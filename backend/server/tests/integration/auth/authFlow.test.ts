@@ -39,27 +39,27 @@ describe('Auth flows (register, login, logout)', () => {
   const authphoneNumber = uniqueUsername('Auth User');
 
   it('registers a new user', async () => {
-    await request(baseUrl).post('/register').send({ username: authUsername, phoneNumber: authphoneNumber, password: 'pw' }).expect(201);
+    await request(baseUrl).post('/api/register').send({ username: authUsername, phoneNumber: authphoneNumber, password: 'pw' }).expect(201);
   });
   it('cant register the same user twice', async () => {
-    await request(baseUrl).post('/register').send({ username: authUsername, phoneNumber: authphoneNumber, password: 'pw' }).expect(409);
+    await request(baseUrl).post('/api/register').send({ username: authUsername, phoneNumber: authphoneNumber, password: 'pw' }).expect(409);
   });
 
   it('logs in and sets session cookie', async () => {
     const agent = request.agent(baseUrl);
-    await agent.post('/login').send({ phoneNumber: authphoneNumber, password: 'pw' }).expect(200);
-    await agent.get('/me').expect(200);
+    await agent.post('/api/login').send({ phoneNumber: authphoneNumber, password: 'pw' }).expect(200);
+    await agent.get('/api/me').expect(200);
   });
 
   it('cant log in with wrong password', async () => {
     const agent = request.agent(baseUrl);
-    await agent.post('/login').send({ phoneNumber: authphoneNumber, password: 'wrongpw' }).expect(401);
+    await agent.post('/api/login').send({ phoneNumber: authphoneNumber, password: 'wrongpw' }).expect(401);
   });
 
   it('logs out and invalidates session', async () => {
     const agent = request.agent(baseUrl);
-    await agent.post('/login').send({ phoneNumber: authphoneNumber, password: 'pw' }).expect(200);
-    await agent.delete('/logout').expect(200);
-    await agent.get('/me').expect(401);
+    await agent.post('/api/login').send({ phoneNumber: authphoneNumber, password: 'pw' }).expect(200);
+    await agent.delete('/api/logout').expect(200);
+    await agent.get('/api/me').expect(401);
   });
 });
