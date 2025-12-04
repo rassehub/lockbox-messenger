@@ -11,6 +11,21 @@ export interface KeyBundle {
   oneTimePreKeys: PreKeyType[];
 }
 
+// Server-compatible key bundle (uses base64 strings instead of ArrayBuffer)
+export interface SignalKeyBundle {
+  registrationId: number;
+  identityPubKey: string; // base64 encoded
+  signedPreKey: {
+    keyId: number;
+    publicKey: string; // base64 encoded
+    signature: string; // base64 encoded
+  };
+  oneTimePreKeys: Array<{
+    keyId: number;
+    publicKey: string; // base64 encoded
+  }>;
+}
+
 export interface UserIdentity {
   userId: string;
   registrationId: number;

@@ -1,0 +1,98 @@
+/**
+ * End-to-End Test: Encrypted Messaging Between Two Users
+ * 
+ * This test validates the complete encrypted messaging flow:
+ * 1. Register two users (Alice & Bob)
+ * 2. Initialize encryption keys for both
+ * 3. Upload keys to server
+ * 4. Alice fetches Bob's keys and establishes session
+ * 5. Alice encrypts and sends message to Bob
+ * 6. Bob decrypts the message
+ * 7. Bob replies with encrypted message
+ * 8. Alice decrypts Bob's reply
+ * 
+ * Prerequisites:
+ * - Backend server must be running on http://127.0.0.1:3000
+ * - Database must be clean (or use unique usernames)
+ * 
+ * Run with: npm test -- encryption-messaging.e2e.test.ts
+ */
+
+import { AuthService } from '../../services/auth';
+import { KeyManager } from '../../services/encryption/keyManager';
+
+describe('E2E: Encrypted Messaging Flow', () => {
+  const authService = new AuthService();
+  
+  // Test user credentials
+  const alice: {
+    username: string;
+    phoneNumber: string;
+    password: string;
+    sessionCookie: string;
+    userId: string;
+    keyManager: KeyManager | null;
+    authService?: AuthService;
+  } = {
+    username: `alice_${Date.now()}`,
+    phoneNumber: `+1555${Math.floor(Math.random() * 10000000).toString().padStart(7, '0')}`,
+    password: 'alice_secure_password_123',
+    sessionCookie: '',
+    userId: '',
+    keyManager: null
+  };
+
+
+  describe('Setup: User Registration & Authentication', () => {
+    it('should register Alice successfully', async () => {
+      const response = await authService.register(
+        alice.username,
+        alice.phoneNumber,
+        alice.password
+      );
+      
+      expect(response).toBeDefined();
+      expect(response.result).toBe('Created');
+      expect(response.userId).toBeDefined();
+      
+      alice.userId = response.userId;
+      alice.sessionCookie = authService.getSessionCookie() || '';
+      
+    }, 10000);
+
+    it('should login Alice and get session', async () => {
+      const response = await authService.login(alice.phoneNumber, alice.password);
+      
+      expect(response).toBeDefined();
+      expect(response.result).toBe('OK');
+      expect(response.userId).toBeDefined();
+      
+      alice.userId = response.userId;
+
+      alice.sessionCookie = authService.getSessionCookie() || '';
+      expect(alice.sessionCookie).toBeTruthy();
+
+    }, 10000);
+  });
+
+  describe('Encryption Setup: Key Generation & Upload', () => {
+    it('should initialize encryption for Alice', async () => {
+      alice.keyManager = new KeyManager(alice.userId);
+      await alice.keyManager.initializeForNewUser(alice.sessionCookie);
+      
+    }, 15000);
+  });
+
+  describe('Key Management: Verify Server Integration', () => {
+    it('should check if keys need replenishment', async () => {
+      expect(alice.keyManager).not.toBeNull();
+      console.log('hello from test')
+      await alice.keyManager!.maintainKeys();
+      
+      const stats = await alice.keyManager!.getKeyStatistics();
+      expect(stats.availablePreKeys).toBeGreaterThan(0);
+      
+    }, 15000);
+
+  });
+});

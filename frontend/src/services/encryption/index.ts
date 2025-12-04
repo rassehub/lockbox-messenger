@@ -11,6 +11,11 @@ export default SignalProtocolManagerInstance;
 export { default as SignalProtocolManager } from './SignalProtocolManager';
 export { SignalProtocolManager as SignalProtocolManagerClass } from './SignalProtocolManager';
 
+// Server communication and high-level key management
+export { KeyManager } from './keyManager';
+export { keyService } from './keyService';
+export { default as KeyService } from './keyService';
+
 // Storage
 export { default as signalStore } from './storage';
 export { SignalProtocolStore } from './storage';
@@ -28,7 +33,13 @@ export * from './types';
 /**
  * Usage Example:
  * 
- * // PRODUCTION: Default import (easiest - recommended)
+ * // RECOMMENDED: Use KeyManager for integrated server + local encryption
+ * import { KeyManager } from '@/services/encryption';
+ * const keyManager = new KeyManager(userId);
+ * await keyManager.initializeForNewUser(sessionCookie);
+ * const encrypted = await keyManager.encryptMessage(recipientId, 'Hello!');
+ * 
+ * // PRODUCTION: Default import for local-only encryption
  * import encryption from '@/services/encryption';
  * await encryption.initialize(userId);
  * const encrypted = await encryption.encrypt(recipientId, 'Hello!');

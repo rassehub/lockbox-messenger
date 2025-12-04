@@ -3,6 +3,7 @@
 import { Request, Response } from 'express';
 import { SignalKeyService } from "../services/signalKeyService";
 import { getDataSource } from "../db";
+import logger from '@/utils/logger';
 
 // Lazy initialization - create service only when first accessed
 let keyService: SignalKeyService | null = null;
@@ -15,8 +16,9 @@ function getKeyService(): SignalKeyService {
 }
 
 export const uploadKeyBundle = async (req: Request, res: Response): Promise<void> => {
+    logger.info("HEADERS:", req.headers);
     try {
-    const userId = req.user?.id; // From auth middleware
+    const userId = req.session?.userId;
     if (!userId) {
       res.status(401).json({ error: "Unauthorized" });
       return;
@@ -74,15 +76,15 @@ export const getKeyBundle = async (req: Request, res: Response): Promise<void> =
 };
 
 export const getKeyStatistics = async (req: Request, res: Response): Promise<void> => {
-      try {
-    const userId = req.user?.id;
-    if (!userId) {
-      res.status(401).json({ error: "Unauthorized" });
-      return;
+    try {
+      const userId = req.session?.userId;
+      
+      if (!userId) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
     }
 
     const stats = await getKeyService().getKeyStats(userId);
-
     res.json({
       success: true,
       stats,
@@ -94,15 +96,19 @@ export const getKeyStatistics = async (req: Request, res: Response): Promise<voi
 }; 
 
 export const checkPreKeys = async (req: Request, res: Response): Promise<void> => {
+    logger.info('request user id:', req.session?.userId)
       try {
-    const userId = req.user?.id;
+    const userId = req.session?.userId;
     if (!userId) {
       res.status(401).json({ error: "Unauthorized" });
       return;
     }
+    logger.info('getKeyStats called with userId:', userId);
 
     const needsMore = await getKeyService().needsMorePreKeys(userId, 10);
     const count = await getKeyService().getAvailablePreKeyCount(userId);
+    logger.info('needs more:', needsMore);
+    logger.info('count: ', count)
 
     res.json({
       success: true,
@@ -118,7 +124,7 @@ export const checkPreKeys = async (req: Request, res: Response): Promise<void> =
 
 export const addPreKeys = async (req: Request, res: Response): Promise<void> => {
     try {
-    const userId = req.user?.id;
+    const userId = req.session?.userId;
     if (!userId) {
       res.status(401).json({ error: "Unauthorized" });
       return;
@@ -148,7 +154,7 @@ export const addPreKeys = async (req: Request, res: Response): Promise<void> => 
 
 export const rotateSignedPreKey = async (req: Request, res: Response): Promise<void> => {
       try {
-    const userId = req.user?.id;
+    const userId = req.session?.userId;
     if (!userId) {
       res.status(401).json({ error: "Unauthorized" });
       return;

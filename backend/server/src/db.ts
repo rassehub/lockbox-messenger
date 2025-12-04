@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import { DataSource, EntityTarget, ObjectLiteral } from "typeorm";
-import { User } from "./models/User";
+import { PreKey, User } from "./models/User";
 import logger from "./utils/logger";
 
 export const AppDataSource = new DataSource({
@@ -13,7 +13,10 @@ export const AppDataSource = new DataSource({
   synchronize: true, // Auto-creates tables (disable in prod)
   dropSchema: process.env.NODE_ENV === 'test', // Clean slate for each test run
   logging: true,
-  entities: [User],
+  entities: [
+    User,
+    PreKey
+  ],
 });
 
 export function getRepository<T extends ObjectLiteral>(entity: EntityTarget<T>) {
