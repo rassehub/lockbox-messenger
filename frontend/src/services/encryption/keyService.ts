@@ -43,8 +43,6 @@ class KeyService {
     if (this.sessionCookie) {
       headers['Cookie'] = `${this.sessionCookie}`;
     }
-    console.log(`keksi ${this.sessionCookie}`)
-    console.log(`headers: ${JSON.stringify(headers)}`);
     return headers;
   }
 
@@ -111,9 +109,9 @@ class KeyService {
    * Check if current user needs to upload more pre-keys
    */
   async checkPreKeys(): Promise<PreKeyCheckResponse> {
-    console.log('hello from checkprekeys')
     const response = await fetch(`${this.baseUrl}/keys/check-prekeys`, {
-      method: 'GET',
+      method: 'POST',
+      credentials: 'include',
       headers: this.getHeaders()
     });
 

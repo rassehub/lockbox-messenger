@@ -171,7 +171,7 @@ describe('KeyService', () => {
       expect(global.fetch).toHaveBeenCalledWith(
         `${baseUrl}/keys/check-prekeys`,
         expect.objectContaining({
-          method: 'GET'
+          method: 'POST'
         })
       );
       expect(result).toEqual(mockResponse);

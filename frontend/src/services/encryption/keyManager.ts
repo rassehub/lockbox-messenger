@@ -94,9 +94,9 @@ export class KeyManager {
    * so we'll regenerate a full bundle if needed
    */
   async checkAndReplenishKeys(): Promise<void> {
-    console.log('hello from checkandreplenish')
     const { needsMorePreKeys, availableCount } = await keyService.checkPreKeys();
-    
+    //const needsMorePreKeys = true
+    //const availableCount = 10
     if (needsMorePreKeys) {
       console.log(`Pre-keys running low (${availableCount}). Generating more...`);
       

@@ -338,7 +338,6 @@ describe('E2E: Encrypted Messaging Flow', () => {
   describe('Key Management: Verify Server Integration', () => {
     it('should check if keys need replenishment', async () => {
       expect(alice.keyManager).not.toBeNull();
-      console.log('hello from test')
       await alice.keyManager!.maintainKeys();
       
       const stats = await alice.keyManager!.getKeyStatistics();

@@ -87,6 +87,8 @@ describe('E2E: Encrypted Messaging Flow', () => {
     it('should check if keys need replenishment', async () => {
       expect(alice.keyManager).not.toBeNull();
       console.log('hello from test')
+      //await alice.keyManager!.checkAndReplenishKeys();
+      //await alice.keyManager!.rotateSignedPreKey();
       await alice.keyManager!.maintainKeys();
       
       const stats = await alice.keyManager!.getKeyStatistics();

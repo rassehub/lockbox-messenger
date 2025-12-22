@@ -28,7 +28,7 @@ router.get("/stats/me", getKeyStatistics);
  * GET /api/keys/check-prekeys
  * Check if user needs to upload more pre-keys
  */
-router.get("/check-prekeys", checkPreKeys);
+router.post("/check-prekeys", checkPreKeys);
 
 /**
  * POST /api/keys/add-prekeys

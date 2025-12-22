@@ -87,7 +87,6 @@ it('accepts authenticated connections', async () => {
       const senderWs = new WebSocket(WS_URL, {
        headers: { Cookie: senderAuth.sessionCookie }
       });
-      console.log(`headers: ${JSON.stringify(senderWs)}`);
       const recipientWs = new WebSocket(WS_URL, {
         headers: { Cookie: recipientAuth.sessionCookie }
       });
