@@ -22,6 +22,11 @@ jest.mock('@/services/signalKeyService', () => ({
   })),
 }));
 
+jest.mock('@/utils/logger', () => ({
+  info: jest.fn(),
+  error: jest.fn(),
+}));
+
 // Mock getDataSource
 jest.mock('@/db', () => ({
   getDataSource: jest.fn(() => ({
@@ -47,7 +52,7 @@ describe('Key Controllers', () => {
     jest.clearAllMocks();
 
     mockReq = {
-      user: { id: 'user-123' } as any,
+      session: { userId: 'user-123' } as any,
       body: {},
       params: {},
     };
@@ -95,7 +100,7 @@ describe('Key Controllers', () => {
     });
 
     it('should return 401 if user is not authenticated', async () => {
-      mockReq.user = undefined;
+      mockReq.session = undefined;
 
       await uploadKeyBundle(mockReq as Request, mockRes as Response);
 
@@ -240,7 +245,7 @@ describe('Key Controllers', () => {
     });
 
     it('should return 401 if user is not authenticated', async () => {
-      mockReq.user = undefined;
+      mockReq.session = undefined;
 
       await getKeyStatistics(mockReq as Request, mockRes as Response);
 
@@ -293,7 +298,7 @@ describe('Key Controllers', () => {
     });
 
     it('should return 401 if user is not authenticated', async () => {
-      mockReq.user = undefined;
+      mockReq.session = undefined;
 
       await checkPreKeys(mockReq as Request, mockRes as Response);
 
@@ -336,7 +341,7 @@ describe('Key Controllers', () => {
     });
 
     it('should return 401 if user is not authenticated', async () => {
-      mockReq.user = undefined;
+      mockReq.session = undefined;
 
       await addPreKeys(mockReq as Request, mockRes as Response);
 
@@ -400,7 +405,7 @@ describe('Key Controllers', () => {
     });
 
     it('should return 401 if user is not authenticated', async () => {
-      mockReq.user = undefined;
+      mockReq.session = undefined;
 
       await rotateSignedPreKey(mockReq as Request, mockRes as Response);
 
