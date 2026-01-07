@@ -91,6 +91,7 @@ describe('WebSocket Message Handlers', () => {
       expect(res.send).toHaveBeenCalledWith('User not found');
     });
 
+    
     it('should handle unauthorized user', async () => {
       const req = {
         user: undefined, // No user in request

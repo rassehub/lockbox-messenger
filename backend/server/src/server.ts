@@ -1,3 +1,5 @@
+/// <reference path="./types/express.d.ts" />
+
 import http from 'http';
 import { app, sessionParser, map } from './config/expressApp';
 import setupWebSocketServer from './config/wss';

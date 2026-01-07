@@ -68,8 +68,8 @@ describe('WebSocket Server', () => {
     // Use real HTTP auth flow: register then login (username/password)
     const username = `u+${Date.now()}`; // avoid unique-constraint collisions across suites
     const phoneNumber = `User ${Date.now()}`;
-    await request(baseUrl).post('/register').send({ username, phoneNumber, password: 'pw' }).expect(201);
-    const loginRes = await request(baseUrl).post('/login').send({ phoneNumber, password: 'pw' }).expect(200);
+    await request(baseUrl).post('/api/register').send({ username, phoneNumber, password: 'pw' }).expect(201);
+    const loginRes = await request(baseUrl).post('/api/login').send({ phoneNumber, password: 'pw' }).expect(200);
 
     
     const raw = loginRes.headers['set-cookie'] || [];
