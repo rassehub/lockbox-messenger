@@ -14,3 +14,4 @@ docker-compose.override.yml
 # Temporary files
 *.tmp
 *.swp
+node_modules
