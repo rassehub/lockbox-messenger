@@ -7,7 +7,7 @@ const PrivacySettings = () => {
     const formConfiguration = {
         fields: [
             {
-                name: "lastSeen",
+                name: "whoCanSee",
                 options: [
                     { label: "Everyone", value: "everyone" },
                     { label: "My Contacts", value: "myContacts" },
@@ -18,7 +18,7 @@ const PrivacySettings = () => {
     }
 
     const initialValues = {
-        lastSeen: "everyone",
+        whoCanSee: "everyone",
     }
 
     const handleLastSeenSubmit = () => {
@@ -54,6 +54,12 @@ const PrivacySettings = () => {
                 onSubmit={handleprofilePictureSubmit}
             />
             <Text style={styles.categoryText}>Privacy settings</Text>
+            <DropdownRadio 
+                dropdownTitle="Disappearing messages"
+                formConfiguration={formConfiguration}
+                initialValues={initialValues}
+                onSubmit={handledisappearingMessages}
+            />
             <SwitchSetting 
                 initialState={false}
                 settingText="Disappearing messages"
