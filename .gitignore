@@ -1,6 +1,8 @@
 # Ignore Docker-related files
 docker-compose.override.yml
 .env
+backend/db/data
+backend/cache/dump.rdb
 
 # macOS
 .DS_Store
