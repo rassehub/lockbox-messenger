@@ -1,4 +1,6 @@
 import WebSocket from 'ws';
+import { arrayBufferToBase64, base64ToArrayBuffer } from './encryption/utils';
+
 
 type MessageHandler = (data: any) => void;
 
@@ -35,16 +37,12 @@ class WebSocketService {
       return;
     }
 
-  const encodedMessage = {
-    type: ciphertext.type,
-    body: Buffer.from(ciphertext.body).toString('base64'),
-  };
 
     this.ws.send(
       JSON.stringify({
         type: 'SEND',
         recipientId,
-        ciphertext: encodedMessage,
+        ciphertext: ciphertext
       })
     );
   }
@@ -61,8 +59,8 @@ class WebSocketService {
           : Buffer.from(raw).toString('utf8');
       
       const message = JSON.parse(text);
-      message.ciphertext.body = Buffer.from(message.ciphertext.body, 'base64');
-      message.ciphertext.body = message.ciphertext.body.toString();
+
+
 
       handler(message);
     });
