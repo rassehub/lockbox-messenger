@@ -1,6 +1,4 @@
 import WebSocket from 'ws';
-import { arrayBufferToBase64, base64ToArrayBuffer } from './encryption/utils';
-
 
 type MessageHandler = (data: any) => void;
 
@@ -36,7 +34,6 @@ class WebSocketService {
       console.warn('WebSocket not connected');
       return;
     }
-
 
     this.ws.send(
       JSON.stringify({
