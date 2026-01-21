@@ -1,28 +1,77 @@
+import WebSocket from 'ws';
+
+type MessageHandler = (data: any) => void;
+
+type WebSocketEvent =
+  | 'open'
+  | 'message'
+  | 'error'
+  | 'close'
+  | 'ping'
+  | 'pong'
+  | 'unexpected-response';
+
 class WebSocketService {
   private ws: WebSocket | null = null;
-  private messageHandlers = new Map<string, (data: any) => void>();
+  private messageHandlers = new Map<string, MessageHandler>();
 
   connect(token: string) {
-    // React Native WebSocket doesn't support headers, use query param instead
-    this.ws = new WebSocket(`ws://127.0.0.1:3000?token=${encodeURIComponent(token)}`);
-    
-    this.ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      this.messageHandlers.get(data.type)?.(data);
-    };
+    this.ws = new WebSocket('ws://127.0.0.1:3000', {
+      headers: { Cookie: token },
+    });
   }
 
-  sendMessage(recipientId: string, ciphertext: string) {
-    this.ws?.send(JSON.stringify({
-      type: 'SEND',
-      recipientId,
-      ciphertext
-    }));
+  on(event: WebSocketEvent, handler: (...args: any[]) => void) {
+    this.ws?.on(event, handler);
   }
 
-  onMessage(type: string, handler: (data: any) => void) {
-    this.messageHandlers.set(type, handler);
+  once(event: WebSocketEvent, handler: (...args: any[]) => void) {
+    this.ws?.once(event, handler);
+  }
+
+  sendMessage(recipientId: string, ciphertext: { type: number; body: string }) {
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      console.warn('WebSocket not connected');
+      return;
+    }
+
+  const encodedMessage = {
+    type: ciphertext.type,
+    body: Buffer.from(ciphertext.body).toString('base64'),
+  };
+
+    this.ws.send(
+      JSON.stringify({
+        type: 'SEND',
+        recipientId,
+        ciphertext: encodedMessage,
+      })
+    );
+  }
+
+  onMessage<T = any > (handler: (message: T) => void) {
+    this.ws?.on('message', (raw) => {
+      const text =
+        typeof raw === 'string'
+          ? raw
+          : Buffer.isBuffer(raw)
+          ? raw.toString('utf8')
+          : Array.isArray(raw)
+          ? Buffer.concat(raw).toString('utf8')
+          : Buffer.from(raw).toString('utf8');
+      
+      const message = JSON.parse(text);
+      message.ciphertext.body = Buffer.from(message.ciphertext.body, 'base64');
+      message.ciphertext.body = message.ciphertext.body.toString();
+
+      handler(message);
+    });
+  }
+
+  disconnect() {
+    this.ws?.close();
+    this.ws = null;
   }
 }
 
-export { WebSocketService };
+export default WebSocketService;
