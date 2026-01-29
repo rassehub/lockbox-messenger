@@ -1,5 +1,6 @@
 module.exports = {
   preset: 'react-native',
+  //automock: true,
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   testMatch: [
     '**/__tests__/**/*.(test|spec).(ts|tsx|js)',
@@ -19,4 +20,5 @@ module.exports = {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
   maxWorkers: 1,
+  
 };
