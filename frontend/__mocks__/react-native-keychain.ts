@@ -1,38 +1,70 @@
 import { jest } from '@jest/globals';
-// Simple mock that returns success for everything
+import { SetOptions } from 'react-native-keychain';
+
+// Global mock storage - stores exactly what's passed in
+const mockKeychainStore = new Map();
+
 const mockKeychain = {
-  setGenericPassword: jest.fn().mockResolvedValue(true as never),
-  getGenericPassword: jest.fn().mockResolvedValue(false as never), // Returns false = not found
-  resetGenericPassword: jest.fn().mockResolvedValue(true as never),
+  __mockStore: mockKeychainStore,
   
-  // Add any other methods your app uses
-  getInternetCredentials: jest.fn().mockResolvedValue(null as never),
-  setInternetCredentials: jest.fn().mockResolvedValue(true as never),
-  resetInternetCredentials: jest.fn().mockResolvedValue(true as never),
+  // Store exactly what's passed, no modification
+  setGenericPassword: jest.fn(async (username, password, options: SetOptions = {}) => {
+    const service = options.service; // This is the key
+    mockKeychainStore.set(service, {
+      username,
+      password, // Raw password string as passed
+      service
+    });
+    return true;
+  }),
   
-  // ACCESSIBLE constants (common ones)
-  ACCESSIBLE: {
-    WHEN_UNLOCKED: 'AccessibleWhenUnlocked',
-    AFTER_FIRST_UNLOCK: 'AccessibleAfterFirstUnlock',
-    ALWAYS: 'AccessibleAlways',
-    WHEN_PASSCODE_SET_THIS_DEVICE_ONLY: 'AccessibleWhenPasscodeSetThisDeviceOnly',
-    WHEN_UNLOCKED_THIS_DEVICE_ONLY: 'AccessibleWhenUnlockedThisDeviceOnly',
-    AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY: 'AccessibleAfterFirstUnlockThisDeviceOnly',
-    ALWAYS_THIS_DEVICE_ONLY: 'AccessibleAlwaysThisDeviceOnly'
+  // Return exactly what was stored
+  getGenericPassword: jest.fn(async (options: SetOptions = {}) => {
+    const service = options.service;
+    const stored = mockKeychainStore.get(service);
+    
+    if (!stored) {
+      return false; // Your code expects false for "not found"
+    }
+    
+    // Return exactly what was stored
+    return {
+      username: stored.username,
+      password: stored.password, // Raw string, not parsed
+      service: stored.service,
+      storage: 'keychain'
+    };
+  }),
+  
+  // Delete exactly by service name
+  resetGenericPassword: jest.fn(async (options: SetOptions = {}) => {
+    const service = options.service;
+    mockKeychainStore.delete(service);
+    return true;
+  }),
+  
+  // Helper to clear storage between tests
+  __clearMockStore: () => {
+    mockKeychainStore.clear();
   },
   
-  // Other constants
-  SECURITY_LEVEL: {
-    SECURE_SOFTWARE: 'SECURE_SOFTWARE',
-    SECURE_HARDWARE: 'SECURE_HARDWARE',
-    ANY: 'ANY'
+  // Helper to inspect what's stored
+  __getStoredData: (service: SetOptions) => {
+    return mockKeychainStore.get(service);
   },
   
-  // Authentication types
-  AUTHENTICATION_TYPE: {
-    DEVICE_PASSCODE_OR_BIOMETRICS: 'AuthenticationWithBiometricsDevicePasscode',
-    BIOMETRICS: 'AuthenticationWithBiometrics'
-  }
+  // Helper to get all stored services
+  __getAllServices: () => {
+    return Array.from(mockKeychainStore.keys());
+  },
+  
+  // Constants (empty is fine for your tests)
+  ACCESSIBLE: {},
+  SECURITY_LEVEL: {},
+  AUTHENTICATION_TYPE: {}
 };
+
+// Global mock
+jest.mock('react-native-keychain', () => mockKeychain);
 
 export default mockKeychain;

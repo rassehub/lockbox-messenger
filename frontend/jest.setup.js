@@ -20,6 +20,7 @@ jest.mock('react-native-keychain', () => ({
     mockStore.set(options.service, {
       username,
       password, // Store raw string
+      service: options.service
     });
     return true;
   }),

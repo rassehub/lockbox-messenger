@@ -39,7 +39,7 @@ async function setItem<K extends Key>(
 
     await Keychain.setGenericPassword(
         USERNAME,
-        JSON.stringify(value),
+        encoded,
         { service: service(key) }
     );
 }
