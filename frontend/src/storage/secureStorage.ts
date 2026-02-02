@@ -2,7 +2,7 @@ import * as Keychain from 'react-native-keychain';
 import { codecs } from './codecs';
 import type { SecureStorageSchema, RecordEntries } from './schema';
 import {
-  KeyPairType,
+    KeyPairType,
 } from '@privacyresearch/libsignal-protocol-typescript';
 
 const APP_NAME = 'com.lockbock';
@@ -13,20 +13,20 @@ type Key = keyof SecureStorageSchema;
 type RecordKeys = keyof RecordEntries; // 'preKeys' | 'signedPreKeys' | 'recipientIdentityKeys'
 
 // Helper type to extract record value type for a given key
-type RecordValueType<K extends RecordKeys> = 
-  K extends 'preKeys' ? KeyPairType :
-  K extends 'signedPreKeys' ? KeyPairType :
-  K extends 'recipientIdentityKeys' ? ArrayBuffer :
-  K extends 'session' ? string :
-  never;
+type RecordValueType<K extends RecordKeys> =
+    K extends 'preKeys' ? KeyPairType :
+    K extends 'signedPreKeys' ? KeyPairType :
+    K extends 'recipientIdentityKeys' ? ArrayBuffer :
+    K extends 'session' ? string :
+    never;
 
 // Type guard to check if a key is a record key
 function isRecordKey(key: Key): key is RecordKeys {
-  return ['preKeys', 'signedPreKeys', 'recipientIdentityKeys'].includes(key as string);
+    return ['preKeys', 'signedPreKeys', 'recipientIdentityKeys'].includes(key as string);
 }
 
 function service(key: string) {
-  return `${APP_NAME}.${key}`;
+    return `${APP_NAME}.${key}`;
 }
 
 async function setItem<K extends Key>(
@@ -34,7 +34,7 @@ async function setItem<K extends Key>(
     value: SecureStorageSchema[K]
 ) {
     let encoded: string;
-    
+
     encoded = codecs[key].encode(value);
 
     await Keychain.setGenericPassword(
@@ -58,15 +58,15 @@ async function getItem<K extends Key>(
 }
 
 async function removeItem<K extends Key>(key: K) {
-  await Keychain.resetGenericPassword({
-    service: service(key),
-  });
+    await Keychain.resetGenericPassword({
+        service: service(key),
+    });
 }
 
 async function upsertRecordItem<K extends RecordKeys,>(
     key: K,
     id: string,
-    value:  RecordValueType<K>
+    value: RecordValueType<K>
 ) {
     const current = await getItem(key);
     const record = current ?? {} as Record<string, RecordValueType<K>>;
@@ -78,13 +78,13 @@ async function getRecordItem<K extends RecordKeys>(
     key: K,
     id: string
 ): Promise<RecordValueType<K> | undefined> {
-    const record = await getItem(key) as Record<string, RecordValueType<K>> | undefined;    
+    const record = await getItem(key) as Record<string, RecordValueType<K>> | undefined;
     return record?.[id];
 }
 
 async function getFullRecord<K extends RecordKeys>(
     key: K
-  ): Promise<Record<string, RecordValueType<K>> | undefined> {
+): Promise<Record<string, RecordValueType<K>> | undefined> {
     return await getItem(key) as Record<string, RecordValueType<K>> | undefined;
 };
 
@@ -94,7 +94,7 @@ export async function removeRecordItem<K extends RecordKeys>(
 ) {
     const record =
         (await getItem(key)) ??
-        ({} as Record<string, RecordValueType<K>>);   
+        ({} as Record<string, RecordValueType<K>>);
     delete record[id];
     await setItem(key, record as SecureStorageSchema[K]);
 }

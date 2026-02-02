@@ -86,7 +86,7 @@ export const logout = async (req: Request, res: Response) => {
   logger.info('Destroying session', { userId: req.session.userId });
   req.session.destroy(() => {
     if (ws) ws.close();
-    res.send({ result: 'OK', message: 'Session destroyed' });
+    res.status(200).send({ result: 'OK', message: 'Session destroyed' });
   });
 }
 

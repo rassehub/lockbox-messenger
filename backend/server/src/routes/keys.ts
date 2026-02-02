@@ -20,7 +20,7 @@ router.post("/upload", uploadKeyBundle);
  * Get a user's key bundle to establish session
  * Atomically consumes one pre-key
  */
-router.get("/:userId", getKeyBundle);
+router.get("/get-recipient-keybundle", getKeyBundle);
 
 router.get("/stats/me", getKeyStatistics);
 

@@ -38,7 +38,6 @@ const stringMapCodec = {
     },
 };
 
-
 const identityKeyMapCodec = {
     encode: (value: Record<string, ArrayBuffer> ): string =>
         JSON.stringify(
