@@ -30,13 +30,7 @@ export class SignalProtocolStore {
    */
   async getIdentityKeyPair(): Promise<KeyPairType | undefined> {
     const data = await SecureStorage.getItem('identityKey');
-    if (data) {
-      return {
-        pubKey: data.pubKey,
-        privKey: data.privKey,
-      };
-    }
-    return undefined;
+      return data ? data : undefined;
   }
 
   /**
@@ -79,10 +73,7 @@ export class SignalProtocolStore {
    */
   async saveIdentity(identifier: string, identityKey: ArrayBuffer): Promise<boolean> {
     const existing = await SecureStorage.getRecordItem('recipientIdentityKeys', identifier)
-
-
     await SecureStorage.upsertRecordItem('recipientIdentityKeys', identifier, identityKey);
-    
     // Return true if the key changed
     return existing !== identityKey;
   }
@@ -155,7 +146,7 @@ export class SignalProtocolStore {
    */
   async loadSession(identifier: string): Promise<string | undefined> {
     const data = await SecureStorage.getRecordItem('session', identifier);
-    return data || undefined;
+    return data ? data : undefined;
   }
 
   /**
