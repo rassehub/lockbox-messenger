@@ -52,7 +52,7 @@ export const uploadKeyBundle = async (req: Request, res: Response): Promise<void
 
 export const getKeyBundle = async (req: Request, res: Response): Promise<void> => {
       try {
-    const { userId } = req.body.recipientId;
+    const { userId } = req.body;
 
     const keyBundle = await getKeyService().getKeyBundle(userId);
 

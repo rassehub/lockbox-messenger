@@ -101,13 +101,14 @@ describe('KeyService', () => {
       const result = await service.getKeyBundle(userId);
 
       expect(global.fetch).toHaveBeenCalledWith(
-        `${baseUrl}/keys/${userId}`,
+        `${baseUrl}/keys/get-recipient-keybundle`,
         expect.objectContaining({
-          method: 'GET',
+          method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Cookie': mockSessionCookie
-          }
+          },
+          body: JSON.stringify({ userId: userId })
         })
       );
       expect(result).toEqual(mockKeyBundle);

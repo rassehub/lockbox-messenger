@@ -29,41 +29,30 @@ export class SignalProtocolStore {
    * Get the local identity key pair
    */
   async getIdentityKeyPair(): Promise<KeyPairType | undefined> {
-    const data = await AsyncStorage.getItem('identityKey');
-    if (data) {
-      const parsed = JSON.parse(data);
-      return {
-        pubKey: base64ToArrayBuffer(parsed.pubKey),
-        privKey: base64ToArrayBuffer(parsed.privKey),
-      };
-    }
-    return undefined;
+    const data = await SecureStorage.getItem('identityKey');
+      return data ? data : undefined;
   }
 
   /**
    * Get the local registration ID
    */
   async getLocalRegistrationId(): Promise<number | undefined> {
-    const data = await AsyncStorage.getItem('registrationId');
-    return data ? parseInt(data, 10) : undefined;
+    const data = await SecureStorage.getItem('registrationId');
+    return data ? data : undefined;
   }
 
   /**
    * Store identity key pair
    */
   async storeIdentityKeyPair(keyPair: KeyPairType): Promise<void> {
-    const serialized = {
-      pubKey: arrayBufferToBase64(keyPair.pubKey),
-      privKey: arrayBufferToBase64(keyPair.privKey),
-    };
-    await AsyncStorage.setItem('identityKey', JSON.stringify(serialized));
+    await SecureStorage.setItem('identityKey', keyPair);
   }
 
   /**
    * Store registration ID
    */
   async storeRegistrationId(registrationId: number): Promise<void> {
-    await AsyncStorage.setItem('registrationId', registrationId.toString());
+    await SecureStorage.setItem('registrationId', registrationId);
   }
 
   /**
@@ -83,20 +72,17 @@ export class SignalProtocolStore {
    * Save identity for a recipient
    */
   async saveIdentity(identifier: string, identityKey: ArrayBuffer): Promise<boolean> {
-    const existing = await this.loadIdentityKey(identifier);
-    const key = arrayBufferToBase64(identityKey);
-
-    await AsyncStorage.setItem(`identityKey:${identifier}`, key);
-
+    const existing = await SecureStorage.getRecordItem('recipientIdentityKeys', identifier)
+    await SecureStorage.upsertRecordItem('recipientIdentityKeys', identifier, identityKey);
     // Return true if the key changed
-    return existing !== key;
+    return existing !== identityKey;
   }
 
   /**
    * Load identity key for a recipient
    */
-  async loadIdentityKey(identifier: string): Promise<string | null> {
-    return await AsyncStorage.getItem(`identityKey:${identifier}`);
+  async loadIdentityKey(identifier: string): Promise<ArrayBuffer | undefined> {
+    return await SecureStorage.getRecordItem(`recipientIdentityKeys`, identifier);
   }
 
   // ==================== Pre-Key Management ====================
@@ -105,33 +91,25 @@ export class SignalProtocolStore {
    * Load a pre-key
    */
   async loadPreKey(keyId: string | number): Promise<KeyPairType | undefined> {
-    const data = await AsyncStorage.getItem(`preKey:${keyId}`);
-    if (data) {
-      const parsed = JSON.parse(data);
-      return {
-        pubKey: base64ToArrayBuffer(parsed.pubKey),
-        privKey: base64ToArrayBuffer(parsed.privKey),
-      };
-    }
-    return undefined;
+    const key = String(keyId); 
+    const data = await SecureStorage.getRecordItem('preKeys', key);
+    return data ? data : undefined;
   }
 
   /**
    * Store a pre-key
    */
   async storePreKey(keyId: string | number, keyPair: KeyPairType): Promise<void> {
-    const serialized = {
-      pubKey: arrayBufferToBase64(keyPair.pubKey),
-      privKey: arrayBufferToBase64(keyPair.privKey),
-    };
-    await AsyncStorage.setItem(`preKey:${keyId}`, JSON.stringify(serialized));
+    const key = String(keyId); 
+    await SecureStorage.upsertRecordItem('preKeys', key, keyPair);
   }
 
   /**
    * Remove a pre-key
    */
   async removePreKey(keyId: string | number): Promise<void> {
-    await AsyncStorage.removeItem(`preKey:${keyId}`);
+    const key = String(keyId); 
+    await SecureStorage.removeRecordItem('preKeys', key);
   }
 
   // ==================== Signed Pre-Key Management ====================
@@ -140,33 +118,25 @@ export class SignalProtocolStore {
    * Load a signed pre-key
    */
   async loadSignedPreKey(keyId: string | number): Promise<KeyPairType | undefined> {
-    const data = await AsyncStorage.getItem(`signedPreKey:${keyId}`);
-    if (data) {
-      const parsed = JSON.parse(data);
-      return {
-        pubKey: base64ToArrayBuffer(parsed.pubKey),
-        privKey: base64ToArrayBuffer(parsed.privKey),
-      };
-    }
-    return undefined;
+    const key = String(keyId); 
+    const data = await SecureStorage.getRecordItem('signedPreKeys', key);
+    return data ? data : undefined;
   }
 
   /**
    * Store a signed pre-key
    */
   async storeSignedPreKey(keyId: string | number, keyPair: KeyPairType): Promise<void> {
-    const serialized = {
-      pubKey: arrayBufferToBase64(keyPair.pubKey),
-      privKey: arrayBufferToBase64(keyPair.privKey),
-    };
-    await AsyncStorage.setItem(`signedPreKey:${keyId}`, JSON.stringify(serialized));
+    const key = String(keyId); 
+    await SecureStorage.upsertRecordItem('signedPreKeys', key, keyPair);
   }
 
   /**
    * Remove a signed pre-key
    */
   async removeSignedPreKey(keyId: string | number): Promise<void> {
-    await AsyncStorage.removeItem(`signedPreKey:${keyId}`);
+    const key = String(keyId); 
+    await SecureStorage.removeRecordItem('signedPreKeys', key);
   }
 
   // ==================== Session Management ====================
@@ -175,31 +145,29 @@ export class SignalProtocolStore {
    * Load a session
    */
   async loadSession(identifier: string): Promise<string | undefined> {
-    const data = await AsyncStorage.getItem(`session:${identifier}`);
-    return data || undefined;
+    const data = await SecureStorage.getRecordItem('session', identifier);
+    return data ? data : undefined;
   }
 
   /**
    * Store a session
    */
   async storeSession(identifier: string, record: string): Promise<void> {
-    await AsyncStorage.setItem(`session:${identifier}`, record);
+    await SecureStorage.upsertRecordItem('session', identifier, record);
   }
 
   /**
    * Remove a session
    */
   async removeSession(identifier: string): Promise<void> {
-    await AsyncStorage.removeItem(`session:${identifier}`);
+    await SecureStorage.removeRecordItem('session', identifier);
   }
 
   /**
    * Remove all sessions for a recipient
    */
   async removeAllSessions(identifier: string): Promise<void> {
-    const keys = await AsyncStorage.getAllKeys();
-    const sessionKeys = keys.filter(key => key.startsWith(`session:${identifier}`));
-    await AsyncStorage.multiRemove(sessionKeys);
+    await SecureStorage.removeItem('session')
   }
 
   /**
@@ -217,16 +185,11 @@ export class SignalProtocolStore {
    * Clear all stored data (use with caution!)
    */
   async clearAll(): Promise<void> {
-    const keys = await AsyncStorage.getAllKeys();
-    const signalKeys = keys.filter(
-      key =>
-        key.startsWith('identityKey') ||
-        key.startsWith('preKey:') ||
-        key.startsWith('signedPreKey:') ||
-        key.startsWith('session:') ||
-        key === 'registrationId'
-    );
-    await AsyncStorage.multiRemove(signalKeys);
+    await SecureStorage.removeItem('identityKey')
+    await SecureStorage.removeItem('preKeys')
+    await SecureStorage.removeItem('recipientIdentityKeys')
+    await SecureStorage.removeItem('registrationId')
+    await SecureStorage.removeItem('session')
   }
 }
 

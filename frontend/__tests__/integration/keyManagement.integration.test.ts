@@ -169,12 +169,13 @@ describe('Key Management Integration', () => {
 
       // Verify key bundle fetch
       expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining(`/keys/${recipientId}`),
+        expect.stringContaining(`/keys/get-recipient-keybundle`),
         expect.objectContaining({
-          method: 'GET',
+          method: 'POST',
           headers: expect.objectContaining({
             'Cookie': sessionCookie
-          })
+          }),
+          body: JSON.stringify({ userId: recipientId })
         })
       );
 

@@ -83,9 +83,10 @@ class KeyService {
    * @param userId - The ID of the user whose keys you want to fetch
    */
   async getKeyBundle(userId: string): Promise<SignalKeyBundle> {
-    const response = await fetch(`${this.baseUrl}/keys/${userId}`, {
-      method: 'GET',
-      headers: this.getHeaders()
+    const response = await fetch(`${this.baseUrl}/keys/get-recipient-keybundle`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ userId })
     });
 
     const data = await this.handleResponse<{ success: boolean; keyBundle: SignalKeyBundle }>(response);
