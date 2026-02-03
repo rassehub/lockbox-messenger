@@ -53,7 +53,7 @@ const keyBundleCodec = {
 
 
 type EncodeOnly<Req> = {
-    encode: (value: Req) => string;
+    encode: (req: Req) => string;
 };
 
 type DecodeOnly<Res> = {
@@ -61,16 +61,16 @@ type DecodeOnly<Res> = {
 };
 
 type EncodeDecode<Req, Res> = {
-    encode: (value: Req) => string;
+    encode: (req: Req) => string;
     decode: (raw: string) => Res;
 };
 
 export type CodecFor<K extends keyof EndpointSchema> =
     EndpointSchema[K]["request"] extends undefined
-        ? EndpointSchema[K]["response"] extends undefined | { success: boolean }
+        ? EndpointSchema[K]["response"] extends undefined
             ? {} // nothing needed
             : DecodeOnly<EndpointSchema[K]["response"]>
-        : EndpointSchema[K]["response"] extends undefined | { success: boolean }
+        : EndpointSchema[K]["response"] extends undefined
             ? EncodeOnly<EndpointSchema[K]["request"]>
             : EncodeDecode<
                 EndpointSchema[K]["request"],
@@ -105,23 +105,23 @@ export const apiCodecs: EndpointCodecs = {
         }
     },
     uploadKeyBundle: {
-        encode: (value: { keyBundle: KeyBundle }): string =>
-            keyBundleCodec.encode(value),
+        encode: (req: { keyBundle: KeyBundle }): string =>
+            keyBundleCodec.encode(req),
     },
     rotateSignedPreKey: {
-        encode: (value: { newSignedPreKey: SignedPublicPreKeyType }): string =>
+        encode: (req: { newSignedPreKey: SignedPublicPreKeyType }): string =>
             JSON.stringify({
                 signedPreKey: {
-                    keyId: value.newSignedPreKey.keyId,
-                    publicKey: arrayBufferToBase64(value.newSignedPreKey.publicKey),
-                    signature: arrayBufferToBase64(value.newSignedPreKey.signature),
+                    keyId: req.newSignedPreKey.keyId,
+                    publicKey: arrayBufferToBase64(req.newSignedPreKey.publicKey),
+                    signature: arrayBufferToBase64(req.newSignedPreKey.signature),
                 }
             })
     },
     addPreKeys: {
-        encode: (value: { preKeys: PreKey[] }): string =>
+        encode: (req: { preKeys: PreKey[] }): string =>
             JSON.stringify({
-                preKeys: value.preKeys.map((preKey) => ({
+                preKeys: req.preKeys.map((preKey) => ({
                     keyId: preKey.keyId,
                     publicKey: arrayBufferToBase64(preKey.publicKey),
                 })),
@@ -153,9 +153,9 @@ export const apiCodecs: EndpointCodecs = {
         },
     },
     fetchRecipientKeyBundle: {
-        encode: (value: { recipientId: string }): string =>
+        encode: (req: { recipientId: string }): string =>
             JSON.stringify({
-                recipientId: value.recipientId
+                recipientId: req.recipientId
             }),
         decode: (raw: string): { keyBundle: KeyBundle } => {
             return { keyBundle: keyBundleCodec.decode(raw)}

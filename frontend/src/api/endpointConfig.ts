@@ -21,18 +21,14 @@ export const endpointConfig = {
       phoneNumber: string;
       password: string;
     },
-    response: {} as {
-      success: boolean;
-    },
+    response: undefined,
   },
 
   logout: {
     url: "/api/logout",
     method: "DELETE",
     request: undefined,
-    response: {} as {
-      success: boolean;
-    },
+    response: undefined,
   },
 
   registerUser: {
@@ -43,9 +39,7 @@ export const endpointConfig = {
       phoneNumber: string;
       password: string;
     },
-    response: {} as {
-      success: boolean;
-    },
+    response: undefined,
   },
 
   fetchCurrentUser: {
@@ -64,9 +58,7 @@ export const endpointConfig = {
     request: {} as {
       keyBundle: KeyBundle;
     },
-    response: {} as {
-      success: boolean;
-    },
+    response: undefined,
   },
 
   rotateSignedPreKey: {
@@ -75,9 +67,7 @@ export const endpointConfig = {
     request: {} as {
       newSignedPreKey: SignedPublicPreKeyType
     },
-    response: {} as {
-      success: boolean;
-    },
+    response: undefined,
   },
 
   addPreKeys: {

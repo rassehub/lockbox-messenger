@@ -16,7 +16,7 @@ class ApiClient {
   };
 
   // For endpoints WITH data (request is NOT void)
-  send<T extends keyof EndpointSchema>(
+  makeRequest<T extends keyof EndpointSchema>(
     endpoint: T,
     ...[data]: EndpointSchema[T]['request'] extends undefined
       ? [] // No parameter when request is void
@@ -31,15 +31,17 @@ class ApiClient {
 
     if ('encode' in (codec as object)) {
       encoded = (codec as HasEncode<typeof codec>).encode(data);
-      const response = this.makeCall(url, method, encoded);
+      const response = this.sendRequest(url, method, encoded);
       if ('decode' in (codec as object)) {
         const decoded = (codec as HasDecode<typeof codec>).decode(response)
+        return decoded
       }
     }
     else {
-      const response = this.makeCall(url, method, "");
+      const response = this.sendRequest(url, method, "");
       if ('decode' in (codec as object)) {
         const decoded = (codec as HasDecode<typeof codec>).decode(response)
+        return decoded
       }
     }
 
@@ -69,7 +71,7 @@ class ApiClient {
     this.sessionCookie = cookie
   }
 
-  async makeCall(endpoint: string, apiMethod: string, data: string)
+  private async sendRequest(endpoint: string, apiMethod: string, data: string)
     : Promise<Response | undefined> {
     const response = await fetch(`${this.baseURL}${endpoint}`, {
       method: apiMethod,
