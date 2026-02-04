@@ -15,7 +15,8 @@ export class KeyManager {
 
   constructor(userId: string) {
     this.userId = userId;
-    this.signalManager = SignalProtocolManager.getInstance();
+    const rand = [...crypto.getRandomValues(new Uint8Array(8))].map(b => (b % 36).toString(36)).join('')
+    this.signalManager = SignalProtocolManager.createTestInstance(rand);
   }
 
   /**

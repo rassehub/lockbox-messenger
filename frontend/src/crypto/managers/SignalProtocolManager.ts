@@ -11,15 +11,19 @@ import type { UserIdentity, KeyBundle, EncryptedMessage } from '../types';
 
 export class SignalProtocolManager {
   private static instance: SignalProtocolManager;
-  private store = SignalProtocolStore;
+  private testinstance: string
+  private store : SignalProtocolStore
   private initialized = false;
 
   // Allow direct instantiation for testing
-  constructor(private useSharedStore = true) {}
+  constructor(private useSharedStore = true, instance: string) {
+    this.testinstance = instance
+    this.store = new SignalProtocolStore(this.testinstance);
+  }
 
-  public static getInstance(): SignalProtocolManager {
+  public static getInstance(instance: string): SignalProtocolManager {
     if (!SignalProtocolManager.instance) {
-      SignalProtocolManager.instance = new SignalProtocolManager(true);
+      SignalProtocolManager.instance = new SignalProtocolManager(true, instance);
     }
     return SignalProtocolManager.instance;
   }
@@ -28,8 +32,8 @@ export class SignalProtocolManager {
    * Create a new instance for testing purposes
    * This bypasses the singleton pattern
    */
-  public static createTestInstance(): SignalProtocolManager {
-    return new SignalProtocolManager(false);
+  public static createTestInstance(instance: string): SignalProtocolManager {
+    return new SignalProtocolManager(false, instance);
   }
   
   /**
@@ -153,4 +157,4 @@ export class SignalProtocolManager {
   }
 }
 
-export default SignalProtocolManager.getInstance();
+export default SignalProtocolManager;

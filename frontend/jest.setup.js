@@ -53,6 +53,6 @@ jest.mock('react-native-keychain', () => ({
 }));
 
 // Clear before each test
-beforeEach(() => {
+beforeAll(() => {
   mockStore.clear();
 });

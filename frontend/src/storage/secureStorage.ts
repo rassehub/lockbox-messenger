@@ -5,8 +5,7 @@ import {
     KeyPairType,
 } from '@privacyresearch/libsignal-protocol-typescript';
 
-const APP_NAME = 'com.lockbock';
-const USERNAME = 'lockbox-item'
+
 
 type Key = keyof SecureStorageSchema;
 
@@ -20,86 +19,92 @@ type RecordValueType<K extends RecordKeys> =
     K extends 'session' ? string :
     never;
 
-// Type guard to check if a key is a record key
-function isRecordKey(key: Key): key is RecordKeys {
-    return ['preKeys', 'signedPreKeys', 'recipientIdentityKeys'].includes(key as string);
-}
+export class SecureStorage {
+    private APP_NAME = 'com.lockbock';
+    private USERNAME = 'lockbox-item'
+    private instance : string
+    constructor(instance: string) {
+        this.instance = instance  
+    }
+    // Type guard to check if a key is a record key
+    isRecordKey(key: Key): key is RecordKeys {
+        return ['preKeys', 'signedPreKeys', 'recipientIdentityKeys'].includes(key as string);
+    }
 
-function service(key: string) {
-    return `${APP_NAME}.${key}`;
-}
+    service(key: string) {
+        return `${this.APP_NAME}.${this.instance}.${key}`;
+    }
 
-async function setItem<K extends Key>(
-    key: K,
-    value: SecureStorageSchema[K]
-) {
-    let encoded: string;
+    async setItem<K extends Key>(
+        key: K,
+        value: SecureStorageSchema[K]
+    ) {
+        let encoded: string;
 
-    encoded = codecs[key].encode(value);
+        encoded = codecs[key].encode(value);
+        //if(key !== "preKeys")
+        //    console.log(`saving: ${this.APP_NAME}.${this.instance}.${key}`)
+        await Keychain.setGenericPassword(
+            this.USERNAME,
+            encoded,
+            { service: this.service(key) }
+        );
+    }
 
-    await Keychain.setGenericPassword(
-        USERNAME,
-        encoded,
-        { service: service(key) }
-    );
-}
+    async getItem<K extends Key>(
+        key: K
+    ): Promise<SecureStorageSchema[K] | undefined> {
+        //if(key !== "preKeys")
+        //    console.log(`loading: ${this.APP_NAME}.${this.instance}.${key}`)
+        const item = await Keychain.getGenericPassword({
+            service: this.service(key),
+        });
 
-async function getItem<K extends Key>(
-    key: K
-): Promise<SecureStorageSchema[K] | undefined> {
+        if (!item) return undefined;
 
-    const item = await Keychain.getGenericPassword({
-        service: service(key),
-    });
+        return codecs[key].decode(item.password) as SecureStorageSchema[K];
+    }
 
-    if (!item) return undefined;
+    async removeItem<K extends Key>(key: K) {
+        await Keychain.resetGenericPassword({
+            service: this.service(key),
+        });
+    }
 
-    return codecs[key].decode(item.password) as SecureStorageSchema[K];
-}
+    async upsertRecordItem<K extends RecordKeys,>(
+        key: K,
+        id: string,
+        value: RecordValueType<K>
+    ) {
+        const current = await this.getItem(key);
+        const record = current ?? {} as Record<string, RecordValueType<K>>;
+        record[id] = value;
+        await this.setItem(key, record as SecureStorageSchema[K]);
+    }
 
-async function removeItem<K extends Key>(key: K) {
-    await Keychain.resetGenericPassword({
-        service: service(key),
-    });
-}
+    async getRecordItem<K extends RecordKeys>(
+        key: K,
+        id: string
+    ): Promise<RecordValueType<K> | undefined> {
+        const record = await this.getItem(key) as Record<string, RecordValueType<K>> | undefined;
+        return record?.[id];
+    }
 
-async function upsertRecordItem<K extends RecordKeys,>(
-    key: K,
-    id: string,
-    value: RecordValueType<K>
-) {
-    const current = await getItem(key);
-    const record = current ?? {} as Record<string, RecordValueType<K>>;
-    record[id] = value;
-    await setItem(key, record as SecureStorageSchema[K]);
-}
+    async getFullRecord<K extends RecordKeys>(
+        key: K
+    ): Promise<Record<string, RecordValueType<K>> | undefined> {
+        return await this.getItem(key) as Record<string, RecordValueType<K>> | undefined;
+    };
 
-async function getRecordItem<K extends RecordKeys>(
-    key: K,
-    id: string
-): Promise<RecordValueType<K> | undefined> {
-    const record = await getItem(key) as Record<string, RecordValueType<K>> | undefined;
-    return record?.[id];
-}
+    async removeRecordItem<K extends RecordKeys>(
+        key: K,
+        id: string
+    ) {
+        const record =
+            (await this.getItem(key)) ??
+            ({} as Record<string, RecordValueType<K>>);
+        delete record[id];
+        await this.setItem(key, record as SecureStorageSchema[K]);
+    }
 
-async function getFullRecord<K extends RecordKeys>(
-    key: K
-): Promise<Record<string, RecordValueType<K>> | undefined> {
-    return await getItem(key) as Record<string, RecordValueType<K>> | undefined;
-};
-
-export async function removeRecordItem<K extends RecordKeys>(
-    key: K,
-    id: string
-) {
-    const record =
-        (await getItem(key)) ??
-        ({} as Record<string, RecordValueType<K>>);
-    delete record[id];
-    await setItem(key, record as SecureStorageSchema[K]);
-}
-
-
-export const SecureStorage = {
-    getItem, setItem, removeItem, upsertRecordItem, getRecordItem, getFullRecord, removeRecordItem
 }
