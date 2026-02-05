@@ -21,7 +21,9 @@ export const endpointConfig = {
       phoneNumber: string;
       password: string;
     },
-    response: undefined,
+    response: {} as {
+      userId: string;
+    },
   },
 
   logout: {
@@ -39,7 +41,9 @@ export const endpointConfig = {
       phoneNumber: string;
       password: string;
     },
-    response: undefined,
+    response: {} as {
+      userId: string;
+    },
   },
 
   fetchCurrentUser: {

@@ -10,22 +10,24 @@ import {
   KeyPairType,
   PreKeyPairType
 } from '@privacyresearch/libsignal-protocol-typescript';
-import { Key } from 'react';
+import { encryptionCodecs } from 'src/crypto/storage/SignalProtcolStorage.codecs';
+import { EncryptionStorageSchema } from 'src/crypto/storage/SignalProtocolStorage.schema';
 
 export class SignalProtocolStore {
   private static instance: SignalProtocolStore;
-  private storage: SecureStorage
-  constructor(secureStorage: SecureStorage) {
-    this.storage = secureStorage;
+  private storage 
 
-   }
+  constructor(userId: string) {
+    this.storage = new SecureStorage<EncryptionStorageSchema, typeof encryptionCodecs>(userId, encryptionCodecs);
+  }
   
-  public static getInstance(secureStorage: SecureStorage): SignalProtocolStore {
+  public static getInstance(userId: string): SignalProtocolStore {
     if (!SignalProtocolStore.instance) {
-      SignalProtocolStore.instance = new SignalProtocolStore(secureStorage);
+      SignalProtocolStore.instance = new SignalProtocolStore(userId);
     }
     return SignalProtocolStore.instance;
   }
+  
   private arrayBuffersEqual(buf1: ArrayBuffer, buf2: ArrayBuffer): boolean {
     if (buf1.byteLength !== buf2.byteLength) return false;
 

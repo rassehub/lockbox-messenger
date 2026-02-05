@@ -1,81 +1,154 @@
+import { ApiClient } from "src/api/apiClient";
+import { AuthStorage } from "./authStorage";
+import { createApiFacade } from "src/utils/createApiFacade";
+
+
+type SessionCookies = {
+  sessionToken: string;
+  refreshToken: string;
+}
+
+type AuthContext = {
+  headers?: Record<string, string>;
+  cookies?: string;
+}
+
 class AuthService {
-  private sessionCookie: string | null = null;
-  
+  private sessionToken?: string;
+  private refreshToken?: string;
+  private userId?: string;
 
-  private async handleResponse(response: Response) {
-    const data = await response.json();
-    
-    if (!response.ok) {
-      throw new Error(data.error || `Request failed with status ${response.status}`);
-    }
-    
-    return data;
+  private authStatus: boolean = false;
+
+  private store: AuthStorage;
+  private api: ReturnType<typeof createApiFacade>;
+
+  constructor(api: ApiClient) {
+    this.store = new AuthStorage;
+    api._bindAuth(this);
+    this.api = createApiFacade(
+      ["registerUser", "login", "logout", "fetchCurrentUser"] as const,
+      api
+    );
   }
 
-  private extractCookie(response: Response): string | null {
-    const setCookie = response.headers.get('set-cookie');
-    if (setCookie) {
-      this.sessionCookie = setCookie.split(';')[0];
-      return this.sessionCookie;
-    }
-    return null;
+  private apiAdapter!: {
+    setAuthContext(ctx?: AuthContext): void;
+  };
+
+  _attachApi(adapter: { setAuthContext(ctx?: AuthContext): void }) {
+    this.apiAdapter = adapter;
   }
 
-  private getHeaders(): Record<string, string> {
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (this.sessionCookie) {
-      headers['Cookie'] = this.sessionCookie;
+  private applySessionToApi(session: SessionCookies) {
+    this.apiAdapter.setAuthContext({
+      headers: {
+        'Content-Type': 'application/json',
+        'Cookie': session.sessionToken,
+      },
+      cookies: session.sessionToken,
+    });
+  };
+
+  private removeSessionFromApi() {
+    this.apiAdapter.setAuthContext({
+      headers: undefined,
+      cookies: undefined,
+    });
+  }
+
+  private async setNewAuthSession(userId: string, session: string, refresh: string) {
+    await this.store.storeAuthSession(session, refresh, userId);
+    await this.store.setLatestUser(userId);
+
+    this.userId = userId;
+    this.sessionToken = session;
+    this.refreshToken = refresh;
+  }
+
+  async isAuthenticated() {
+    return { status: this.authStatus, userId: this.userId }
+  }
+
+  async loadExistingSession(): Promise<string | undefined> {
+    const session = await this.store.loadExistingSession();
+    if(session) {
+      this.userId = session.userId;
+      this.sessionToken = session.sessionToken;
+      this.refreshToken = session.refreshToken;
+
+      this.applySessionToApi({
+        sessionToken: session.sessionToken,
+        refreshToken: session.refreshToken
+      })
+
+      return session.userId;
     }
-    return headers;
+    return undefined;
   }
 
   async register(username: string, phoneNumber: string, password: string) {
-    const response = await fetch('http://127.0.0.1:3000/api/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, phoneNumber, password })
-    });
+    let setCookie;
+    let userId;
+
+    const res = await this.api.request("registerUser", {
+      username: username,
+      phoneNumber: phoneNumber,
+      password: password
+    })
     
-    const cookie = this.extractCookie(response);
-    const data = await this.handleResponse(response);
+    if (!res.rawResponse.ok) {
+      throw new Error(` ${res.rawResponse.statusText}`);
+    }
     
-    return { ...data, sessionCookie: cookie }; // Return cookie
+    setCookie = res.headers.get("set-cookie");
+    userId = res.data.userId;
+    
+    if (setCookie && userId) {
+      await this.setNewAuthSession(userId, setCookie,  "");
+      console.log(`SUCCESS: register user ${userId}`);
+      return userId;
+    }
+    else
+      throw new Error("FAIL: can't initialize session");
   }
 
-  async login( phoneNumber: string, password: string) {
-    const response = await fetch('http://127.0.0.1:3000/api/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phoneNumber, password })
-    });
+  async login(phoneNumber: string, password: string) {
+    let setCookie;
+    let userId;
     
-    const cookie = this.extractCookie(response);
-    const data = await this.handleResponse(response);
-    
-    return { ...data, sessionCookie: cookie }; // Return cookie
-  }
+    const res = await this.api.request("login", { phoneNumber, password })
 
-  getSessionCookie(): string | null {
-    return this.sessionCookie;
+    if (!res.rawResponse.ok) {
+      throw new Error(`FAIL: login failed with error: ${res.rawResponse.statusText}`);
+    }
+    
+    setCookie = res.headers.get("set-cookie");
+    userId = res.data.userId;
+
+    if (setCookie && userId) {
+      await this.setNewAuthSession(userId, setCookie,  "");
+      console.log(`SUCCESS: login user ${userId}`);
+      return userId;
+    }
+    else
+      throw new Error("FAIL: can't initialize session");
   }
 
   async logout() {
-    const response = await fetch('http://127.0.0.1:3000/api/logout', {
-      method: 'DELETE',
-      headers: this.getHeaders()
-    });
-
-    this.sessionCookie = null; // Clear session
-    return this.handleResponse(response);
+    const res = await this.api.request("logout");
+    if(res.rawResponse.ok && this.userId) {
+      this.store.removeAuthSession(this.userId);
+      this.sessionToken = undefined; // Clear session
+      this.refreshToken = undefined;
+      this.userId = undefined;
+    }
+    this.removeSessionFromApi();
   }
 
   async getMe() {
-    const response = await fetch('http://127.0.0.1:3000/api/me', {
-      method: 'GET',
-      headers: this.getHeaders()
-    });
-
-    return this.handleResponse(response);
+    const userId = await this.api.request("fetchCurrentUser");
+    return userId
   }
 }
 

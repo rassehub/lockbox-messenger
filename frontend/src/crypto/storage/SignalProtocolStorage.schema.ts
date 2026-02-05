@@ -16,11 +16,7 @@ export type RecordEntries = {
 type ScalarEntries = {
     identityKey: KeyPairType;
     registrationId: number;
-    
-    //Types for authentication:
-    sessionToken: string;
-    refreshToken: string;
     signedPreKeyId: number;
 }
 
-export type SecureStorageSchema =  RecordEntries & ScalarEntries
+export type EncryptionStorageSchema =  RecordEntries & ScalarEntries

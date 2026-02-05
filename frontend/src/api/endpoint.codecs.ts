@@ -3,7 +3,7 @@ import {
     KeyPairType,
 } from '@privacyresearch/libsignal-protocol-typescript';
 
-import type { EndpointSchema } from "./endpointConfig";
+import type { EndpointSchema } from "./endpoint.config";
 import { SignedPublicPreKeyType, PreKeyType } from "@privacyresearch/libsignal-protocol-typescript";
 
 type KeyBundle = {
@@ -88,6 +88,7 @@ export const apiCodecs: EndpointCodecs = {
                 phoneNumber: req.phoneNumber,
                 password: req.password,
             }),
+        decode: (res: string) => JSON.parse(res),
     },
     logout: {},
     registerUser: {
@@ -97,6 +98,7 @@ export const apiCodecs: EndpointCodecs = {
                 phoneNumber: req.phoneNumber,
                 password: req.password,
             }),
+        decode: (res: string) => JSON.parse(res),
     },
     fetchCurrentUser: {
         decode: (raw: string): { userId: string } => {

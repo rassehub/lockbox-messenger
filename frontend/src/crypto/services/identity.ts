@@ -17,6 +17,8 @@ import {
 import type { UserIdentity, KeyBundle } from '../types';
 import type { SignedPublicPreKeyType, PreKeyType, PreKeyPairType, KeyPairType } from '@privacyresearch/libsignal-protocol-typescript';
 import { ApiClient } from 'src/api/apiClient';
+import { createApiFacade } from 'src/utils/createApiFacade';
+
 
 /**
  * Create a new Signal Protocol identity for the user
@@ -43,7 +45,7 @@ export const createUserIdentity = async (userId: string, store: SignalProtocolSt
  * Generate a key bundle to be uploaded to the server
  * This is what other users will fetch to establish a session with you
  */
-export const generateKeyBundle = async (store: SignalProtocolStore, api: ApiClient): Promise<KeyBundle> => {
+export const generateKeyBundle = async (store: SignalProtocolStore, api: ReturnType<typeof createApiFacade>): Promise<KeyBundle> => {
   const registrationId = await store.getLocalRegistrationId();
   const identityKeyPair = await store.getIdentityKeyPair();
 
@@ -63,7 +65,7 @@ export const generateKeyBundle = async (store: SignalProtocolStore, api: ApiClie
   await store.replacePreKeys(preKeys);
   await store.storeSignedPreKey(signedPreKeyId, signedPreKey.keyPair);
 
-  await api.makeRequest("uploadKeyBundle", {
+  await api.request("uploadKeyBundle", {
     keyBundle: {
       registrationId,
       identityPubKey: identityKeyPair.pubKey,

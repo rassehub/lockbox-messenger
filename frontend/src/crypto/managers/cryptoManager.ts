@@ -1,28 +1,31 @@
 import SignalProtocolStore from '../storage/SignalProtocolStorage';
 import { ApiClient } from '../../api/apiClient';
+import { createApiFacade } from 'src/utils/createApiFacade';
 import { checkAndReplenishKeys, rotateSignedPreKey, getUserKeysForSession } from '../services/keys';
 import { createUserIdentity, generateKeyBundle, hasUserIdentity, getUserIdentity, } from '../services/identity';
 import { createSession, hasSession, deleteSession, deleteAllSessions } from '../services/session';
 import { encryptMessage, decryptMessage } from '../services/crypto';
 
-import { SignalKeyBundle, KeyBundle, UserIdentity, EncryptedMessage } from '../types';
-import { generatePreKeys } from '../utils/keys';
-import { SecureStorage } from 'src/storage/secureStorage';
-
+import { KeyBundle, UserIdentity } from '../types';
 
 export class CryptoManager {
     private userId: string;
-    private secureStorage: SecureStorage;
     private store: SignalProtocolStore;
-    private api: ApiClient;
+    private api: ReturnType<typeof createApiFacade>;
 
     private initialized = false;
 
-    constructor(userId: string) {
+    constructor(userId: string, api: ApiClient) {
         this.userId = userId;
-        this.secureStorage = new SecureStorage(userId);
-        this.store = new SignalProtocolStore(this.secureStorage);
-        this.api = new ApiClient(this.secureStorage);
+        this.store = new SignalProtocolStore(userId);
+        this.api = createApiFacade([
+            "addPreKeys",
+            "checkPreKeyAvailability",
+            "fetchMyKeyStatistics",
+            "fetchRecipientKeyBundle",
+            "rotateSignedPreKey",
+            "uploadKeyBundle"
+        ] as const, api);
     }
 
     async initializeNewUser(): Promise<void> {
@@ -68,7 +71,7 @@ export class CryptoManager {
             return await encryptMessage(recipientUserId, message, this.store)
 
         const recipientKeys = await getUserKeysForSession(recipientUserId, this.api);
-        await createSession(recipientUserId, recipientKeys.keyBundle, this.store);
+        await createSession(recipientUserId, recipientKeys.data.keyBundle, this.store);
 
         return await encryptMessage(recipientUserId, message, this.store);
     }

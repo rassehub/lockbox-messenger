@@ -1,5 +1,5 @@
-import { arrayBufferToBase64, base64ToArrayBuffer } from "../crypto/utils/bufferEncoding";
-import type { SecureStorageSchema } from "./schema";
+import { arrayBufferToBase64, base64ToArrayBuffer } from "../utils/bufferEncoding";
+import type { EncryptionStorageSchema } from "./SignalProtocolStorage.schema";
 import {
   KeyPairType,
 } from '@privacyresearch/libsignal-protocol-typescript';
@@ -103,10 +103,10 @@ const keyPairMapCodec = {
   },
 };
 
-export const codecs: {
-    [K in keyof SecureStorageSchema]: {
-        encode: (value: SecureStorageSchema[K]) => string;
-        decode: (raw: string) => SecureStorageSchema[K];
+export const encryptionCodecs: {
+    [K in keyof EncryptionStorageSchema]: {
+        encode: (value: EncryptionStorageSchema[K]) => string;
+        decode: (raw: string) => EncryptionStorageSchema[K];
     };
 } = {
     identityKey: keyPairCodec,
@@ -119,7 +119,4 @@ export const codecs: {
 
     session: stringMapCodec,
     registrationId: numberCodec,
-
-    sessionToken: stringCodec,
-    refreshToken: stringCodec,
 };
