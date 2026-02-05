@@ -20,6 +20,7 @@ type ScalarEntries = {
     //Types for authentication:
     sessionToken: string;
     refreshToken: string;
+    signedPreKeyId: number;
 }
 
 export type SecureStorageSchema =  RecordEntries & ScalarEntries

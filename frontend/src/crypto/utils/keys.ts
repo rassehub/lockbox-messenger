@@ -3,6 +3,7 @@
  */
 
 import { KeyHelper } from '@privacyresearch/libsignal-protocol-typescript';
+import type { SignedPublicPreKeyType, PreKeyType, PreKeyPairType, KeyPairType, SignedPreKeyPairType } from '@privacyresearch/libsignal-protocol-typescript';
 
 /**
  * Generate a unique key ID
@@ -40,6 +41,29 @@ export const generateSignedPreKey = async (identityKeyPair: any, keyId: number) 
 };
 
 /**
+ * strip privateKey from a pre-key
+ */
+export const preKeyToPublic = async (keyId: number, preKey: PreKeyPairType): Promise<PreKeyType> => {
+  return {
+    keyId: keyId,
+    publicKey: preKey.keyPair.pubKey
+  }
+};
+
+/**
+ * strip privateKey from a signed pre-key
+ */
+export const signedPreKeyToPublic = async (keyId: number, signedPreKey: SignedPreKeyPairType) : Promise<SignedPublicPreKeyType> => {
+   return {
+    keyId: keyId,
+    publicKey: signedPreKey.keyPair.pubKey,
+    signature: signedPreKey.signature
+  };
+  
+};
+
+
+/**
  * Generate multiple pre-keys at once
  */
 export const generatePreKeys = async (startId: number, count: number) => {
@@ -49,4 +73,18 @@ export const generatePreKeys = async (startId: number, count: number) => {
     preKeys.push(preKey);
   }
   return preKeys;
+};
+
+/**
+ * strip privateKey from multiple pre-keys at once
+ */
+export const preKeyArrayToPublic = (preKeys: PreKeyPairType[]) => {
+  const publicPreKeys: PreKeyType[] = [];
+    for (const preKey of preKeys) {
+      publicPreKeys.push({
+        keyId: preKey.keyId,
+        publicKey: preKey.keyPair.pubKey,
+      });
+    }
+  return publicPreKeys;
 };

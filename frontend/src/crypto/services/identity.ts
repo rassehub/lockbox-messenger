@@ -11,9 +11,12 @@ import {
   generateSignedPreKey,
   generateKeyId,
   generatePreKeys,
+  preKeyArrayToPublic,
+  signedPreKeyToPublic
 } from '../utils/keys';
 import type { UserIdentity, KeyBundle } from '../types';
-import type { SignedPublicPreKeyType, PreKeyType } from '@privacyresearch/libsignal-protocol-typescript';
+import type { SignedPublicPreKeyType, PreKeyType, PreKeyPairType, KeyPairType } from '@privacyresearch/libsignal-protocol-typescript';
+import { ApiClient } from 'src/api/apiClient';
 
 /**
  * Create a new Signal Protocol identity for the user
@@ -28,17 +31,6 @@ export const createUserIdentity = async (userId: string, store: SignalProtocolSt
   const identityKeyPair = await generateIdentityKeyPair();
   await store.storeIdentityKeyPair(identityKeyPair);
 
-  // Generate and store initial pre-keys (100 keys)
-  const preKeys = await generatePreKeys(1, 100);
-  for (const preKey of preKeys) {
-    await store.storePreKey(preKey.keyId, preKey.keyPair);
-  }
-
-  // Generate and store signed pre-key
-  const signedPreKeyId = generateKeyId();
-  const signedPreKey = await generateSignedPreKey(identityKeyPair, signedPreKeyId);
-  await store.storeSignedPreKey(signedPreKeyId, signedPreKey.keyPair);
-
   return {
     userId,
     registrationId,
@@ -46,11 +38,12 @@ export const createUserIdentity = async (userId: string, store: SignalProtocolSt
   };
 };
 
+
 /**
  * Generate a key bundle to be uploaded to the server
  * This is what other users will fetch to establish a session with you
  */
-export const generateKeyBundle = async (store: SignalProtocolStore): Promise<KeyBundle> => {
+export const generateKeyBundle = async (store: SignalProtocolStore, api: ApiClient): Promise<KeyBundle> => {
   const registrationId = await store.getLocalRegistrationId();
   const identityKeyPair = await store.getIdentityKeyPair();
 
@@ -58,33 +51,32 @@ export const generateKeyBundle = async (store: SignalProtocolStore): Promise<Key
     throw new Error('User identity not initialized. Call createUserIdentity first.');
   }
 
-  // Generate a new signed pre-key
   const signedPreKeyId = generateKeyId();
   const signedPreKey = await generateSignedPreKey(identityKeyPair, signedPreKeyId);
+
+  // Generate one-time pre-keys 
+  const preKeys = await generatePreKeys(generateKeyId(), 100);
+
+  const pubPK = preKeyArrayToPublic(preKeys);
+  const pubSPK = await signedPreKeyToPublic(signedPreKeyId, signedPreKey);
+
+  await store.replacePreKeys(preKeys);
   await store.storeSignedPreKey(signedPreKeyId, signedPreKey.keyPair);
 
-  // Create public version of signed pre-key
-  const publicSignedPreKey: SignedPublicPreKeyType = {
-    keyId: signedPreKeyId,
-    publicKey: signedPreKey.keyPair.pubKey,
-    signature: signedPreKey.signature,
-  };
-
-  // Generate one-time pre-keys (or use existing ones)
-  const preKeyId = generateKeyId();
-  const preKey = await generatePreKey(preKeyId);
-  await store.storePreKey(preKeyId, preKey.keyPair);
-
-  const publicPreKey: PreKeyType = {
-    keyId: preKey.keyId,
-    publicKey: preKey.keyPair.pubKey,
-  };
-
+  await api.makeRequest("uploadKeyBundle", {
+    keyBundle: {
+      registrationId,
+      identityPubKey: identityKeyPair.pubKey,
+      signedPreKey: pubSPK,
+      oneTimePreKeys: pubPK,
+    }
+  })
+  
   return {
     registrationId,
     identityPubKey: identityKeyPair.pubKey,
-    signedPreKey: publicSignedPreKey,
-    oneTimePreKeys: [publicPreKey],
+    signedPreKey: pubSPK,
+    oneTimePreKeys: pubPK,
   };
 };
 
@@ -121,11 +113,19 @@ export const getUserIdentity = async (store: SignalProtocolStore): Promise<UserI
  */
 export const regeneratePreKeys = async (
   store: SignalProtocolStore,
-  startId: number,
   count: number = 100
-): Promise<void> => {
-  const preKeys = await generatePreKeys(startId, count);
+): Promise<PreKeyType[]> => {
+  const keyId  = generateKeyId()
+  const preKeys = await generatePreKeys(keyId, count);
+  await store.replacePreKeys(preKeys);
+
+  const publicPreKeys: PreKeyType[] = [];
   for (const preKey of preKeys) {
-    await store.storePreKey(preKey.keyId, preKey.keyPair);
+    publicPreKeys.push({
+      keyId: preKey.keyId,
+      publicKey: preKey.keyPair.pubKey,
+    });
   }
+  return publicPreKeys
 };
+

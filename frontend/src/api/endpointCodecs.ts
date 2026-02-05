@@ -7,13 +7,13 @@ import type { EndpointSchema } from "./endpointConfig";
 import { SignedPublicPreKeyType, PreKeyType } from "@privacyresearch/libsignal-protocol-typescript";
 
 type KeyBundle = {
-    registrationId: string;
+    registrationId: number;
     identityPubKey: ArrayBuffer;
     signedPreKey: SignedPublicPreKeyType
     oneTimePreKeys: PreKeyType[]
 }
 type PreKey = {
-    keyId: string;
+    keyId: number;
     publicKey: ArrayBuffer;
 }
 
@@ -24,7 +24,7 @@ const keyBundleCodec = {
             registrationId: value.keyBundle.registrationId,
             identityPubKey: arrayBufferToBase64(value.keyBundle.identityPubKey),
             signedPreKey: {
-                keyId: value.keyBundle.signedPreKey.keyId,
+                keyId: String(value.keyBundle.signedPreKey.keyId),
                 publicKey: arrayBufferToBase64(value.keyBundle.signedPreKey.publicKey),
                 signature: arrayBufferToBase64(value.keyBundle.signedPreKey.signature)
             },
@@ -112,7 +112,7 @@ export const apiCodecs: EndpointCodecs = {
         encode: (req: { newSignedPreKey: SignedPublicPreKeyType }): string =>
             JSON.stringify({
                 signedPreKey: {
-                    keyId: req.newSignedPreKey.keyId,
+                    keyId: String(req.newSignedPreKey.keyId),
                     publicKey: arrayBufferToBase64(req.newSignedPreKey.publicKey),
                     signature: arrayBufferToBase64(req.newSignedPreKey.signature),
                 }
@@ -122,7 +122,7 @@ export const apiCodecs: EndpointCodecs = {
         encode: (req: { preKeys: PreKey[] }): string =>
             JSON.stringify({
                 preKeys: req.preKeys.map((preKey) => ({
-                    keyId: preKey.keyId,
+                    keyId: String(preKey.keyId),
                     publicKey: arrayBufferToBase64(preKey.publicKey),
                 })),
             }),

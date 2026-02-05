@@ -3,25 +3,26 @@
  * Handles persistent storage of keys, sessions, and identity information
  */
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { object } from 'yup';
 import { SecureStorage } from '../../storage/secureStorage';
-import { arrayBufferToBase64, base64ToArrayBuffer } from '../utils/bufferEncoding';
 import {
   SignalProtocolAddress,
   KeyPairType,
+  PreKeyPairType
 } from '@privacyresearch/libsignal-protocol-typescript';
+import { Key } from 'react';
 
 export class SignalProtocolStore {
   private static instance: SignalProtocolStore;
   private storage: SecureStorage
-  constructor(instance: string) {
-    this.storage = new SecureStorage(instance)
+  constructor(secureStorage: SecureStorage) {
+    this.storage = secureStorage;
 
    }
   
-  public static getInstance(instance: string): SignalProtocolStore {
+  public static getInstance(secureStorage: SecureStorage): SignalProtocolStore {
     if (!SignalProtocolStore.instance) {
-      SignalProtocolStore.instance = new SignalProtocolStore(instance);
+      SignalProtocolStore.instance = new SignalProtocolStore(secureStorage);
     }
     return SignalProtocolStore.instance;
   }
@@ -116,12 +117,32 @@ export class SignalProtocolStore {
     return data ? data : undefined;
   }
 
+  async loadAllPreKeys(): Promise<PreKeyPairType[] | undefined> {
+    const data = await this.storage.getFullRecord('preKeys');
+    if (data) {
+      const preKeyArray = Object.entries(data).map(([id, keyPair]) => ({
+        keyId: Number(id), // Convert string key to number
+        keyPair
+      }));
+      return preKeyArray
+    }
+    return undefined;
+  }
+
   /**
    * Store a pre-key
    */
   async storePreKey(keyId: string | number, keyPair: KeyPairType): Promise<void> {
     const key = String(keyId);
     await this.storage.upsertRecordItem('preKeys', key, keyPair);
+  }
+
+  async replacePreKeys(keyPairs: PreKeyPairType[]) {
+    const record: Record<string, KeyPairType> = {};
+    for (const item of keyPairs) {
+      record[item.keyId] = item.keyPair;
+    }
+    await this.storage.setItem("preKeys", record);
   }
 
   /**
@@ -149,6 +170,7 @@ export class SignalProtocolStore {
   async storeSignedPreKey(keyId: string | number, keyPair: KeyPairType): Promise<void> {
     const key = String(keyId);
     await this.storage.upsertRecordItem('signedPreKeys', key, keyPair);
+    await this.storeSignedPrekeyId(Number(keyId))
   }
 
   /**
@@ -159,6 +181,14 @@ export class SignalProtocolStore {
     await this.storage.removeRecordItem('signedPreKeys', key);
   }
 
+  async storeSignedPrekeyId(keyId: number): Promise<void> {
+    await this.storage.setItem("signedPreKeyId", keyId)
+  }
+
+  async loadSignedPreKeyId() : Promise<number | undefined> {
+    const data = await this.storage.getItem("signedPreKeyId")
+    return data ? data : undefined
+  }
   // ==================== Session Management ====================
 
   /**
@@ -172,8 +202,8 @@ export class SignalProtocolStore {
   /**
    * Store a session
    */
-  async storeSession(identifier: string, record: string): Promise<void> {
-    await this.storage.upsertRecordItem('session', identifier, record);
+  async storeSession(identifier: string, session: string): Promise<void> {
+    await this.storage.upsertRecordItem('session', identifier, session);
   }
 
   /**

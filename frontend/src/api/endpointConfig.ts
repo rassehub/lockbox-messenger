@@ -1,14 +1,14 @@
 import { SignedPublicPreKeyType, PreKeyType } from "@privacyresearch/libsignal-protocol-typescript";
 type PreKey = {
-  keyId: string;
+  keyId: number;
   publicKey: ArrayBuffer;
 }
 
 type KeyBundle = {
-  registrationId: string;
+  registrationId: number;
   identityPubKey: ArrayBuffer;
-  signedPreKey: SignedPublicPreKeyType
-  oneTimePreKeys: PreKeyType[]
+  signedPreKey: SignedPublicPreKeyType;
+  oneTimePreKeys: PreKeyType[];
 }
 
 

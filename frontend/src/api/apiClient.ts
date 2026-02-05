@@ -1,18 +1,20 @@
 import type { EndpointSchema } from "./endpointConfig";
 import { endpointConfig } from "./endpointConfig";
 import { CodecFor } from "./endpointCodecs";
+import { SecureStorage } from "src/storage/secureStorage";
 
 type HasEncode<T> = T extends { encode: any } ? T : never;
 type HasDecode<T> = T extends { decode: any } ? T : never;
 
-class ApiClient {
+export class ApiClient {
 
-  private sessionCookie: string;
+  private sessionCookie: string = "";
   private baseURL: string = "localhost:3000"
   private codecs = new Map<keyof EndpointSchema, any>();
-
-  constructor() {
-    this.sessionCookie = "e"
+  private store: SecureStorage
+  
+  constructor(store: SecureStorage) {
+    this.store = store
   };
 
   // For endpoints WITH data (request is NOT void)
@@ -48,12 +50,16 @@ class ApiClient {
     return Promise.resolve({} as EndpointSchema[T]['response']);
   }
 
-  private getHeaders(): Record<string, string> {
+  private async getHeaders(): Promise<Record<string, string> |  undefined> {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (this.sessionCookie) {
+    if (this.sessionCookie) 
       headers['Cookie'] = `${this.sessionCookie}`;
+    else {
+      const cookie = await this.store.getItem("sessionToken");
+      if(cookie)
+        headers['Cookie'] = cookie;
     }
-    return headers;
+    return headers ? headers : undefined
   }
 
   private getCodec<T extends keyof EndpointSchema>(endpoint: T): CodecFor<T> {
@@ -67,15 +73,22 @@ class ApiClient {
     return codec as CodecFor<T>;
   }
 
-  setSessionCookie(cookie: string) {
+  private async setNewSessionCookie(cookie: string) {
     this.sessionCookie = cookie
+    await this.store.setItem("sessionToken", cookie)
+  }
+
+  private async loadSessionCookie() {
+    const cookie = await this.store.getItem("sessionToken");
+    if(cookie)
+      this.sessionCookie = cookie
   }
 
   private async sendRequest(endpoint: string, apiMethod: string, data: string)
     : Promise<Response | undefined> {
     const response = await fetch(`${this.baseURL}${endpoint}`, {
       method: apiMethod,
-      headers: this.getHeaders(),
+      headers: await this.getHeaders(),
       body: data,
       credentials: "include"
     });

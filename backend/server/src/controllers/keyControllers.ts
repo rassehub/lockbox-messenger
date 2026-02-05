@@ -37,7 +37,7 @@ export const uploadKeyBundle = async (req: Request, res: Response): Promise<void
       res.status(400).json({ error: "Invalid key bundle format" });
       return;
     }
-
+    await getKeyService().cleanupOldPreKeys(0);
     await getKeyService().uploadKeyBundle(userId, keyBundle);
 
     res.json({

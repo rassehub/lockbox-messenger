@@ -115,6 +115,7 @@ export const codecs: {
 
     preKeys: keyPairMapCodec,
     signedPreKeys: keyPairMapCodec,
+    signedPreKeyId: numberCodec,
 
     session: stringMapCodec,
     registrationId: numberCodec,
