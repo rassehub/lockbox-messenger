@@ -1,4 +1,4 @@
-import { SecureStorage } from "src/storage/secureStorage";
+import { SecureStorage } from "../storage/secureStorage";
 import AuthStorageSchema from './authStorage.schema'
 import { authCodecs } from "./authStorage.codecs";
 

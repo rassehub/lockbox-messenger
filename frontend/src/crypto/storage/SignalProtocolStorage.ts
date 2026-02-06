@@ -3,15 +3,14 @@
  * Handles persistent storage of keys, sessions, and identity information
  */
 
-import { object } from 'yup';
 import { SecureStorage } from '../../storage/secureStorage';
 import {
   SignalProtocolAddress,
   KeyPairType,
   PreKeyPairType
 } from '@privacyresearch/libsignal-protocol-typescript';
-import { encryptionCodecs } from 'src/crypto/storage/SignalProtcolStorage.codecs';
-import { EncryptionStorageSchema } from 'src/crypto/storage/SignalProtocolStorage.schema';
+import { encryptionCodecs } from './SignalProtcolStorage.codecs';
+import { EncryptionStorageSchema } from './SignalProtocolStorage.schema';
 
 export class SignalProtocolStore {
   private static instance: SignalProtocolStore;

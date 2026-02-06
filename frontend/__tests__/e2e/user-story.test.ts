@@ -1,4 +1,3 @@
-import { use } from "react";
 import { AuthService } from "../../src/auth/auth";
 import { KeyManager } from "../../src/crypto";
 import { SignalProtocolManager } from "../../src/crypto/managers/SignalProtocolManager";

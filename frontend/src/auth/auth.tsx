@@ -1,6 +1,6 @@
 import { ApiClient } from "src/api/apiClient";
 import { AuthStorage } from "./authStorage";
-import { createApiFacade } from "src/utils/createApiFacade";
+import { createApiFacade } from "../utils/createApiFacade";
 
 
 type SessionCookies = {

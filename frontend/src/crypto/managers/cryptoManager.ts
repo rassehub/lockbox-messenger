@@ -1,6 +1,6 @@
 import SignalProtocolStore from '../storage/SignalProtocolStorage';
 import { ApiClient } from '../../api/apiClient';
-import { createApiFacade } from 'src/utils/createApiFacade';
+import { createApiFacade } from '../../utils/createApiFacade';
 import { checkAndReplenishKeys, rotateSignedPreKey, getUserKeysForSession } from '../services/keys';
 import { createUserIdentity, generateKeyBundle, hasUserIdentity, getUserIdentity, } from '../services/identity';
 import { createSession, hasSession, deleteSession, deleteAllSessions } from '../services/session';

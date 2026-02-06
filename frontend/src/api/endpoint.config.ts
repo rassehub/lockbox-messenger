@@ -92,7 +92,7 @@ export const endpointConfig = {
     response: {} as {
       needsMorePreKeys: boolean;
       availableCount: number;
-      threshold: string;
+      threshold: number;
     },
   },
 
