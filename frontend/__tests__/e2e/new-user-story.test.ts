@@ -92,7 +92,7 @@ describe('Authentication related functions and api-calls', () => {
 describe('WebSocket and encryption:', () => {
     let encryptedMessage: { type: number; body: string };
     const aliceMessage = 'Hello Bob!';
-
+    const bobMessage = 'Hello Alice!';
     it('should connect alice to websocket', async () => {
         alice.ws.connect();
         await expect(waitForOpen(alice.ws)).resolves.toBeUndefined();
@@ -114,14 +114,15 @@ describe('WebSocket and encryption:', () => {
     });
     it('should encrypt message', async () => {
 
-        if(alice.crypto) {
+        if (alice.crypto) {
             encryptedMessage = await alice.crypto.encryptMessage(bob.userId, aliceMessage);
-        
+
             expect(encryptedMessage).toBeDefined();
             expect(encryptedMessage.type).toBeDefined();
+            expect(encryptedMessage.type).toBe(3);
             expect(encryptedMessage.body).toBeDefined();
             expect(typeof encryptedMessage.body).toBe('string');
-            
+
             // Encrypted message should be different from original
             expect(encryptedMessage.body).not.toBe(aliceMessage);
         }
@@ -132,7 +133,7 @@ describe('WebSocket and encryption:', () => {
 
         bob.ws.connect();
         await expect(waitForOpen(bob.ws)).resolves.toBeUndefined();
-        
+
         const messagePromise = waitForMessage(bob.ws);
 
         alice.ws.sendMessage(bob.userId, encryptedMessage)
@@ -145,16 +146,44 @@ describe('WebSocket and encryption:', () => {
         expect(received).toMatchObject({
             type: 'MESSAGE',
             sender: alice.userId,
-            ciphertext : expectedMessage
+            ciphertext: expectedMessage
         });
+        expect(received.ciphertext.type).toBe(3);
 
         const decryptedMessage = await bob.crypto!.decryptMessage(received.sender, received.ciphertext);
-      
+
         expect(decryptedMessage).toBeDefined();
         expect(typeof decryptedMessage).toBe('string');
-        expect(decryptedMessage).toBe(aliceMessage);   
+        expect(decryptedMessage).toBe(aliceMessage);
 
         alice.ws.disconnect();
         bob.ws.disconnect();
+    });
+    it('should encrypt and decrypt following messages properly', async () => {
+        if (bob.crypto) {
+            encryptedMessage = await bob.crypto.encryptMessage(alice.userId, bobMessage);
+
+            alice.ws.connect();
+            await expect(waitForOpen(alice.ws)).resolves.toBeUndefined();
+
+            bob.ws.connect();
+            await expect(waitForOpen(bob.ws)).resolves.toBeUndefined();
+
+            const messagePromise = waitForMessage(alice.ws);
+
+            bob.ws.sendMessage(alice.userId, encryptedMessage)
+
+            const received = await messagePromise;
+            expect(received.ciphertext.type).toBe(1);
+
+            const decryptedMessage = await alice.crypto!.decryptMessage(received.sender, received.ciphertext);
+
+            expect(decryptedMessage).toBeDefined();
+            expect(typeof decryptedMessage).toBe('string');
+            expect(decryptedMessage).toBe(bobMessage);
+
+            alice.ws.disconnect();
+            bob.ws.disconnect();
+        }
     });
 });
