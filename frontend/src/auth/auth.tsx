@@ -1,6 +1,7 @@
 import { ApiClient } from "src/api/apiClient";
 import { AuthStorage } from "./authStorage";
 import { createApiFacade } from "../utils/createApiFacade";
+import { WebSocketService } from "../../src/realtime/websocket";
 
 
 type SessionCookies = {
@@ -23,13 +24,15 @@ class AuthService {
   private store: AuthStorage;
   private api: ReturnType<typeof createApiFacade>;
 
-  constructor(api: ApiClient) {
+  constructor(api: ApiClient, ws: WebSocketService) {
     this.store = new AuthStorage;
     api._bindAuth(this);
+    ws._bindAuth(this);
     this.api = createApiFacade(
       ["registerUser", "login", "logout", "fetchCurrentUser"] as const,
       api
     );
+
   }
 
   private apiAdapter!: {
@@ -40,8 +43,23 @@ class AuthService {
     this.apiAdapter = adapter;
   }
 
-  private applySessionToApi(session: SessionCookies) {
+
+  private wsAdapter!: {
+    setAuthContext(ctx?: AuthContext): void;
+  };
+
+  _attachWs(adapter: { setAuthContext(ctx?: AuthContext): void }) {
+    this.wsAdapter = adapter;
+  }
+  
+  private applySessionCookie(session: SessionCookies) {
     this.apiAdapter.setAuthContext({
+      headers: {
+        'Cookie': session.sessionToken,
+      },
+      cookies: session.sessionToken,
+    });
+    this.wsAdapter.setAuthContext({
       headers: {
         'Cookie': session.sessionToken,
       },
@@ -49,8 +67,12 @@ class AuthService {
     });
   };
 
-  private removeSessionFromApi() {
+  private removeSession() {
     this.apiAdapter.setAuthContext({
+      headers: undefined,
+      cookies: undefined,
+    });
+    this.wsAdapter.setAuthContext({
       headers: undefined,
       cookies: undefined,
     });
@@ -63,7 +85,7 @@ class AuthService {
     this.userId = userId;
     this.sessionToken = session;
     this.refreshToken = refresh;
-    this.applySessionToApi({
+    this.applySessionCookie({
         sessionToken: session,
         refreshToken: refresh
     })
@@ -80,7 +102,7 @@ class AuthService {
       this.sessionToken = session.sessionToken;
       this.refreshToken = session.refreshToken;
 
-      this.applySessionToApi({
+      this.applySessionCookie({
         sessionToken: session.sessionToken,
         refreshToken: session.refreshToken
       })
@@ -106,14 +128,13 @@ class AuthService {
     
     setCookie = res.headers.get("set-cookie");
     userId = res.data.userId;
-    console.log(`Registering... Cookie: ${setCookie} userID: ${userId}`)
     if (setCookie && userId) {
       await this.setNewAuthSession(userId, setCookie,  "");
       console.log(`SUCCESS: register user ${userId}`);
       return userId;
     }
     else
-      throw new Error("FAIL: can't initialize session");
+      throw new Error("FAIL: can't initialize session for user: ${userId}");
   }
 
   async login(phoneNumber: string, password: string) {
@@ -127,14 +148,13 @@ class AuthService {
     }
     setCookie = res.headers.get("set-cookie");
     userId = res.data.userId;
-    console.log(`Loggin in... Cookie: ${setCookie} userID: ${userId}`)
     if (setCookie && userId) {
       await this.setNewAuthSession(userId, setCookie,  "");
       console.log(`SUCCESS: login user ${userId}`);
       return userId;
     }
     else
-      throw new Error(`FAIL: can't initialize session Cookie: ${setCookie} userID: ${userId}`);
+      throw new Error(`FAIL: can't initialize session for user: ${userId}`);
   }
 
   async logout() {
@@ -146,9 +166,10 @@ class AuthService {
       this.store.removeAuthSession(this.userId);
       this.sessionToken = undefined; // Clear session
       this.refreshToken = undefined;
+      this.removeSession();
+      console.log(`SUCCESS: logged out user: ${this.userId}`)
       this.userId = undefined;
     }
-    this.removeSessionFromApi();
   }
 
   async getMe() {

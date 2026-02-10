@@ -37,9 +37,12 @@ export class CryptoManager {
             return false
     }
 
-    async initializeExistingUser(): Promise<void> {
-        await this.initializeLocalIdentity();
+    async initializeExistingUser(): Promise<boolean> {
+        const identity = await this.initializeLocalIdentity();
         await this.maintainKeys();
+        if(identity)
+            return true;
+        return false;
     }
 
     private async initializeLocalIdentity(): Promise<UserIdentity> {
@@ -102,10 +105,11 @@ export class CryptoManager {
         await deleteSession(recipientId, this.store);
     }
 
-    async maintainKeys(): Promise<void> {
+    async maintainKeys(): Promise<{keysAdded: number, isRotated: boolean}> {
         this.ensureInitialized();
-        await checkAndReplenishKeys(this.api, this.store);
-        await rotateSignedPreKey(this.api, this.store);
+        const keysAdded = await checkAndReplenishKeys(this.api, this.store);
+        const isRotated = await rotateSignedPreKey(this.api, this.store);
+        return {keysAdded, isRotated};
     }
 
     private ensureInitialized(): void {

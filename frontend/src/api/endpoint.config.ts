@@ -110,7 +110,7 @@ export const endpointConfig = {
 
   fetchRecipientKeyBundle: {
     url: "/keys/get-recipient-keybundle",
-    method: "GET",
+    method: "POST",
     request: {} as {
       recipientId: string;
     },

@@ -1,4 +1,6 @@
 import WebSocket from 'ws';
+import { AuthService } from "../auth/auth";
+
 
 type MessageHandler = (data: any) => void;
 
@@ -11,13 +13,33 @@ type WebSocketEvent =
   | 'pong'
   | 'unexpected-response';
 
-class WebSocketService {
+type AuthContext = {
+  headers?: Record<string, string>;
+  cookies?: string;
+}
+
+export class WebSocketService {
   private ws: WebSocket | null = null;
   private messageHandlers = new Map<string, MessageHandler>();
 
-  connect(token: string) {
+  private authContext?: AuthContext;
+
+  private setAuthContext(ctx?: AuthContext) {
+    this.authContext = ctx;
+  }
+
+  _bindAuth(auth: AuthService) {
+    auth._attachWs({
+      setAuthContext: this.setAuthContext.bind(this),
+    });
+  }
+
+  connect() {
     this.ws = new WebSocket('ws://127.0.0.1:3000', {
-      headers: { Cookie: token },
+      headers: {
+        'Content-Type': 'application/json',
+        ...this.authContext?.headers,
+      },
     });
   }
 
@@ -68,5 +90,3 @@ class WebSocketService {
     this.ws = null;
   }
 }
-
-export default WebSocketService;

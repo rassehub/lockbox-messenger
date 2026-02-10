@@ -1,8 +1,8 @@
 import type { EndpointSchema } from "./endpoint.config";
 import { endpointConfig } from "./endpoint.config";
 import { CodecFor, apiCodecs } from "./endpoint.codecs";
-import { SecureStorage } from "src/storage/secureStorage";
-import { AuthService } from "src/auth/auth";
+import { SecureStorage } from "../storage/secureStorage";
+import { AuthService } from "../auth/auth";
 
 type HasEncode<T> = T extends { encode: any } ? T : never;
 type HasDecode<T> = T extends { decode: any } ? T : never;

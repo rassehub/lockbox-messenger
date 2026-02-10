@@ -38,6 +38,7 @@ const keyBundleCodec = {
         }),
     decode: (raw: unknown): KeyBundle => {
         const parsed = raw as {
+            keyBundle:  {
             registrationId: number,
             identityPubKey: string,
             signedPreKey: {
@@ -50,15 +51,16 @@ const keyBundleCodec = {
                 publicKey:  string,
             }[]
             }
+            }
         return {
-            registrationId: parsed.registrationId,
-            identityPubKey: base64ToArrayBuffer(parsed.identityPubKey),
+            registrationId: parsed.keyBundle.registrationId,
+            identityPubKey: base64ToArrayBuffer(parsed.keyBundle.identityPubKey),
             signedPreKey: {
-                keyId: parsed.signedPreKey.keyId,
-                publicKey: base64ToArrayBuffer(parsed.signedPreKey.publicKey),
-                signature: base64ToArrayBuffer(parsed.signedPreKey.signature),
+                keyId: parsed.keyBundle.signedPreKey.keyId,
+                publicKey: base64ToArrayBuffer(parsed.keyBundle.signedPreKey.publicKey),
+                signature: base64ToArrayBuffer(parsed.keyBundle.signedPreKey.signature),
             },
-            oneTimePreKeys: parsed.oneTimePreKeys.map((preKey: any) => ({
+            oneTimePreKeys: parsed.keyBundle.oneTimePreKeys.map((preKey: any) => ({
                 keyId: preKey.keyId,
                 publicKey: base64ToArrayBuffer(preKey.publicKey),
             })),
