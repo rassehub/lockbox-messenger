@@ -28,9 +28,13 @@ export class CryptoManager {
         ] as const, api);
     }
 
-    async initializeNewUser(): Promise<void> {
-        await this.initializeLocalIdentity();
-        await generateKeyBundle(this.store, this.api);
+    async initializeNewUser(): Promise<boolean> {
+        const identity = await this.initializeLocalIdentity();
+        const keyBundle = await generateKeyBundle(this.store, this.api);
+        if(identity && keyBundle)
+            return true
+        else
+            return false
     }
 
     async initializeExistingUser(): Promise<void> {

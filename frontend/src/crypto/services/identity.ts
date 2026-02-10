@@ -65,7 +65,7 @@ export const generateKeyBundle = async (store: SignalProtocolStore, api: ReturnT
   await store.replacePreKeys(preKeys);
   await store.storeSignedPreKey(signedPreKeyId, signedPreKey.keyPair);
 
-  await api.request("uploadKeyBundle", {
+  const response = await api.request("uploadKeyBundle", {
     keyBundle: {
       registrationId,
       identityPubKey: identityKeyPair.pubKey,
@@ -73,6 +73,8 @@ export const generateKeyBundle = async (store: SignalProtocolStore, api: ReturnT
       oneTimePreKeys: pubPK,
     }
   })
+  if(!response.rawResponse.ok)
+    throw Error(`Error: ${response.rawResponse.statusText}`)
   
   return {
     registrationId,

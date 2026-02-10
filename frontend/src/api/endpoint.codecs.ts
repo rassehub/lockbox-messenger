@@ -21,17 +21,20 @@ type PreKey = {
 const keyBundleCodec = {
     encode: (value: { keyBundle: KeyBundle }): string =>
         JSON.stringify({
-            registrationId: value.keyBundle.registrationId,
-            identityPubKey: arrayBufferToBase64(value.keyBundle.identityPubKey),
-            signedPreKey: {
-                keyId: String(value.keyBundle.signedPreKey.keyId),
-                publicKey: arrayBufferToBase64(value.keyBundle.signedPreKey.publicKey),
-                signature: arrayBufferToBase64(value.keyBundle.signedPreKey.signature)
-            },
-            oneTimePreKeys: value.keyBundle.oneTimePreKeys.map((preKey) => ({
-                keyId: preKey.keyId,
-                publicKey: arrayBufferToBase64(preKey.publicKey),
-            })),
+            keyBundle: {
+                registrationId: value.keyBundle.registrationId,
+                identityPubKey: arrayBufferToBase64(value.keyBundle.identityPubKey),
+                signedPreKey: {
+                    keyId: value.keyBundle.signedPreKey.keyId,
+                    publicKey: arrayBufferToBase64(value.keyBundle.signedPreKey.publicKey),
+                    signature: arrayBufferToBase64(value.keyBundle.signedPreKey.signature)
+                },
+                oneTimePreKeys: value.keyBundle.oneTimePreKeys.map((preKey) => ({
+                    keyId: preKey.keyId,
+                    publicKey: arrayBufferToBase64(preKey.publicKey),
+                })),
+            }
+
         }),
     decode: (raw: unknown): KeyBundle => {
         const parsed = raw as {
@@ -170,16 +173,18 @@ export const apiCodecs: EndpointCodecs = {
     fetchMyKeyStatistics: {
         decode: (raw: unknown): { totalPreKeys: number, availablePreKeys: number, consumedPreKeys: number, lastUpdated: Date } => {
             const parsed = raw as {
-                totalPreKeys: number,
-                availablePreKeys: number,
-                consumedPreKeys: number,
-                lastUpdated: Date
+                stats: {
+                    totalPreKeys: number,
+                    availablePreKeys: number,
+                    consumedPreKeys: number,
+                    lastUpdated: Date
+                }
             }
             return {
-                totalPreKeys: parsed.totalPreKeys,
-                availablePreKeys: parsed.availablePreKeys,
-                consumedPreKeys: parsed.consumedPreKeys,
-                lastUpdated: parsed.lastUpdated
+                totalPreKeys: parsed.stats.totalPreKeys,
+                availablePreKeys: parsed.stats.availablePreKeys,
+                consumedPreKeys: parsed.stats.consumedPreKeys,
+                lastUpdated: parsed.stats.lastUpdated
             }
         },
     },

@@ -60,9 +60,9 @@ export class ApiClient {
     } else {
       transportResponse = await this.sendRequest(url, method, "");
     }
-
+    if(!transportResponse.ok)
+      throw Error(`Error: api-request failed: ${transportResponse.statusText}`)
     let decoded;
-
     if ('decode' in (codec as object) && transportResponse) {
       decoded = (codec as HasDecode<typeof codec>).decode(await transportResponse.json());
     }

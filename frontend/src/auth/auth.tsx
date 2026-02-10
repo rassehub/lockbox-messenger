@@ -43,7 +43,6 @@ class AuthService {
   private applySessionToApi(session: SessionCookies) {
     this.apiAdapter.setAuthContext({
       headers: {
-        'Content-Type': 'application/json',
         'Cookie': session.sessionToken,
       },
       cookies: session.sessionToken,
@@ -64,6 +63,10 @@ class AuthService {
     this.userId = userId;
     this.sessionToken = session;
     this.refreshToken = refresh;
+    this.applySessionToApi({
+        sessionToken: session,
+        refreshToken: refresh
+    })
   }
 
   async isAuthenticated() {
@@ -98,12 +101,12 @@ class AuthService {
     })
     
     if (!res.rawResponse.ok) {
-      throw new Error(` ${res.rawResponse.statusText}`);
+      throw new Error(`Error: ${res.rawResponse.statusText}`);
     }
     
     setCookie = res.headers.get("set-cookie");
     userId = res.data.userId;
-    
+    console.log(`Registering... Cookie: ${setCookie} userID: ${userId}`)
     if (setCookie && userId) {
       await this.setNewAuthSession(userId, setCookie,  "");
       console.log(`SUCCESS: register user ${userId}`);
@@ -117,26 +120,28 @@ class AuthService {
     let setCookie;
     let userId;
     
-    const res = await this.api.request("login", { phoneNumber, password })
+    const res = await this.api.request("login", { phoneNumber: phoneNumber, password: password })
 
     if (!res.rawResponse.ok) {
       throw new Error(`FAIL: login failed with error: ${res.rawResponse.statusText}`);
     }
-    
     setCookie = res.headers.get("set-cookie");
     userId = res.data.userId;
-
+    console.log(`Loggin in... Cookie: ${setCookie} userID: ${userId}`)
     if (setCookie && userId) {
       await this.setNewAuthSession(userId, setCookie,  "");
       console.log(`SUCCESS: login user ${userId}`);
       return userId;
     }
     else
-      throw new Error("FAIL: can't initialize session");
+      throw new Error(`FAIL: can't initialize session Cookie: ${setCookie} userID: ${userId}`);
   }
 
   async logout() {
     const res = await this.api.request("logout");
+    if (!res.rawResponse.ok) {
+      throw new Error(`Error: ${res.rawResponse.statusText}`);
+    }
     if(res.rawResponse.ok && this.userId) {
       this.store.removeAuthSession(this.userId);
       this.sessionToken = undefined; // Clear session
@@ -148,6 +153,9 @@ class AuthService {
 
   async getMe() {
     const userId = await this.api.request("fetchCurrentUser");
+    if (!userId.rawResponse.ok) {
+      throw new Error(`Error: ${userId.rawResponse.statusText}`);
+    }
     return userId
   }
 }
