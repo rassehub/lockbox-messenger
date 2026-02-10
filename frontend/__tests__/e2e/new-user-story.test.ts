@@ -2,31 +2,46 @@ import { AuthService } from "../../src/auth/auth";
 import { CryptoManager } from "../../src/crypto/managers/cryptoManager";
 import { ApiClient } from "../../src/api/apiClient";
 import { WebSocketService } from "../../src/realtime/websocket";
+import { FetchHttpClient } from "../../src/core/fetchHttpClient";
+export interface ClientContext {
+  userId: string
+  username: string
+  phoneNumber: string
+  password: string
 
-const alice = {
+  transport: FetchHttpClient
+  auth: AuthService
+  api: ApiClient
+  crypto: CryptoManager
+  ws: WebSocketService
+}
+
+
+export function createClientContext(): ClientContext {
+  const transport = new FetchHttpClient("http://127.0.0.1:3000")
+  const auth = new AuthService(transport)
+  const api = new ApiClient(auth, transport)
+  const crypto = new CryptoManager(api)
+  const ws = new WebSocketService(auth)
+
+  return {
     userId: "",
     username: `liisa${Math.floor(Math.random() * 16777215)}`,
     phoneNumber: String(Math.floor(Math.random() * 16777215)),
     password: "notsosecure",
-    api: new ApiClient(),
-    auth: undefined as AuthService | undefined,
-    crypto: undefined as CryptoManager | undefined,
-    ws: new WebSocketService()
-}
-alice.auth = new AuthService(alice.api, alice.ws);
 
-const bob = {
-    userId: "",
-    username: `bob${Math.floor(Math.random() * 16777215)}`,
-    phoneNumber: String(Math.floor(Math.random() * 16777215)),
-    password: "notsosecure",
-    api: new ApiClient(),
-    auth: undefined as AuthService | undefined,
-    crypto: undefined as CryptoManager | undefined,
-    ws: new WebSocketService()
+    transport,
+    auth,
+    api,
+    crypto,
+    ws
+  }
 }
-bob.auth = new AuthService(bob.api, bob.ws);
 
+const alice = createClientContext();
+
+const bob = createClientContext();
+    
 const waitForOpen = (ws: WebSocketService): Promise<void> => {
     return new Promise((resolve, reject) => {
         const timeout = setTimeout(() => reject(new Error('Connection timeout')), 5000);
@@ -52,6 +67,7 @@ const waitForMessage = (ws: WebSocketService): Promise<any> => {
 };
 
 describe('Authentication related functions and api-calls', () => {
+    
     it('registers successfully', async () => {
         const userId = await alice.auth?.register(alice.username, alice.phoneNumber, alice.password);
         expect(userId).toBeDefined;
@@ -74,16 +90,16 @@ describe('Authentication related functions and api-calls', () => {
             alice.userId = userId;
     });
     it('initializes cryptomanager for new user succesfully', async () => {
-        alice.crypto = new CryptoManager(alice.userId, alice.api)
-        const result = await alice.crypto.initializeNewUser();
+
+        const result = await alice.crypto.initializeNewUser(alice.userId);
         expect(result).toBeTruthy;
         const keyStats = await alice.api.makeRequest("fetchMyKeyStatistics");
         expect(keyStats).toBeDefined;
         expect(keyStats.data.availablePreKeys).toBeGreaterThan(1);
     });
     it('initializes cryptomanager for existing user succesully', async () => {
-        alice.crypto = new CryptoManager(alice.userId, alice.api);
-        const result = await alice.crypto.initializeExistingUser();
+
+        const result = await alice.crypto.initializeExistingUser(alice.userId);
         expect(result).toBeTruthy;
     });
 
@@ -102,8 +118,7 @@ describe('WebSocket and encryption:', () => {
         const userId = await bob.auth?.register(bob.username, bob.phoneNumber, bob.password);
         if (userId)
             bob.userId = userId;
-        bob.crypto = new CryptoManager(bob.userId, bob.api);
-        const result = await bob.crypto.initializeNewUser();
+        const result = await bob.crypto.initializeNewUser(userId);
         expect(result).toBeTruthy;
         const keyStats = await bob.api.makeRequest("fetchMyKeyStatistics");
         expect(keyStats).toBeDefined;

@@ -15,7 +15,7 @@ type KeyBundle = {
 export const endpointConfig = {
   // auth routes
   login: {
-    url: "/api/login",
+    url: "/auth/login",
     method: "POST",
     request: {} as {
       phoneNumber: string;
@@ -27,14 +27,14 @@ export const endpointConfig = {
   },
 
   logout: {
-    url: "/api/logout",
+    url: "/auth/logout",
     method: "DELETE",
     request: undefined,
     response: undefined,
   },
 
   registerUser: {
-    url: "/api/register",
+    url: "/auth/register",
     method: "POST",
     request: {} as {
       username: string;
@@ -47,7 +47,7 @@ export const endpointConfig = {
   },
 
   fetchCurrentUser: {
-    url: "/api/me",
+    url: "/auth/me",
     method: "GET",
     request: undefined,
     response: {} as {

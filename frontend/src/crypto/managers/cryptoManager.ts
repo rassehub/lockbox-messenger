@@ -9,15 +9,14 @@ import { encryptMessage, decryptMessage } from '../services/crypto';
 import { KeyBundle, UserIdentity } from '../types';
 
 export class CryptoManager {
-    private userId: string;
-    private store: SignalProtocolStore;
+    private userId: string  = "";
+    private store: SignalProtocolStore | undefined = undefined;
     private api: ReturnType<typeof createApiFacade>;
 
     private initialized = false;
 
-    constructor(userId: string, api: ApiClient) {
-        this.userId = userId;
-        this.store = new SignalProtocolStore(userId);
+    constructor(api: ApiClient) {
+        
         this.api = createApiFacade([
             "addPreKeys",
             "checkPreKeyAvailability",
@@ -28,8 +27,10 @@ export class CryptoManager {
         ] as const, api);
     }
 
-    async initializeNewUser(): Promise<boolean> {
-        const identity = await this.initializeLocalIdentity();
+    async initializeNewUser(userId: string): Promise<boolean> {
+        this.userId = userId;
+        this.store = new SignalProtocolStore(userId);
+        const identity = await this.initializeLocalIdentity(this.store);
         const keyBundle = await generateKeyBundle(this.store, this.api);
         if(identity && keyBundle)
             return true
@@ -37,29 +38,31 @@ export class CryptoManager {
             return false
     }
 
-    async initializeExistingUser(): Promise<boolean> {
-        const identity = await this.initializeLocalIdentity();
+    async initializeExistingUser(userId: string): Promise<boolean> {
+        this.userId = userId;
+        this.store = new SignalProtocolStore(userId);
+        const identity = await this.initializeLocalIdentity(this.store);
         await this.maintainKeys();
         if(identity)
             return true;
         return false;
     }
 
-    private async initializeLocalIdentity(): Promise<UserIdentity> {
+    private async initializeLocalIdentity(store: SignalProtocolStore): Promise<UserIdentity> {
         if (this.initialized) {
-            const identity = await getUserIdentity(this.store);
+            const identity = await getUserIdentity(store);
             if (identity) {
                 return identity;
             }
         }
 
-        const exists = await hasUserIdentity(this.store);
+        const exists = await hasUserIdentity(store);
         let identity: UserIdentity;
 
         if (!exists) {
-            identity = await createUserIdentity(this.userId, this.store);
+            identity = await createUserIdentity(this.userId, store);
         } else {
-            const existingIdentity = await getUserIdentity(this.store);
+            const existingIdentity = await getUserIdentity(store);
             if (!existingIdentity) {
                 throw new Error('Failed to load user identity');
             }
@@ -72,7 +75,7 @@ export class CryptoManager {
 
     async encryptMessage(recipientUserId: string, message: string)
     : Promise<{ type: number; body: string }> {
-        this.ensureInitialized();
+        this.ensureInitialized(); if(!this.store){throw Error('user  not initialized');}
         const isSession = await hasSession(recipientUserId, this.store);
         if (isSession)
             return await encryptMessage(recipientUserId, message, this.store)
@@ -86,7 +89,7 @@ export class CryptoManager {
     async decryptMessage(senderId: string, encryptedMessage: { 
         type: number; body: string; registrationId?: number 
     }): Promise<string> {
-        this.ensureInitialized();
+        this.ensureInitialized(); if(!this.store){throw Error('user  not initialized');}
         const fullMessage = {
             type: encryptedMessage.type,
             body: encryptedMessage.body,
@@ -96,17 +99,17 @@ export class CryptoManager {
     }
 
     async establishSession(recipientId: string, keyBundle: KeyBundle): Promise<void> {
-        this.ensureInitialized();
+        this.ensureInitialized(); if(!this.store){throw Error('user  not initialized');}
         await createSession(recipientId, keyBundle, this.store);
     }
 
     async removeSession(recipientId: string): Promise<void> {
-        this.ensureInitialized();
+        this.ensureInitialized(); if(!this.store){throw Error('user  not initialized');}
         await deleteSession(recipientId, this.store);
     }
 
     async maintainKeys(): Promise<{keysAdded: number, isRotated: boolean}> {
-        this.ensureInitialized();
+        this.ensureInitialized(); if(!this.store){throw Error('user  not initialized');}
         const keysAdded = await checkAndReplenishKeys(this.api, this.store);
         const isRotated = await rotateSignedPreKey(this.api, this.store);
         return {keysAdded, isRotated};

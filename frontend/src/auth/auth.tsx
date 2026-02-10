@@ -1,20 +1,10 @@
 import { ApiClient } from "src/api/apiClient";
 import { AuthStorage } from "./authStorage";
 import { createApiFacade } from "../utils/createApiFacade";
-import { WebSocketService } from "../../src/realtime/websocket";
+import { SessionProvider } from "../core/SessionProvider";
+import { HttpClient } from "../core/http";
 
-
-type SessionCookies = {
-  sessionToken: string;
-  refreshToken: string;
-}
-
-type AuthContext = {
-  headers?: Record<string, string>;
-  cookies?: string;
-}
-
-class AuthService {
+class AuthService implements SessionProvider {
   private sessionToken?: string;
   private refreshToken?: string;
   private userId?: string;
@@ -22,61 +12,20 @@ class AuthService {
   private authStatus: boolean = false;
 
   private store: AuthStorage;
-  private api: ReturnType<typeof createApiFacade>;
 
-  constructor(api: ApiClient, ws: WebSocketService) {
+  constructor(private http: HttpClient) {
     this.store = new AuthStorage;
-    api._bindAuth(this);
-    ws._bindAuth(this);
-    this.api = createApiFacade(
-      ["registerUser", "login", "logout", "fetchCurrentUser"] as const,
-      api
-    );
 
   }
 
-  private apiAdapter!: {
-    setAuthContext(ctx?: AuthContext): void;
-  };
-
-  _attachApi(adapter: { setAuthContext(ctx?: AuthContext): void }) {
-    this.apiAdapter = adapter;
+  getSessionToken(): string | undefined {
+    return this.sessionToken;
   }
 
-
-  private wsAdapter!: {
-    setAuthContext(ctx?: AuthContext): void;
-  };
-
-  _attachWs(adapter: { setAuthContext(ctx?: AuthContext): void }) {
-    this.wsAdapter = adapter;
+  getRefreshToken(): string | undefined {
+    return this.refreshToken;
   }
-  
-  private applySessionCookie(session: SessionCookies) {
-    this.apiAdapter.setAuthContext({
-      headers: {
-        'Cookie': session.sessionToken,
-      },
-      cookies: session.sessionToken,
-    });
-    this.wsAdapter.setAuthContext({
-      headers: {
-        'Cookie': session.sessionToken,
-      },
-      cookies: session.sessionToken,
-    });
-  };
 
-  private removeSession() {
-    this.apiAdapter.setAuthContext({
-      headers: undefined,
-      cookies: undefined,
-    });
-    this.wsAdapter.setAuthContext({
-      headers: undefined,
-      cookies: undefined,
-    });
-  }
 
   private async setNewAuthSession(userId: string, session: string, refresh: string) {
     await this.store.storeAuthSession(session, refresh, userId);
@@ -85,10 +34,6 @@ class AuthService {
     this.userId = userId;
     this.sessionToken = session;
     this.refreshToken = refresh;
-    this.applySessionCookie({
-        sessionToken: session,
-        refreshToken: refresh
-    })
   }
 
   async isAuthenticated() {
@@ -102,11 +47,6 @@ class AuthService {
       this.sessionToken = session.sessionToken;
       this.refreshToken = session.refreshToken;
 
-      this.applySessionCookie({
-        sessionToken: session.sessionToken,
-        refreshToken: session.refreshToken
-      })
-
       return session.userId;
     }
     return undefined;
@@ -116,18 +56,22 @@ class AuthService {
     let setCookie;
     let userId;
 
-    const res = await this.api.request("registerUser", {
-      username: username,
-      phoneNumber: phoneNumber,
-      password: password
+    const res = await this.http.send({
+      url: "/auth/register",
+      method: "POST",
+      headers: { "Content-Type":  "application/json"},
+      body: JSON.stringify({username, phoneNumber, password})
     })
     
-    if (!res.rawResponse.ok) {
-      throw new Error(`Error: ${res.rawResponse.statusText}`);
+    if (!res.ok) {
+      throw new Error(`Error: ${res.statusText}`);
     }
     
     setCookie = res.headers.get("set-cookie");
-    userId = res.data.userId;
+    
+    const data = await res.json();
+    userId = data.userId ? data.userId : null;
+
     if (setCookie && userId) {
       await this.setNewAuthSession(userId, setCookie,  "");
       console.log(`SUCCESS: register user ${userId}`);
@@ -140,14 +84,23 @@ class AuthService {
   async login(phoneNumber: string, password: string) {
     let setCookie;
     let userId;
-    
-    const res = await this.api.request("login", { phoneNumber: phoneNumber, password: password })
 
-    if (!res.rawResponse.ok) {
-      throw new Error(`FAIL: login failed with error: ${res.rawResponse.statusText}`);
+    const res = await this.http.send({
+      url: "/auth/login",
+      method: "POST",
+      headers: { "Content-Type":  "application/json"},
+      body: JSON.stringify({phoneNumber, password})
+    })
+    
+    if (!res.ok) {
+      throw new Error(`Error: ${res.statusText}`);
     }
+    
     setCookie = res.headers.get("set-cookie");
-    userId = res.data.userId;
+    
+    const data = await res.json();
+    userId = data.userId ? data.userId : null;
+
     if (setCookie && userId) {
       await this.setNewAuthSession(userId, setCookie,  "");
       console.log(`SUCCESS: login user ${userId}`);
@@ -158,25 +111,46 @@ class AuthService {
   }
 
   async logout() {
-    const res = await this.api.request("logout");
-    if (!res.rawResponse.ok) {
-      throw new Error(`Error: ${res.rawResponse.statusText}`);
+    const res = await this.http.send({
+      url: "/auth/logout",
+      method: "DELETE",
+      headers: {
+         "Content-Type":  "application/json",
+         'Cookie': this.sessionToken ? this.sessionToken : "",
+      }
+    })
+    
+    if (!res.ok) {
+      throw new Error(`Error: ${res.statusText}`);
     }
-    if(res.rawResponse.ok && this.userId) {
+    
+    if(res.ok && this.userId) {
       this.store.removeAuthSession(this.userId);
+      console.log(`SUCCESS: logged out user: ${this.userId}`);
       this.sessionToken = undefined; // Clear session
       this.refreshToken = undefined;
-      this.removeSession();
-      console.log(`SUCCESS: logged out user: ${this.userId}`)
       this.userId = undefined;
     }
   }
 
   async getMe() {
-    const userId = await this.api.request("fetchCurrentUser");
-    if (!userId.rawResponse.ok) {
-      throw new Error(`Error: ${userId.rawResponse.statusText}`);
+    let userId;
+    const res = await this.http.send({
+      url: "/auth/me",
+      method: "GET",
+      headers: {
+         "Content-Type":  "application/json",
+         'Cookie': this.sessionToken ? this.sessionToken : "",
+      }
+    })
+    
+    if (!res.ok) {
+      throw new Error(`Error: ${res.statusText}`);
     }
+
+    const data = await res.json();
+    userId = data.userId ? data.userId : null;
+
     return userId
   }
 }

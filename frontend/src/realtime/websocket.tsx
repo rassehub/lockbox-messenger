@@ -1,5 +1,5 @@
 import WebSocket from 'ws';
-import { AuthService } from "../auth/auth";
+import { SessionProvider } from "../core/SessionProvider";
 
 
 type MessageHandler = (data: any) => void;
@@ -13,32 +13,20 @@ type WebSocketEvent =
   | 'pong'
   | 'unexpected-response';
 
-type AuthContext = {
-  headers?: Record<string, string>;
-  cookies?: string;
-}
 
 export class WebSocketService {
   private ws: WebSocket | null = null;
   private messageHandlers = new Map<string, MessageHandler>();
 
-  private authContext?: AuthContext;
-
-  private setAuthContext(ctx?: AuthContext) {
-    this.authContext = ctx;
-  }
-
-  _bindAuth(auth: AuthService) {
-    auth._attachWs({
-      setAuthContext: this.setAuthContext.bind(this),
-    });
-  }
+  constructor(private session: SessionProvider) { }
 
   connect() {
+    const cookie = this.session.getSessionToken()
+
     this.ws = new WebSocket('ws://127.0.0.1:3000', {
       headers: {
         'Content-Type': 'application/json',
-        ...this.authContext?.headers,
+        'Cookie': cookie ? cookie : "",
       },
     });
   }
@@ -66,17 +54,17 @@ export class WebSocketService {
     );
   }
 
-  onMessage<T = any > (handler: (message: T) => void) {
+  onMessage<T = any>(handler: (message: T) => void) {
     this.ws?.on('message', (raw) => {
       const text =
         typeof raw === 'string'
           ? raw
           : Buffer.isBuffer(raw)
-          ? raw.toString('utf8')
-          : Array.isArray(raw)
-          ? Buffer.concat(raw).toString('utf8')
-          : Buffer.from(raw).toString('utf8');
-      
+            ? raw.toString('utf8')
+            : Array.isArray(raw)
+              ? Buffer.concat(raw).toString('utf8')
+              : Buffer.from(raw).toString('utf8');
+
       const message = JSON.parse(text);
 
 
