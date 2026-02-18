@@ -14,10 +14,15 @@ const trashDark = require('../../assets/delete-dark.png');
 
 const AccountSettings = () => {
     const { isDarkTheme } = useTheme();
-    const { handleAuthentication } = useAuthentication();
+    const { logout } = useAuthentication();
     const navigation = useNavigation<NativeStackNavigationProp<StackParams>>();
     const [username, onUsernameChanged] = useState('');
     const [email, onEmailChanged] = useState('');
+
+    const handleLogout = async () => {
+        await logout();
+        navigation.navigate('Login');
+    }
 
     return(
         <View style={styles.mainContainer}>
@@ -44,12 +49,7 @@ const AccountSettings = () => {
             <Text style={styles.categoryText}>Danger zone</Text>
 
             <Pressable 
-                onPress={() => {
-                    const logout = handleAuthentication();
-                    if (!logout) {
-                        navigation.navigate('Login');
-                    }
-                }}
+                onPress={handleLogout}
                 style={styles.base}
             >
                 <Text style={styles.settingText}>Logout</Text>

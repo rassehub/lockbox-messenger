@@ -6,62 +6,81 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { StackParams } from "../../App";
 import { useAuthentication } from "../AuthContext";
+import { useEffect, useRef, useState } from "react";
+import { FormikProps } from "formik";
 
 const logoPlaceholder = require('../assets/logo-placeholder.png');
 
 const LoginScreen = () => {
-    const { isAuthenticated, handleAuthentication } = useAuthentication();
+    const { isAuthenticated, loading, loadStoredAuth, handleAuthentication } = useAuthentication();
     const { isDarkTheme } = useTheme();
     const navigation = useNavigation<NativeStackNavigationProp<StackParams>>();
+
+    const formRef = useRef<FormikProps<{ phonenumber: string; password: string; }> | null>(null);
+
+    useEffect(() => {
+        if(!loading && isAuthenticated) {
+            navigation.navigate("Home");
+        }
+    }, [loading, isAuthenticated, navigation]);
+
+    const handleLogin = async (values: LoginValues) => {
+        const authenticated = await handleAuthentication(values.phonenumber, values.password);
+        if(authenticated) {
+            navigation.navigate("Home");
+        } else {
+            console.log("Authentication failed");
+        }
+    };
 
     const formConfiguration = {
         fields: [
             {
-                name: "email",
-                label: "Email",
-                type: "input",
-                inputType: "email",
-                component: "input",
+                name: "phonenumber",
+                label: "Phone number",
                 icon: require('../assets/email.png'),
+                inputType: "phonenumber",
             },
             {
                 name: "password",
                 label: "Password",
-                type: "input",
-                inputType: "password",
-                component: "input",
                 icon: require('../assets/lock.png'),
+                inputType: "password",
             },
-        ]
-    }
+        ],
+    } satisfies {
+        fields: {
+            name: keyof LoginValues;
+            label: string;
+            icon: any;
+            inputType?: "phonenumber" | "password" | "text";
+        }[];
+    };
 
     const initialValues = {
-        email: "",
+        phonenumber: "",
         password: "",
     }
 
-    const handleLogin = () => {
-        const authenticated = handleAuthentication();
-        if (authenticated) {
-            navigation.navigate('Home');
-        } else {
-            console.log('Authentication failed');
-        }
+    type LoginValues = {
+        phonenumber: string;
+        password: string;
     }
 
     return(
         <View style={styles.mainContainer}>
             <Image style={styles.logo} source={logoPlaceholder}/>
             <Text style={styles.title}>Login</Text>
-            <AuthenticationForm 
+            <AuthenticationForm<LoginValues>
                 formConfiguration={formConfiguration}
                 initialValues={initialValues}
                 onSubmit={handleLogin}
+                formRef={formRef}
             />
             <TouchableOpacity>
                 <Text style={styles.forgotPassword}>Forgot Password?</Text>
             </TouchableOpacity>
-            <AuthButton buttonText="Login" onPressed={handleLogin} />
+            <AuthButton buttonText="Login" onPressed={() => formRef.current?.handleSubmit()} />
             <Text style={styles.bottomText}>Don't have an account? 
                 <TouchableOpacity 
                     onPress={() => {

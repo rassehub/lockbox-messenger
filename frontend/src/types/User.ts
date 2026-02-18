@@ -1,7 +1,8 @@
 export type User = {
     userID: string;
+    phonenumber: string;
     userName: string;
-    password: string;
+    email: string;
     displayName?: string;
     chatIds?: string[];
 }
