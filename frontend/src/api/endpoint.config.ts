@@ -69,7 +69,7 @@ export const endpointConfig = {
     url: "/keys/rotate-signed-prekey",
     method: "POST",
     request: {} as {
-      newSignedPreKey: SignedPublicPreKeyType
+      signedPreKey: SignedPublicPreKeyType
     },
     response: undefined,
   },
@@ -104,7 +104,7 @@ export const endpointConfig = {
       totalPreKeys: number;
       availablePreKeys: number;
       consumedPreKeys: number;
-      lastUpdated: Date | null;
+      lastUpdated: Date;
     },
   },
 

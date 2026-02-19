@@ -1,5 +1,5 @@
 /**
- * Signal Protocol Store implementation using AsyncStorage
+ * Signal Protocol Store implementation using SecureStorage
  * Handles persistent storage of keys, sessions, and identity information
  */
 
@@ -8,23 +8,24 @@ import {
   SignalProtocolAddress,
   KeyPairType,
   PreKeyPairType
-} from '@privacyresearch/libsignal-protocol-typescript';
-import { encryptionCodecs } from './SignalProtcolStorage.codecs';
-import { EncryptionStorageSchema } from './SignalProtocolStorage.schema';
+} from '../types';
+import { encryptionCodecs } from './cryptoStorageCodecs';
+import { EncryptionStorageSchema } from './cryptoStorageSchema';
+import { ICryptoStorage } from '../interfaces/ICryptoStorage';
 
-export class SignalProtocolStore {
-  private static instance: SignalProtocolStore;
+export class CryptoStorage  implements ICryptoStorage {
+  private static instance: CryptoStorage;
   private storage 
 
   constructor(userId: string) {
     this.storage = new SecureStorage<EncryptionStorageSchema, typeof encryptionCodecs>(userId, encryptionCodecs);
   }
   
-  public static getInstance(userId: string): SignalProtocolStore {
-    if (!SignalProtocolStore.instance) {
-      SignalProtocolStore.instance = new SignalProtocolStore(userId);
+  public static getInstance(userId: string): CryptoStorage {
+    if (!CryptoStorage.instance) {
+      CryptoStorage.instance = new CryptoStorage(userId);
     }
-    return SignalProtocolStore.instance;
+    return CryptoStorage.instance;
   }
   
   private arrayBuffersEqual(buf1: ArrayBuffer, buf2: ArrayBuffer): boolean {
@@ -68,7 +69,7 @@ export class SignalProtocolStore {
   /**
    * Store registration ID
    */
-  async storeRegistrationId(registrationId: number): Promise<void> {
+  async storeLocalRegistrationId(registrationId: number): Promise<void> {
     await this.storage.setItem('registrationId', registrationId);
   }
 
@@ -138,6 +139,20 @@ export class SignalProtocolStore {
     await this.storage.upsertRecordItem('preKeys', key, keyPair);
   }
 
+  /**
+   * Store a pre-key
+   */
+async storePreKeys(preKeys: {keyId: string | number, keyPair: KeyPairType}[]): Promise<void> {
+    const existingRecord = await this.storage.getFullRecord('preKeys') || {};
+
+    for(const item of preKeys){
+        const id = String(item.keyId);
+        existingRecord[id] = item.keyPair;
+    }
+
+    await this.storage.setItem('preKeys', existingRecord);
+}
+
   async replacePreKeys(keyPairs: PreKeyPairType[]) {
     const record: Record<string, KeyPairType> = {};
     for (const item of keyPairs) {
@@ -171,7 +186,7 @@ export class SignalProtocolStore {
   async storeSignedPreKey(keyId: string | number, keyPair: KeyPairType): Promise<void> {
     const key = String(keyId);
     await this.storage.upsertRecordItem('signedPreKeys', key, keyPair);
-    await this.storeSignedPrekeyId(Number(keyId))
+    await this.storeSignedPreKeyId(Number(keyId))
   }
 
   /**
@@ -182,7 +197,7 @@ export class SignalProtocolStore {
     await this.storage.removeRecordItem('signedPreKeys', key);
   }
 
-  async storeSignedPrekeyId(keyId: number): Promise<void> {
+  async storeSignedPreKeyId(keyId: number): Promise<void> {
     await this.storage.setItem("signedPreKeyId", keyId)
   }
 
@@ -217,7 +232,7 @@ export class SignalProtocolStore {
   /**
    * Remove all sessions for a recipient
    */
-  async removeAllSessions(identifier: string): Promise<void> {
+  async removeAllSessions(): Promise<void> {
     await this.storage.removeItem('session')
   }
 
@@ -245,4 +260,4 @@ export class SignalProtocolStore {
 }
 
 
-export default SignalProtocolStore;
+export default CryptoStorage;

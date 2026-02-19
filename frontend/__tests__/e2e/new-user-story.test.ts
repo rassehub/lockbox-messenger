@@ -1,5 +1,8 @@
 import { AuthService } from "../../src/auth/auth";
-import { CryptoManager } from "../../src/crypto/managers/cryptoManager";
+import { CryptoManager } from "../../src/crypto/managers/CryptoManager";
+import { CryptoStorage } from "../../src/crypto/storage/CryptoStorage";
+import { CryptoProvider } from "../../src/crypto/services/CryptoProvider";
+import { KeyApiService } from "../../src/crypto/services/KeyApiService";
 import { ApiClient } from "../../src/api/apiClient";
 import { WebSocketService } from "../../src/realtime/websocket";
 import { FetchHttpClient } from "../../src/core/fetchHttpClient";
@@ -12,7 +15,10 @@ export interface ClientContext {
   transport: FetchHttpClient
   auth: AuthService
   api: ApiClient
-  crypto: CryptoManager
+  keyApi: KeyApiService
+  cryptoStorage: CryptoStorage
+  cryptoProvider: CryptoProvider
+  cryptoManager: CryptoManager
   ws: WebSocketService
 }
 
@@ -21,9 +27,8 @@ export function createClientContext(): ClientContext {
   const transport = new FetchHttpClient("http://127.0.0.1:3000")
   const auth = new AuthService(transport)
   const api = new ApiClient(auth, transport)
-  const crypto = new CryptoManager(api)
   const ws = new WebSocketService(auth)
-
+  const keyApi = new KeyApiService(api)
   return {
     userId: "",
     username: `liisa${Math.floor(Math.random() * 16777215)}`,
@@ -33,7 +38,10 @@ export function createClientContext(): ClientContext {
     transport,
     auth,
     api,
-    crypto,
+    keyApi,
+    cryptoManager: {} as CryptoManager,
+    cryptoProvider: {} as CryptoProvider,
+    cryptoStorage: {} as CryptoStorage,
     ws
   }
 }
@@ -90,20 +98,16 @@ describe('Authentication related functions and api-calls', () => {
             alice.userId = userId;
     });
     it('initializes cryptomanager for new user succesfully', async () => {
-
-        const result = await alice.crypto.initializeNewUser(alice.userId);
-        expect(result).toBeTruthy;
+        alice.cryptoStorage = await new CryptoStorage(alice.userId);
+        alice.cryptoProvider = await CryptoProvider.initializeLocalIdentity(alice.cryptoStorage, alice.userId);
+        alice.cryptoManager = await CryptoManager.initializeUser(
+            alice.cryptoProvider,
+            alice.keyApi
+        );
         const keyStats = await alice.api.makeRequest("fetchMyKeyStatistics");
         expect(keyStats).toBeDefined;
         expect(keyStats.data.availablePreKeys).toBeGreaterThan(1);
     });
-    it('initializes cryptomanager for existing user succesully', async () => {
-
-        const result = await alice.crypto.initializeExistingUser(alice.userId);
-        expect(result).toBeTruthy;
-    });
-
-
 });
 describe('WebSocket and encryption:', () => {
     let encryptedMessage: { type: number; body: string };
@@ -118,10 +122,15 @@ describe('WebSocket and encryption:', () => {
         const userId = await bob.auth?.register(bob.username, bob.phoneNumber, bob.password);
         if (userId)
             bob.userId = userId;
-        const result = await bob.crypto.initializeNewUser(userId);
-        expect(result).toBeTruthy;
+        bob.cryptoStorage = await new CryptoStorage(bob.userId);
+        bob.cryptoProvider = await CryptoProvider.initializeLocalIdentity(bob.cryptoStorage, bob.userId);
+        bob.cryptoManager = await CryptoManager.initializeUser(
+            bob.cryptoProvider,
+            bob.keyApi
+        );
         const keyStats = await bob.api.makeRequest("fetchMyKeyStatistics");
         expect(keyStats).toBeDefined;
+        expect(keyStats.data.availablePreKeys).toBeGreaterThan(1);
         expect(keyStats.data.availablePreKeys).toBeGreaterThan(1);
         bob.ws.connect();
         await expect(waitForOpen(bob.ws)).resolves.toBeUndefined();
@@ -129,8 +138,8 @@ describe('WebSocket and encryption:', () => {
     });
     it('should encrypt message', async () => {
 
-        if (alice.crypto) {
-            encryptedMessage = await alice.crypto.encryptMessage(bob.userId, aliceMessage);
+        if (alice.cryptoManager) {
+            encryptedMessage = await alice.cryptoManager.encryptMessage(bob.userId, aliceMessage);
 
             expect(encryptedMessage).toBeDefined();
             expect(encryptedMessage.type).toBeDefined();
@@ -165,7 +174,7 @@ describe('WebSocket and encryption:', () => {
         });
         expect(received.ciphertext.type).toBe(3);
 
-        const decryptedMessage = await bob.crypto!.decryptMessage(received.sender, received.ciphertext);
+        const decryptedMessage = await bob.cryptoManager.decryptMessage(received.sender, received.ciphertext);
 
         expect(decryptedMessage).toBeDefined();
         expect(typeof decryptedMessage).toBe('string');
@@ -175,8 +184,8 @@ describe('WebSocket and encryption:', () => {
         bob.ws.disconnect();
     });
     it('should encrypt and decrypt following messages properly', async () => {
-        if (bob.crypto) {
-            encryptedMessage = await bob.crypto.encryptMessage(alice.userId, bobMessage);
+        if (bob.cryptoManager) {
+            encryptedMessage = await bob.cryptoManager.encryptMessage(alice.userId, bobMessage);
 
             alice.ws.connect();
             await expect(waitForOpen(alice.ws)).resolves.toBeUndefined();
@@ -191,7 +200,7 @@ describe('WebSocket and encryption:', () => {
             const received = await messagePromise;
             expect(received.ciphertext.type).toBe(1);
 
-            const decryptedMessage = await alice.crypto!.decryptMessage(received.sender, received.ciphertext);
+            const decryptedMessage = await alice.cryptoManager.decryptMessage(received.sender, received.ciphertext);
 
             expect(decryptedMessage).toBeDefined();
             expect(typeof decryptedMessage).toBe('string');

@@ -1,5 +1,5 @@
 import { arrayBufferToBase64, base64ToArrayBuffer } from "../utils/bufferEncoding";
-import type { EncryptionStorageSchema } from "./SignalProtocolStorage.schema";
+import type { EncryptionStorageSchema } from "./cryptoStorageSchema";
 import {
   KeyPairType,
 } from '@privacyresearch/libsignal-protocol-typescript';

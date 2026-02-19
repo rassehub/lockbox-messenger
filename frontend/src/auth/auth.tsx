@@ -4,6 +4,12 @@ import { createApiFacade } from "../utils/createApiFacade";
 import { SessionProvider } from "../core/SessionProvider";
 import { HttpClient } from "../core/http";
 
+/*
+    POSSIBLE IDEAS:
+    -set userId so that it will not get stored
+      -relogin will send getMe request with stored session token, which will send userId
+    -implement refresh token so that if it gets sent with expired session token new ones will be issued
+*/
 class AuthService implements SessionProvider {
   private sessionToken?: string;
   private refreshToken?: string;

@@ -134,12 +134,12 @@ export const apiCodecs: EndpointCodecs = {
             keyBundleCodec.encode(req),
     },
     rotateSignedPreKey: {
-        encode: (req: { newSignedPreKey: SignedPublicPreKeyType }): string =>
+        encode: (req: { signedPreKey: SignedPublicPreKeyType }): string =>
             JSON.stringify({
                 signedPreKey: {
-                    keyId: String(req.newSignedPreKey.keyId),
-                    publicKey: arrayBufferToBase64(req.newSignedPreKey.publicKey),
-                    signature: arrayBufferToBase64(req.newSignedPreKey.signature),
+                    keyId: String(req.signedPreKey.keyId),
+                    publicKey: arrayBufferToBase64(req.signedPreKey.publicKey),
+                    signature: arrayBufferToBase64(req.signedPreKey.signature),
                 }
             })
     },

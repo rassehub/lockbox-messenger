@@ -2,8 +2,6 @@
  * Type definitions for Signal Protocol encryption
  */
 
-import type { KeyPairType, SignedPublicPreKeyType, PreKeyType } from '@privacyresearch/libsignal-protocol-typescript';
-
 export interface KeyBundle {
   registrationId: number;
   identityPubKey: ArrayBuffer;
@@ -11,19 +9,44 @@ export interface KeyBundle {
   oneTimePreKeys: PreKeyType[];
 }
 
-// Server-compatible key bundle (uses base64 strings instead of ArrayBuffer)
-export interface SignalKeyBundle {
-  registrationId: number;
-  identityPubKey: string; // base64 encoded
-  signedPreKey: {
+export interface SignalProtocolAddressType {
+    readonly name: string;
+    readonly deviceId: number;
+    toString: () => string;
+    equals: (other: SignalProtocolAddressType) => boolean;
+}
+
+export interface SignalProtocolAddress {
+  name: string;
+  deviceId: number;
+  
+  getName(): string;
+  getDeviceId(): number;
+  toString(): string;
+  equals(other: SignalProtocolAddressType): boolean;
+}
+export interface KeyPairType<T = ArrayBuffer> {
+    pubKey: T;
+    privKey: T;
+}
+export interface PreKeyPairType<T = ArrayBuffer> {
     keyId: number;
-    publicKey: string; // base64 encoded
-    signature: string; // base64 encoded
-  };
-  oneTimePreKeys: Array<{
+    keyPair: KeyPairType<T>;
+}
+export interface SignedPreKeyPairType<T = ArrayBuffer> extends PreKeyPairType<T> {
+    signature: T;
+}
+export interface PreKeyType<T = ArrayBuffer> {
     keyId: number;
-    publicKey: string; // base64 encoded
-  }>;
+    publicKey: T;
+}
+export interface SignedPublicPreKeyType<T = ArrayBuffer> extends PreKeyType<T> {
+    signature: T;
+}
+export declare type SessionRecordType = string;
+export declare enum Direction {
+    SENDING = 1,
+    RECEIVING = 2
 }
 
 export interface UserIdentity {
@@ -48,4 +71,17 @@ export interface MessagePayload {
 export interface StoredSession {
   recipientId: string;
   deviceId: number;
+}
+
+export interface KeyStats {
+      totalPreKeys: number;
+      availablePreKeys: number;
+      consumedPreKeys: number;
+      lastUpdated: Date;
+}
+
+export interface PreKeyCheckResponse {
+  needsMorePreKeys: boolean;
+  availableCount: number;
+  threshold: number;
 }

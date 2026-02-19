@@ -18,3 +18,5 @@ backend/node_modules
 *.tmp
 *.swp
 node_modules
+
+documentation/
