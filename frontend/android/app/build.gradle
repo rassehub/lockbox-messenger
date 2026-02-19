@@ -111,6 +111,10 @@ dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
 
+    // AndroidX Activity dependency was incorrectly placed in the root buildscript.
+    // It belongs in the app module's dependencies so it can be used at runtime.
+    implementation("androidx.activity:activity:1.9.+")
+
     if (hermesEnabled.toBoolean()) {
         implementation("com.facebook.react:hermes-android")
     } else {

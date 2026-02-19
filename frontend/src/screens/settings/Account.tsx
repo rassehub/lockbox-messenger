@@ -1,9 +1,10 @@
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Image, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { useTheme } from "../../ThemeContext";
 import { useAuthentication } from "../../AuthContext";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { StackParams } from "../../../App";
+import { useState } from "react";
 
 const logout = require('../../assets/logout.png');
 const logoutDark = require('../../assets/logout-dark.png');
@@ -15,10 +16,33 @@ const AccountSettings = () => {
     const { isDarkTheme } = useTheme();
     const { handleAuthentication } = useAuthentication();
     const navigation = useNavigation<NativeStackNavigationProp<StackParams>>();
+    const [username, onUsernameChanged] = useState('');
+    const [email, onEmailChanged] = useState('');
 
     return(
         <View style={styles.mainContainer}>
             <Text style={styles.categoryText}>Account Settings</Text>
+
+            <TextInput
+                style={[styles.base, styles.settingText]}
+                onChangeText={onUsernameChanged}
+                value={username}
+                placeholder="Username"
+                placeholderTextColor={'#A8A5FF'}
+                
+            />
+
+            <TextInput
+                style={[styles.base, styles.settingText]}
+                onChangeText={onEmailChanged}
+                value={email}
+                placeholder="Email"
+                placeholderTextColor={'#A8A5FF'}
+                
+            />
+
+            <Text style={styles.categoryText}>Danger zone</Text>
+
             <Pressable 
                 onPress={() => {
                     const logout = handleAuthentication();
@@ -66,7 +90,7 @@ const styles = StyleSheet.create({
         marginTop: '2%',
         width: 24,
         height: 24,
-    }
+    },
 });
 
 export default AccountSettings;

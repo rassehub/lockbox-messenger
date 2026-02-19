@@ -40,7 +40,7 @@ const NewChatScreen = () => {
                 <View style={styles.centeredView}>
                     <View style={[styles.modalView, {
                         backgroundColor: isDarkTheme ? '#1E1E1E' : '#FFFFFF',
-                        shadowColor: isDarkTheme ? '#A8A5FF' :'#000',
+                        shadowColor: isDarkTheme ? '#A8A5FF' : '#000',
                     }]}>
                         <Text style={[styles.modalText, {color: isDarkTheme ? '#A8A5FF' : '#594EFF'}]}>Add new contact</Text>
                         <SearchBar onSearch={handleModalSearch}/>
@@ -97,8 +97,8 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-      },
-      modalView: {
+    },
+    modalView: {
         margin: 20,
         backgroundColor: 'white',
         borderRadius: 20,
@@ -110,8 +110,8 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.25,
         shadowRadius: 4,
         elevation: 5,
-      },
-      button: {
+    },
+    button: {
         alignSelf: 'flex-end',
         width: 120,
         backgroundColor: '#A8A5FF',
@@ -119,17 +119,17 @@ const styles = StyleSheet.create({
         marginTop: 15,
         paddingVertical: 10,
         elevation: 2
-      },
-      buttonStyle: {
+    },
+    buttonStyle: {
         color: 'white',
         fontWeight: 'bold',
         textAlign: 'center',
-      },
-      modalText: {
+    },
+    modalText: {
         marginBottom: 15,
         paddingLeft: '2%',
         textAlign: 'left',
-      },
+    },
 });
 
 export default NewChatScreen;

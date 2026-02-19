@@ -1,0 +1,202 @@
+import { arrayBufferToBase64, base64ToArrayBuffer } from "../crypto/utils/bufferEncoding";
+import {
+    KeyPairType,
+} from '@privacyresearch/libsignal-protocol-typescript';
+
+import type { EndpointSchema } from "./apiEndpointConfig";
+import { SignedPublicPreKeyType, PreKeyType } from "@privacyresearch/libsignal-protocol-typescript";
+
+type KeyBundle = {
+    registrationId: number;
+    identityPubKey: ArrayBuffer;
+    signedPreKey: SignedPublicPreKeyType
+    oneTimePreKeys: PreKeyType[]
+}
+type PreKey = {
+    keyId: number;
+    publicKey: ArrayBuffer;
+}
+
+
+const keyBundleCodec = {
+    encode: (value: { keyBundle: KeyBundle }): string =>
+        JSON.stringify({
+            keyBundle: {
+                registrationId: value.keyBundle.registrationId,
+                identityPubKey: arrayBufferToBase64(value.keyBundle.identityPubKey),
+                signedPreKey: {
+                    keyId: value.keyBundle.signedPreKey.keyId,
+                    publicKey: arrayBufferToBase64(value.keyBundle.signedPreKey.publicKey),
+                    signature: arrayBufferToBase64(value.keyBundle.signedPreKey.signature)
+                },
+                oneTimePreKeys: value.keyBundle.oneTimePreKeys.map((preKey) => ({
+                    keyId: preKey.keyId,
+                    publicKey: arrayBufferToBase64(preKey.publicKey),
+                })),
+            }
+
+        }),
+    decode: (raw: unknown): KeyBundle => {
+        const parsed = raw as {
+            keyBundle:  {
+            registrationId: number,
+            identityPubKey: string,
+            signedPreKey: {
+                keyId: number,
+                publicKey: string,
+                signature: string,
+            },
+            oneTimePreKeys: {
+                keyId: number,
+                publicKey:  string,
+            }[]
+            }
+            }
+        return {
+            registrationId: parsed.keyBundle.registrationId,
+            identityPubKey: base64ToArrayBuffer(parsed.keyBundle.identityPubKey),
+            signedPreKey: {
+                keyId: parsed.keyBundle.signedPreKey.keyId,
+                publicKey: base64ToArrayBuffer(parsed.keyBundle.signedPreKey.publicKey),
+                signature: base64ToArrayBuffer(parsed.keyBundle.signedPreKey.signature),
+            },
+            oneTimePreKeys: parsed.keyBundle.oneTimePreKeys.map((preKey: any) => ({
+                keyId: preKey.keyId,
+                publicKey: base64ToArrayBuffer(preKey.publicKey),
+            })),
+        };
+    }
+};
+
+
+type EncodeOnly<Req> = {
+    encode: (req: Req) => string;
+};
+
+type DecodeOnly<Res> = {
+    decode: (raw: unknown) => Res;
+};
+
+type EncodeDecode<Req, Res> = {
+    encode: (req: Req) => string;
+    decode: (raw: unknown) => Res;
+};
+
+export type CodecFor<K extends keyof EndpointSchema> =
+    EndpointSchema[K]["request"] extends undefined
+        ? EndpointSchema[K]["response"] extends undefined
+            ? {} // nothing needed
+            : DecodeOnly<EndpointSchema[K]["response"]>
+        : EndpointSchema[K]["response"] extends undefined
+            ? EncodeOnly<EndpointSchema[K]["request"]>
+            : EncodeDecode<
+                EndpointSchema[K]["request"],
+                EndpointSchema[K]["response"]
+            >;
+
+type EndpointCodecs = {
+    [K in keyof EndpointSchema]: CodecFor<K>;
+};
+
+export const apiCodecs: EndpointCodecs = {
+    login: {
+        encode: (req) => 
+            JSON.stringify({
+                phoneNumber: req.phoneNumber,
+                password: req.password,
+            }),
+        decode: (raw: unknown) => {
+        const parsed = raw as { userId: string };
+        return { userId: parsed.userId };
+    }
+    },
+    logout: {},
+    registerUser: {
+        encode: (req) => 
+            JSON.stringify({
+                username: req.username,
+                phoneNumber: req.phoneNumber,
+                password: req.password,
+            }),
+        decode: (raw: unknown) =>  {
+        const parsed = raw as { userId: string };
+        return { userId: parsed.userId };
+    }
+    },
+    fetchCurrentUser: {
+    decode: (raw: unknown): { userId: string } => {
+        const parsed = raw as { userId: string };
+        return { userId: parsed.userId };
+    }
+    },
+    uploadKeyBundle: {
+        encode: (req: { keyBundle: KeyBundle }): string =>
+            keyBundleCodec.encode(req),
+    },
+    rotateSignedPreKey: {
+        encode: (req: { signedPreKey: SignedPublicPreKeyType }): string =>
+            JSON.stringify({
+                signedPreKey: {
+                    keyId: String(req.signedPreKey.keyId),
+                    publicKey: arrayBufferToBase64(req.signedPreKey.publicKey),
+                    signature: arrayBufferToBase64(req.signedPreKey.signature),
+                }
+            })
+    },
+    addPreKeys: {
+        encode: (req: { preKeys: PreKey[] }): string =>
+            JSON.stringify({
+                preKeys: req.preKeys.map((preKey) => ({
+                    keyId: String(preKey.keyId),
+                    publicKey: arrayBufferToBase64(preKey.publicKey),
+                })),
+            }),
+        decode: (raw: unknown): { availableCount: number } => {
+            const parsed = raw as {
+                availableCount: number
+            }
+            return { availableCount: parsed.availableCount }
+        }
+    },
+    checkPreKeyAvailability: {
+        decode: (raw: unknown): { needsMorePreKeys: boolean, availableCount: number, threshold: number } => {
+            const parsed = raw as {
+                needsMorePreKeys: boolean,
+                availableCount: number,
+                threshold: number
+            }
+            return {
+                needsMorePreKeys: parsed.needsMorePreKeys,
+                availableCount: parsed.availableCount,
+                threshold: parsed.threshold
+            }
+        }
+    },
+    fetchMyKeyStatistics: {
+        decode: (raw: unknown): { totalPreKeys: number, availablePreKeys: number, consumedPreKeys: number, lastUpdated: Date } => {
+            const parsed = raw as {
+                stats: {
+                    totalPreKeys: number,
+                    availablePreKeys: number,
+                    consumedPreKeys: number,
+                    lastUpdated: Date
+                }
+            }
+            return {
+                totalPreKeys: parsed.stats.totalPreKeys,
+                availablePreKeys: parsed.stats.availablePreKeys,
+                consumedPreKeys: parsed.stats.consumedPreKeys,
+                lastUpdated: parsed.stats.lastUpdated
+            }
+        },
+    },
+    fetchRecipientKeyBundle: {
+        encode: (req: { recipientId: string }): string =>
+            JSON.stringify({
+                recipientId: req.recipientId
+            }),
+        decode: (raw: unknown): { keyBundle: KeyBundle } => {
+            return { keyBundle: keyBundleCodec.decode(raw)}
+        }
+    }
+}

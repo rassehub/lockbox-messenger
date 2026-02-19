@@ -255,10 +255,12 @@ export class SignalKeyService {
     totalPreKeys: number;
     availablePreKeys: number;
     consumedPreKeys: number;
-    lastUpdated: Date | null;
+    lastUpdated: Date;
   }> {
     const user = await this.userRepo.findOne({ where: { id: userId } });
-
+    if (!user || !user.signal_key_bundle) {
+      throw new Error("User or key bundle not found");
+    }
     const total = await this.preKeyRepo.count({ where: { userId } });
     const available = await this.preKeyRepo.count({
       where: { userId, consumed: false },
@@ -271,7 +273,7 @@ export class SignalKeyService {
       totalPreKeys: total,
       availablePreKeys: available,
       consumedPreKeys: consumed,
-      lastUpdated: user?.keys_updated_at || null,
+      lastUpdated: user.keys_updated_at,
     };
   }
 }

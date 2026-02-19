@@ -17,3 +17,6 @@ backend/node_modules
 # Temporary files
 *.tmp
 *.swp
+node_modules
+
+documentation/

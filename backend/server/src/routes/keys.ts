@@ -22,6 +22,8 @@ router.post("/upload", uploadKeyBundle);
  */
 router.get("/:userId", getKeyBundle);
 
+router.post("/get-recipient-keybundle", getKeyBundle);
+
 router.get("/stats/me", getKeyStatistics);
 
 /**

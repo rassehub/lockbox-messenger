@@ -13,7 +13,7 @@ app.use(express.json());
 app.use(express.static('public'));
 app.use(sessionParser);
 
-app.use('/api', authRoutes);
+app.use('/auth', authRoutes);
 app.use('/keys', keyRoutes);
 
 

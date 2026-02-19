@@ -16,8 +16,8 @@ function getKeyService(): SignalKeyService {
 }
 
 export const uploadKeyBundle = async (req: Request, res: Response): Promise<void> => {
-    logger.info("HEADERS:", req.headers);
-    try {
+  logger.info("HEADERS:", req.headers);
+  try {
     const userId = req.session?.userId;
     if (!userId) {
       res.status(401).json({ error: "Unauthorized" });
@@ -37,7 +37,7 @@ export const uploadKeyBundle = async (req: Request, res: Response): Promise<void
       res.status(400).json({ error: "Invalid key bundle format" });
       return;
     }
-
+    await getKeyService().cleanupOldPreKeys(0);
     await getKeyService().uploadKeyBundle(userId, keyBundle);
 
     res.json({
@@ -51,10 +51,15 @@ export const uploadKeyBundle = async (req: Request, res: Response): Promise<void
 };
 
 export const getKeyBundle = async (req: Request, res: Response): Promise<void> => {
-      try {
-    const { userId } = req.params;
+  const { recipientId } = req.body ?? {};
 
-    const keyBundle = await getKeyService().getKeyBundle(userId);
+  if (!recipientId) {
+    res.status(400).json({ error: 'Missing recipient userId' });
+    return;
+  }
+  try {
+
+    const keyBundle = await getKeyService().getKeyBundle(recipientId);
 
     res.json({
       success: true,
@@ -76,12 +81,12 @@ export const getKeyBundle = async (req: Request, res: Response): Promise<void> =
 };
 
 export const getKeyStatistics = async (req: Request, res: Response): Promise<void> => {
-    try {
-      const userId = req.session?.userId;
-      
-      if (!userId) {
-        res.status(401).json({ error: "Unauthorized" });
-        return;
+  try {
+    const  userId = req.session?.userId;
+
+    if (!userId) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
     }
 
     const stats = await getKeyService().getKeyStats(userId);
@@ -93,22 +98,22 @@ export const getKeyStatistics = async (req: Request, res: Response): Promise<voi
     console.error("Error fetching key stats:", error);
     res.status(500).json({ error: "Failed to fetch key stats" });
   }
-}; 
+};
 
 export const checkPreKeys = async (req: Request, res: Response): Promise<void> => {
-    logger.info('request user id:', req.session?.userId)
-      try {
+  logger.info(`request user id: ${req.session?.userId}`)
+  try {
     const userId = req.session?.userId;
     if (!userId) {
       res.status(401).json({ error: "Unauthorized" });
       return;
     }
-    logger.info('getKeyStats called with userId:', userId);
+    logger.info(`getKeyStats called with userId: ${userId}`);
 
     const needsMore = await getKeyService().needsMorePreKeys(userId, 10);
     const count = await getKeyService().getAvailablePreKeyCount(userId);
-    logger.info('needs more:', needsMore);
-    logger.info('count: ', count)
+    logger.info(`needs more: ${needsMore}`);
+    logger.info(`count: ${count}`)
 
     res.json({
       success: true,
@@ -123,7 +128,7 @@ export const checkPreKeys = async (req: Request, res: Response): Promise<void> =
 };
 
 export const addPreKeys = async (req: Request, res: Response): Promise<void> => {
-    try {
+  try {
     const userId = req.session?.userId;
     if (!userId) {
       res.status(401).json({ error: "Unauthorized" });
@@ -153,7 +158,7 @@ export const addPreKeys = async (req: Request, res: Response): Promise<void> => 
 };
 
 export const rotateSignedPreKey = async (req: Request, res: Response): Promise<void> => {
-      try {
+  try {
     const userId = req.session?.userId;
     if (!userId) {
       res.status(401).json({ error: "Unauthorized" });

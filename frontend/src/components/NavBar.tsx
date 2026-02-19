@@ -9,6 +9,8 @@ const chat = require('../assets/chat.png');
 const chatDark = require('../assets/chat-dark-temp.png');
 const profile = require('../assets/profile.png');
 const profileDark = require('../assets/profile-dark.png');
+const activeBackground = require('../assets/active-background.png');
+const activeBackgroundDark = require('../assets/active-background-dark.png');
 
 const NavBar = () => {
     const { isDarkTheme } = useTheme();
@@ -18,96 +20,85 @@ const NavBar = () => {
 
     const {width} = Dimensions.get('window');
     const positions = [
-        ((width / 2) / 2) - 20.5,
+        ((width / 2) / 2) - 50.5,
         ((width / 2) / 2) + 146,
     ];
-
-    console.log(positions)
+    console.log(positions);
 
     const animated = useRef(new Animated.Value(0)).current;
+    const homeBottom = useRef(new Animated.Value(25)).current;
+    const profileBottom = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
         Animated.spring(animated, {
             toValue: selected === 'home' ? positions[0] : positions[1],
             useNativeDriver: true,
         }).start();
+
+        Animated.spring(homeBottom, {
+            toValue: selected === 'home' ? 25 : 0,
+            useNativeDriver: false,
+        }).start();
+
+        Animated.spring(profileBottom, {
+            toValue: selected === 'profile' ? 25 : 0,
+            useNativeDriver: false,
+        }).start();
     }, [selected]);
 
     return (
-        <View style={styles.mainContainer}>
-            <View style={[styles.mainView, {backgroundColor: isDarkTheme ? '#1E1E1E' : '#FFFFFF'}]}>
-                <View style={[
-                    styles.roundedView1, 
-                    {
-                        borderTopRightRadius: 18,
-                        width: selected === 'home' ? '20%' : '62.3%',
-                    }
-                ]}/>
-
-                <View style={[
-                    styles.roundedView2,
-                    {
-                        borderTopLeftRadius: 18,
-                        width: selected === 'profile' ? '20%' : '62.5%',
-                    }
-                ]}/>
-            </View>
-
-            <View style={styles.icons}>
-                <TouchableOpacity
-                    onPress={() => {
-                        setSelected('home');
-                        navigation.navigate('Home');
-                    }}
+        <View>
+            <View style={styles.navBar}>
+                <Animated.Image 
                     style={[
-                        styles.iconContainerView,
-                        { bottom: selected === 'home' ? 0 : -20 }
-                    ]}
-                >
-                    <Image source={chat} />
-                </TouchableOpacity>
-                <TouchableOpacity
-                    onPress={() => {
-                        setSelected('profile');
-                        navigation.navigate('Profile', {
-                            userId: 'tttt',
-                        });
-                    }}
-                    style={[
-                        styles.iconContainerView,
-                        { bottom: selected === 'profile' ? 0 : -20 }
-                    ]}
-                >
-                    <Image source={profile} />
-                </TouchableOpacity>
+                        styles.activeBackground,
+                        { transform: [{ translateX: animated }] }
+                    ]} 
+                    source={isDarkTheme ? activeBackgroundDark : activeBackground} 
+                />
+                <View style={styles.navItems}>
+                    <TouchableOpacity
+                        style={styles.navItem}
+                        onPress={() => {
+                            setSelected('home');
+                            navigation.navigate('Home');
+                        }}>
+                        <Animated.Image style={{bottom: homeBottom}} source={chat} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.navItem}
+                        onPress={() => {
+                            setSelected('profile');
+                            navigation.navigate('Profile', {
+                                userId: 'tttt',
+                            });
+                        }}>
+                        <Animated.Image style={{bottom: profileBottom}} source={profile} />
+                    </TouchableOpacity>  
+                </View> 
             </View>
-            
-            <Animated.View style={[
-                styles.backgroundView, 
-                {
-                    backgroundColor: isDarkTheme ? '#1E1E1E' : '#FFFFFF',
-                    transform: [{translateX: animated}],
-                }
-            ]}>
-                    
-            </Animated.View>
-
-            <View style={[styles.bottomLayer, {alignSelf: selected === 'home' ? 'flex-start' : 'flex-end'}]}></View>
-            
         </View>
     )
 }
 
 const styles = StyleSheet.create({
     navBar: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
+        
         backgroundColor: '#A8A5FF',
         width: '100%',
         position: 'absolute',
         bottom: 0,
         borderTopLeftRadius: 15,
         borderTopRightRadius: 15,
+    },
+    activeBackground: {
+        position: 'absolute',
+    },
+    navItems: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '100%',
+
     },
     navItem: {
         width: '50%',
