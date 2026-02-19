@@ -1,5 +1,4 @@
-// http.ts
-export interface HttpClient {
+export interface IHttpClient {
   send(request: {
     url: string
     method: string

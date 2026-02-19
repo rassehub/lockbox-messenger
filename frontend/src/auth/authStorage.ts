@@ -1,6 +1,6 @@
 import { SecureStorage } from "../storage/secureStorage";
-import AuthStorageSchema from './authStorage.schema'
-import { authCodecs } from "./authStorage.codecs";
+import AuthStorageSchema from './authStorageSchema'
+import { authCodecs } from "./authStorageCodecs";
 
 export class AuthStorage {
     private secureStorage;

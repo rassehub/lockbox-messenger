@@ -1,8 +1,8 @@
-import type { EndpointSchema } from "./endpoint.config";
-import { endpointConfig } from "./endpoint.config";
-import { CodecFor, apiCodecs } from "./endpoint.codecs";
-import { SessionProvider } from "../core/SessionProvider";
-import { HttpClient } from "../core/http";
+import type { EndpointSchema } from "./apiEndpointConfig";
+import { endpointConfig } from "./apiEndpointConfig";
+import { CodecFor, apiCodecs } from "./apiEndpointCodecs";
+import { ISessionProvider } from "./ISessionProvider";
+import { IHttpClient } from "../http/IHttpClient";
 
 type HasEncode<T> = T extends { encode: any } ? T : never;
 type HasDecode<T> = T extends { decode: any } ? T : never;
@@ -17,7 +17,7 @@ type ApiResponse<T> = {
 export class ApiClient {
   private codecs = new Map<keyof EndpointSchema, any>();
 
-  constructor(private session: SessionProvider, private http: HttpClient,) {
+  constructor(private session: ISessionProvider, private http: IHttpClient,) {
     this.codecs = new Map(
       Object.entries(apiCodecs) as [keyof EndpointSchema, any][]
     );

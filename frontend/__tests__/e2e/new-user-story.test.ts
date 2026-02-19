@@ -5,14 +5,14 @@ import { CryptoProvider } from "../../src/crypto/services/CryptoProvider";
 import { KeyApiService } from "../../src/crypto/services/KeyApiService";
 import { ApiClient } from "../../src/api/apiClient";
 import { WebSocketService } from "../../src/realtime/websocket";
-import { FetchHttpClient } from "../../src/core/fetchHttpClient";
+import { HttpClient } from "../../src/http/HttpClient";
 export interface ClientContext {
   userId: string
   username: string
   phoneNumber: string
   password: string
 
-  transport: FetchHttpClient
+  transport: HttpClient
   auth: AuthService
   api: ApiClient
   keyApi: KeyApiService
@@ -24,7 +24,7 @@ export interface ClientContext {
 
 
 export function createClientContext(): ClientContext {
-  const transport = new FetchHttpClient("http://127.0.0.1:3000")
+  const transport = new HttpClient("http://127.0.0.1:3000")
   const auth = new AuthService(transport)
   const api = new ApiClient(auth, transport)
   const ws = new WebSocketService(auth)

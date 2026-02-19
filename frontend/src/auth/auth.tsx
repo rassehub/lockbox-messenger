@@ -1,8 +1,8 @@
 import { ApiClient } from "src/api/apiClient";
 import { AuthStorage } from "./authStorage";
 import { createApiFacade } from "../utils/createApiFacade";
-import { SessionProvider } from "../core/SessionProvider";
-import { HttpClient } from "../core/http";
+import { ISessionProvider } from "../api/ISessionProvider";
+import { IHttpClient } from "../http/IHttpClient";
 
 /*
     POSSIBLE IDEAS:
@@ -10,7 +10,7 @@ import { HttpClient } from "../core/http";
       -relogin will send getMe request with stored session token, which will send userId
     -implement refresh token so that if it gets sent with expired session token new ones will be issued
 */
-class AuthService implements SessionProvider {
+class AuthService implements ISessionProvider {
   private sessionToken?: string;
   private refreshToken?: string;
   private userId?: string;
@@ -19,7 +19,7 @@ class AuthService implements SessionProvider {
 
   private store: AuthStorage;
 
-  constructor(private http: HttpClient) {
+  constructor(private http: IHttpClient) {
     this.store = new AuthStorage;
 
   }

@@ -1,4 +1,4 @@
-import type AuthStorageSchema from './authStorage.schema'
+import type AuthStorageSchema from './authStorageSchema'
 
 const authMapCodec = {
     encode: (value: Record<string, {session: string, refresh: string}> ): string =>

@@ -3,7 +3,7 @@ import {
     KeyPairType,
 } from '@privacyresearch/libsignal-protocol-typescript';
 
-import type { EndpointSchema } from "./endpoint.config";
+import type { EndpointSchema } from "./apiEndpointConfig";
 import { SignedPublicPreKeyType, PreKeyType } from "@privacyresearch/libsignal-protocol-typescript";
 
 type KeyBundle = {

@@ -1,5 +1,5 @@
 import WebSocket from 'ws';
-import { SessionProvider } from "../core/SessionProvider";
+import { ISessionProvider } from "../api/ISessionProvider";
 
 
 type MessageHandler = (data: any) => void;
@@ -18,7 +18,7 @@ export class WebSocketService {
   private ws: WebSocket | null = null;
   private messageHandlers = new Map<string, MessageHandler>();
 
-  constructor(private session: SessionProvider) { }
+  constructor(private session: ISessionProvider) { }
 
   connect() {
     const cookie = this.session.getSessionToken()

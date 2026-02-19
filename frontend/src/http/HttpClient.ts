@@ -1,7 +1,7 @@
 // fetchHttpClient.ts
-import { HttpClient } from "./http"
+import { IHttpClient } from "./IHttpClient"
 
-export class FetchHttpClient implements HttpClient {
+export class HttpClient implements IHttpClient {
   constructor(private baseURL: string) {}
 
   async send({ url, method, headers, body }: {
