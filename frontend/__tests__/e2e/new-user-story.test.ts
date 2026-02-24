@@ -7,49 +7,49 @@ import { ApiClient } from "../../src/api/apiClient";
 import { WebSocketService } from "../../src/realtime/websocket";
 import { HttpClient } from "../../src/http/HttpClient";
 export interface ClientContext {
-  userId: string
-  username: string
-  phoneNumber: string
-  password: string
+    userId: string
+    username: string
+    phoneNumber: string
+    password: string
 
-  transport: HttpClient
-  auth: AuthService
-  api: ApiClient
-  keyApi: KeyApiService
-  cryptoStorage: CryptoStorage
-  cryptoProvider: CryptoProvider
-  cryptoManager: CryptoManager
-  ws: WebSocketService
+    transport: HttpClient
+    auth: AuthService
+    api: ApiClient
+    keyApi: KeyApiService
+    cryptoStorage: CryptoStorage
+    cryptoProvider: CryptoProvider
+    cryptoManager: CryptoManager
+    ws: WebSocketService
 }
 
 
 export function createClientContext(): ClientContext {
-  const transport = new HttpClient("http://127.0.0.1:3000")
-  const auth = new AuthService(transport)
-  const api = new ApiClient(auth, transport)
-  const ws = new WebSocketService(auth)
-  const keyApi = new KeyApiService(api)
-  return {
-    userId: "",
-    username: `liisa${Math.floor(Math.random() * 16777215)}`,
-    phoneNumber: String(Math.floor(Math.random() * 16777215)),
-    password: "notsosecure",
+    const transport = new HttpClient("http://127.0.0.1:3000")
+    const auth = new AuthService(transport)
+    const api = new ApiClient(auth, transport)
+    const ws = new WebSocketService(auth)
+    const keyApi = new KeyApiService(api)
+    return {
+        userId: "",
+        username: `liisa${Math.floor(Math.random() * 16777215)}`,
+        phoneNumber: String(Math.floor(Math.random() * 16777215)),
+        password: "notsosecure",
 
-    transport,
-    auth,
-    api,
-    keyApi,
-    cryptoManager: {} as CryptoManager,
-    cryptoProvider: {} as CryptoProvider,
-    cryptoStorage: {} as CryptoStorage,
-    ws
-  }
+        transport,
+        auth,
+        api,
+        keyApi,
+        cryptoManager: {} as CryptoManager,
+        cryptoProvider: {} as CryptoProvider,
+        cryptoStorage: {} as CryptoStorage,
+        ws
+    }
 }
 
 const alice = createClientContext();
 
 const bob = createClientContext();
-    
+
 const waitForOpen = (ws: WebSocketService): Promise<void> => {
     return new Promise((resolve, reject) => {
         const timeout = setTimeout(() => reject(new Error('Connection timeout')), 5000);
@@ -75,7 +75,10 @@ const waitForMessage = (ws: WebSocketService): Promise<any> => {
 };
 
 describe('Authentication related functions and api-calls', () => {
-    
+    beforeEach(() => {
+        console.log = jest.fn();
+    });
+
     it('registers successfully', async () => {
         const userId = await alice.auth?.register(alice.username, alice.phoneNumber, alice.password);
         expect(userId).toBeDefined;
@@ -110,6 +113,9 @@ describe('Authentication related functions and api-calls', () => {
     });
 });
 describe('WebSocket and encryption:', () => {
+    beforeEach(() => {
+        console.log = jest.fn();
+    });
     let encryptedMessage: { type: number; body: string };
     const aliceMessage = 'Hello Bob!';
     const bobMessage = 'Hello Alice!';
@@ -209,5 +215,23 @@ describe('WebSocket and encryption:', () => {
             alice.ws.disconnect();
             bob.ws.disconnect();
         }
+    });
+    it('should receive messsage from cache and deccrypt it properly', async () => {
+        alice.ws.connect();
+        const offlineMessage = await alice.cryptoManager.encryptMessage(bob.userId, "offline message");
+
+        alice.ws.sendMessage(bob.userId, offlineMessage);
+        alice.ws.disconnect();
+
+        bob.ws.connect();
+
+        const messagePromise = waitForMessage(bob.ws)
+
+        const received = await messagePromise;
+
+        const decryptedMessage = await bob.cryptoManager.decryptMessage(alice.userId, received.ciphertext);
+        expect(decryptedMessage).toBe("offline message");
+
+        bob.ws.disconnect();
     });
 });
