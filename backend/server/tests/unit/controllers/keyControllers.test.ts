@@ -8,6 +8,7 @@ const mockNeedsMorePreKeys = jest.fn();
 const mockGetAvailablePreKeyCount = jest.fn();
 const mockAddOneTimePreKeys = jest.fn();
 const mockRotateSignedPreKey = jest.fn();
+const mockCleanupOldPreKeys =   jest.fn();
 
 // Mock the SignalKeyService
 jest.mock('@/services/signalKeyService', () => ({
@@ -19,6 +20,7 @@ jest.mock('@/services/signalKeyService', () => ({
     getAvailablePreKeyCount: mockGetAvailablePreKeyCount,
     addOneTimePreKeys: mockAddOneTimePreKeys,
     rotateSignedPreKey: mockRotateSignedPreKey,
+    cleanupOldPreKeys: mockCleanupOldPreKeys,
   })),
 }));
 
@@ -184,7 +186,7 @@ describe('Key Controllers', () => {
         oneTimePreKeys: [{ keyId: 42, publicKey: 'prekey-base64' }],
       };
 
-      mockReq.params = { userId: 'user-456' };
+      mockReq.body = { recipientId: 'user-456' };
       mockGetKeyBundle.mockResolvedValue(mockKeyBundle);
 
       await getKeyBundle(mockReq as Request, mockRes as Response);
@@ -197,7 +199,7 @@ describe('Key Controllers', () => {
     });
 
     it('should return 503 if user has no available pre-keys', async () => {
-      mockReq.params = { userId: 'user-456' };
+      mockReq.body = { recipientId: 'user-456' };
       mockGetKeyBundle.mockRejectedValue(
         new Error('No available pre-keys. User needs to upload more pre-keys.')
       );
@@ -212,7 +214,7 @@ describe('Key Controllers', () => {
     });
 
     it('should return 500 for other errors', async () => {
-      mockReq.params = { userId: 'user-456' };
+      mockReq.body = { recipientId: 'user-456' };
       mockGetKeyBundle.mockRejectedValue(new Error('Database connection failed'));
 
       await getKeyBundle(mockReq as Request, mockRes as Response);
