@@ -1,14 +1,14 @@
 services:
+  # --------------------
+  # SERVER (DEV)
+  # --------------------
   server:
-    build:
-      context: ./server
-      dockerfile: Dockerfile
-    restart: always
-    container_name: lockbox-server
-    user: '1000:1000'
+    build: ./server
+    image: lockbox-server
+    restart: unless-stopped
+    user: "1000:1000"
     ports:
-      - '3000:3000'
-    environment:
+      - "3000:3000"
     env_file:
       - ./server/.env
     depends_on:
@@ -17,12 +17,31 @@ services:
     volumes:
       - ./server:/server:Z
     command: npm run dev
+    profiles: ["dev"]
+
+  # --------------------
+  # SERVER (TEST)
+  # --------------------
+  server_test:
+    image: lockbox-server
+    restart: unless-stopped
+    user: "1000:1000"
+    env_file:
+      - ./server/.env.test
+    depends_on:
+      - db_test
+      - cache_test
+    volumes:
+      - ./server:/server:Z
+    command: npm run test:watchAll
+    profiles: ["test"]
+
+  # --------------------
+  # DATABASE (DEV)
+  # --------------------
   db:
     image: postgres:17.5-alpine3.21
-    restart: always
-    container_name: lockbox-db
-    ports:
-      - '5432:5432'
+    restart: unless-stopped
     environment:
       POSTGRES_USER: dbuser
       POSTGRES_PASSWORD: dbpass
@@ -30,12 +49,41 @@ services:
       POSTGRES_LOG_MIN_MESSAGES: warning
     tmpfs:
       - /var/lib/postgresql/data
+    profiles: ["dev"]
+
+  # --------------------
+  # DATABASE (TEST)
+  # --------------------
+  db_test:
+    image: postgres:17.5-alpine3.21
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: dbuser
+      POSTGRES_PASSWORD: dbpass
+      POSTGRES_DB: lockbox_test
+      POSTGRES_LOG_MIN_MESSAGES: warning
+    tmpfs:
+      - /var/lib/postgresql/data
+    profiles: ["test"]
+
+  # --------------------
+  # CACHE (DEV)
+  # --------------------
   cache:
     image: redis:8.0-alpine3.21
-    restart: always
-    container_name: lockbox-cache
-    ports:
-      - '6379:6379'
+    restart: unless-stopped
     command: redis-server --save 20 1 --loglevel debug --requirepass cachepass
     tmpfs:
       - /data
+    profiles: ["dev"]
+
+  # --------------------
+  # CACHE (TEST)
+  # --------------------
+  cache_test:
+    image: redis:8.0-alpine3.21
+    restart: unless-stopped
+    command: redis-server --save 20 1 --loglevel warning --requirepass cachepass
+    tmpfs:
+      - /data
+    profiles: ["test"]
