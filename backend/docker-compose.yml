@@ -37,8 +37,8 @@ services:
     depends_on:
       - db_test
       - cache_test
-    volumes:
-      - ./server:/server:Z
+#    volumes:
+#      - ./server:/server:Z
     command: npm test -- --ci --runInBand
     profiles: ["test"]
 
