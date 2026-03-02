@@ -5,12 +5,12 @@ import logger from "./utils/logger";
 
 export const AppDataSource = new DataSource({
   type: "postgres",
-  host: "lockbox-db",
+  host: process.env.DB_HOST,
   port: 5432,
-  username: "dbuser",
-  password: "dbpass",
-  database: "lockbox_dev",
-  synchronize: true, // Auto-creates tables (disable in prod)
+  username: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database:process.env.DB_NAME,
+  synchronize: process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development', // Auto-creates tables (disable in prod)
   dropSchema: process.env.NODE_ENV === 'test', // Clean slate for each test run
   logging: true,
   entities: [

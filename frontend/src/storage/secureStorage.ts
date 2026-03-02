@@ -1,6 +1,5 @@
 import * as Keychain from 'react-native-keychain';
-import { encryptionCodecs } from '../crypto/storage/SignalProtcolStorage.codecs';
-import type { EncryptionStorageSchema, RecordEntries } from '../crypto/storage/SignalProtocolStorage.schema';
+import type { EncryptionStorageSchema, RecordEntries } from '../crypto/storage/cryptoStorageSchema';
 import {
     KeyPairType,
 } from '@privacyresearch/libsignal-protocol-typescript';

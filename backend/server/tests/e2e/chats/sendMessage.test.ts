@@ -47,16 +47,16 @@ describe('WSS messages', () => {
   });
 
   const login = async (phoneNumber: string, password: string) => {
-    const res = await request(baseUrl).post('/api/login').send({ phoneNumber, password }).expect(200);
+    const res = await request(baseUrl).post('/auth/login').send({ phoneNumber, password }).expect(200);
     const raw = res.headers['set-cookie'] || [];
     const arr = Array.isArray(raw) ? raw : [raw];
     const cookie = arr.map((c: string) => c.split(';')[0]).join('; ');
-    const me = await request(baseUrl).get('/api/me').set('Cookie', cookie).expect(200);
+    const me = await request(baseUrl).get('/auth/me').set('Cookie', cookie).expect(200);
     return { cookie, userId: me.body.userId as string };
   };
 
   const register = async (username: string, phoneNumber: string, password: string) => {
-    await request(baseUrl).post('/api/register').send({ username, phoneNumber, password }).expect(201);
+    await request(baseUrl).post('/auth/register').send({ username, phoneNumber, password }).expect(201);
   };
 
   it('forwards message to an online recipient', async () => {
