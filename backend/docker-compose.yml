@@ -3,7 +3,9 @@ services:
   # SERVER (DEV)
   # --------------------
   server:
-    build: ./server
+    build:
+      context:  ./server
+      target: development
     image: lockbox-server
     restart: unless-stopped
     user: "1000:1000"
@@ -23,7 +25,9 @@ services:
   # SERVER TEST (CI - single run)
   # --------------------
   server_test:
-    build: ./server
+    build:
+      context:  ./server
+      target: development
     image: lockbox-server
     user: "1000:1000"
     env_file:
@@ -40,7 +44,9 @@ services:
   # SERVER TEST (LOCAL WATCH)
   # --------------------
   server_test_watch:
-    build: ./server
+    build:
+      context:  ./server
+      target: development
     image: lockbox-server
     user: "1000:1000"
     env_file:
