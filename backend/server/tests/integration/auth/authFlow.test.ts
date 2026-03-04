@@ -35,6 +35,7 @@ describe('Auth flows (register, login, logout)', () => {
     }
   });
 
+
   const authUsername = uniqueUsername('auth');
   const authphoneNumber = uniqueUsername('Auth User');
 

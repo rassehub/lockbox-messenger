@@ -117,7 +117,7 @@ describe('Auth Middleware - isAuthenticated', () => {
       'Auth middleware error:',
       dbError
     );
-    expect(mockRes.sendStatus).toHaveBeenCalledWith(500);
+    expect(mockRes.status).toHaveBeenCalledWith(500);
     expect(mockNext).not.toHaveBeenCalled();
 
     consoleSpy.mockRestore();

@@ -38,7 +38,7 @@ export const login = async (req: Request, res: Response) => {
 }
 
 export const register = async (req: Request, res: Response) => {
-      const { username, phoneNumber, password } = req.body ?? {};
+  const { username, phoneNumber, password } = req.body ?? {};
   if (!username || !phoneNumber || !password) {
     res.status(400).json({ error: 'Missing username, phoneNumber or password' });
     return;
@@ -58,10 +58,10 @@ export const register = async (req: Request, res: Response) => {
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
-    const user = repo.create({ 
-      username: username, 
-      password_hash: passwordHash, 
-      phone_number: phoneNumber, 
+    const user = repo.create({
+      username: username,
+      password_hash: passwordHash,
+      phone_number: phoneNumber,
       signal_key_bundle: null // Will be uploaded after registration via /api/keys/upload
     });
     const saved = await repo.save(user as User);
@@ -76,12 +76,13 @@ export const register = async (req: Request, res: Response) => {
 }
 
 export const logout = async (req: Request, res: Response) => {
-  if (!req.session.userId) {
+  if (!req.user) {
     res.status(401).json({ error: 'Unauthorized' });
     return;
   }
+  const userId = req.user.id;
 
-  const ws = map.get(req.session.userId);
+  const ws = map.get(userId);
 
   logger.info('Destroying session', { userId: req.session.userId });
   req.session.destroy(() => {
@@ -91,9 +92,5 @@ export const logout = async (req: Request, res: Response) => {
 }
 
 export const me = async (req: Request, res: Response) => {
-  if (!req.session.userId) {
-    res.status(401).json({ error: 'Unauthorized' });
-    return;
-  }
-  res.json({ userId: req.session.userId });
+  res.json({ userId: req.user.id });
 }
