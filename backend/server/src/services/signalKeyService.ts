@@ -45,31 +45,42 @@ export class SignalKeyService {
 
   /**
    * Store one-time pre-keys with automatic keyId collision handling
+   * overwrite keys only if marked as consumed. Client ensures key has been processed
    */
   private async storeOneTimePreKeys(
     userId: string,
     preKeys: Array<{ keyId: number; publicKey: string }>
   ): Promise<void> {
-    // First, verify NONE of the keyIds already exist for this user
     const keyIds = preKeys.map(pk => pk.keyId);
 
     const existingKeys = await this.preKeyRepo.find({
       where: {
         userId,
         keyId: In(keyIds)
-      },
-      select: ['keyId'] // Only need keyId for the check
+      }
     });
 
-    if (existingKeys.length > 0) {
-      const collidingIds = existingKeys.map(k => k.keyId);
+    const consumedConflicts = existingKeys.filter(key => key.consumed === true);
+    const activeConflicts = existingKeys.filter(key => key.consumed === false);
+
+    if (activeConflicts.length > 0) {
+      const collidingIds = activeConflicts.map(k => k.keyId);
       throw new Error(
-        `Pre-key collision detected for userId=${userId}, keyIds=${collidingIds.join(', ')}. ` +
+        `Active pre-key collision detected for userId=${userId}, keyIds=${collidingIds.join(', ')}. ` +
         `Client should have prevented this.`
       );
     }
 
-    // No collisions found, safe to bulk insert all at once
+    if (consumedConflicts.length > 0) {
+      const consumedIds = consumedConflicts.map(k => k.keyId);
+      await this.preKeyRepo.delete({
+        userId,
+        keyId: In(consumedIds)
+      });
+
+      console.log(`Replaced ${consumedConflicts.length} consumed pre-keys for user ${userId}`);
+    }
+
     const newPreKeys = preKeys.map(preKey => this.preKeyRepo.create({
       userId,
       keyId: preKey.keyId,
@@ -77,7 +88,6 @@ export class SignalKeyService {
       consumed: false,
     }));
 
-    // Bulk insert for better performance
     await this.preKeyRepo.save(newPreKeys);
   }
 
