@@ -3,7 +3,7 @@ import { Request, Response } from 'express';
 
 import { User } from "../models/User";
 
-export const searchUser = async (req: Request, res: Response) => {
+export const searchUser = async (req: Request, res: Response): Promise<void> => {
     try {
         const { username } = req.body;
         const repo = getRepository(User);
@@ -11,21 +11,23 @@ export const searchUser = async (req: Request, res: Response) => {
 
 
         if (!user) {
-            return res.status(404).json({
+            res.status(404).json({
                 success: false,
                 message: 'User not found'
             });
+            return 
         }
 
-        return res.status(200).json({
+        res.status(200).json({
             success: true,
             userId: user.id
         });
     } catch (error) {
         console.error('Error searching for user:', error);
-        return res.status(500).json({
+        res.status(500).json({
             success: false,
             message: 'Error searching for user'
         });
+
     }
 };
