@@ -61,6 +61,14 @@ export const signedPreKeyToPublic = async (keyId: number, signedPreKey: SignedPr
   };
   
 };
+export const generatePreKeysFromIds = async (keyIds: number[]) => {
+    const preKeys = [];
+    for (const keyId of keyIds) {
+        const preKey = await generatePreKey(keyId);
+        preKeys.push(preKey);
+    }
+    return preKeys;
+};
 
 
 /**

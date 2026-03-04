@@ -147,10 +147,24 @@ export class CryptoProvider implements ICryptoProvider {
     };
 
     async regeneratePreKeys(count: number): Promise<PreKeyType[]> {
-        const preKeys = await utils.keys.generatePreKeys(utils.keys.generateKeyId(), count);
+        const MAX_KEY_ID = 500;
+        const idPool = Array.from({ length: MAX_KEY_ID }, (_, i) => i + 1);
+
+        const existingKeys = await this.storage.loadAllPreKeys();
+        const existingKeyIds = new Set(existingKeys?.map(key => key.keyId));
+
+        const availableIds = idPool.filter(id => !existingKeyIds.has(id));
+
+        if (availableIds.length < count) {
+            throw new Error(`Not enough available key IDs. Need ${count}, but only ${availableIds.length} available (1-${MAX_KEY_ID})`);
+        }
+        const idsToUse = availableIds.slice(0, count);
+
+        const preKeys = await utils.keys.generatePreKeysFromIds(idsToUse);
+
         await this.storage.storePreKeys(preKeys);
 
         const pubPK = utils.keys.preKeyArrayToPublic(preKeys);
         return pubPK;
-    };
+    }
 }

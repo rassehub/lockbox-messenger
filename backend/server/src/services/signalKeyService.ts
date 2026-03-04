@@ -6,6 +6,7 @@
 import { Repository, DataSource } from "typeorm";
 import { User, SignalKeyBundle } from "../models/User";
 import { PreKey } from "../models/User";
+import { In } from "typeorm";
 
 export class SignalKeyService {
   private userRepo: Repository<User>;
@@ -49,67 +50,35 @@ export class SignalKeyService {
     userId: string,
     preKeys: Array<{ keyId: number; publicKey: string }>
   ): Promise<void> {
-    for (const preKey of preKeys) {
-      try {
-        // Try to insert the pre-key
-        const newPreKey = this.preKeyRepo.create({
-          userId,
-          keyId: preKey.keyId,
-          publicKey: preKey.publicKey,
-          consumed: false,
-        });
+    // First, verify NONE of the keyIds already exist for this user
+    const keyIds = preKeys.map(pk => pk.keyId);
 
-        await this.preKeyRepo.save(newPreKey);
-      } catch (error: any) {
-        // Check if it's a unique constraint violation
-        if (error.code === "23505") {
-          // PostgreSQL unique violation
-          console.warn(
-            `PreKey collision detected for userId=${userId}, keyId=${preKey.keyId}. Generating new ID...`
-          );
+    const existingKeys = await this.preKeyRepo.find({
+      where: {
+        userId,
+        keyId: In(keyIds)
+      },
+      select: ['keyId'] // Only need keyId for the check
+    });
 
-          // Generate a new keyId that's guaranteed to be unique for this user
-          const newKeyId = await this.generateUniqueKeyId(userId);
-
-          const newPreKey = this.preKeyRepo.create({
-            userId,
-            keyId: newKeyId,
-            publicKey: preKey.publicKey,
-            consumed: false,
-          });
-
-          await this.preKeyRepo.save(newPreKey);
-        } else {
-          throw error;
-        }
-      }
-    }
-  }
-
-  /**
-   * Generate a unique keyId for a specific user
-   */
-  private async generateUniqueKeyId(userId: string): Promise<number> {
-    let attempts = 0;
-    const maxAttempts = 100;
-
-    while (attempts < maxAttempts) {
-      // Generate random 24-bit number (0 to 16,777,215)
-      const keyId = Math.floor(Math.random() * 16777215);
-
-      // Check if this keyId exists for this user
-      const exists = await this.preKeyRepo.findOne({
-        where: { userId, keyId },
-      });
-
-      if (!exists) {
-        return keyId;
-      }
-
-      attempts++;
+    if (existingKeys.length > 0) {
+      const collidingIds = existingKeys.map(k => k.keyId);
+      throw new Error(
+        `Pre-key collision detected for userId=${userId}, keyIds=${collidingIds.join(', ')}. ` +
+        `Client should have prevented this.`
+      );
     }
 
-    throw new Error("Failed to generate unique keyId after 100 attempts");
+    // No collisions found, safe to bulk insert all at once
+    const newPreKeys = preKeys.map(preKey => this.preKeyRepo.create({
+      userId,
+      keyId: preKey.keyId,
+      publicKey: preKey.publicKey,
+      consumed: false,
+    }));
+
+    // Bulk insert for better performance
+    await this.preKeyRepo.save(newPreKeys);
   }
 
   /**
