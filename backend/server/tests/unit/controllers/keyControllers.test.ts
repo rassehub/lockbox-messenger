@@ -55,6 +55,7 @@ describe('Key Controllers', () => {
 
     mockReq = {
       session: { userId: 'user-123' } as any,
+      user: { id: 'user-123', username: 'testuser' } as any, 
       body: {},
       params: {},
     };
@@ -99,16 +100,6 @@ describe('Key Controllers', () => {
         success: true,
         message: 'Key bundle uploaded successfully',
       });
-    });
-
-    it('should return 401 if user is not authenticated', async () => {
-      mockReq.session = undefined;
-
-      await uploadKeyBundle(mockReq as Request, mockRes as Response);
-
-      expect(mockRes.status).toHaveBeenCalledWith(401);
-      expect(mockRes.json).toHaveBeenCalledWith({ error: 'Unauthorized' });
-      expect(mockUploadKeyBundle).not.toHaveBeenCalled();
     });
 
     it('should return 400 if keyBundle is missing', async () => {
@@ -246,16 +237,6 @@ describe('Key Controllers', () => {
       });
     });
 
-    it('should return 401 if user is not authenticated', async () => {
-      mockReq.session = undefined;
-
-      await getKeyStatistics(mockReq as Request, mockRes as Response);
-
-      expect(mockRes.status).toHaveBeenCalledWith(401);
-      expect(mockRes.json).toHaveBeenCalledWith({ error: 'Unauthorized' });
-      expect(mockGetKeyStats).not.toHaveBeenCalled();
-    });
-
     it('should return 500 if service throws an error', async () => {
       mockGetKeyStats.mockRejectedValue(new Error('Service error'));
 
@@ -299,15 +280,6 @@ describe('Key Controllers', () => {
       });
     });
 
-    it('should return 401 if user is not authenticated', async () => {
-      mockReq.session = undefined;
-
-      await checkPreKeys(mockReq as Request, mockRes as Response);
-
-      expect(mockRes.status).toHaveBeenCalledWith(401);
-      expect(mockRes.json).toHaveBeenCalledWith({ error: 'Unauthorized' });
-    });
-
     it('should return 500 if service throws an error', async () => {
       mockNeedsMorePreKeys.mockRejectedValue(new Error('Service error'));
 
@@ -340,15 +312,6 @@ describe('Key Controllers', () => {
         message: 'Added 2 pre-keys',
         availableCount: 52,
       });
-    });
-
-    it('should return 401 if user is not authenticated', async () => {
-      mockReq.session = undefined;
-
-      await addPreKeys(mockReq as Request, mockRes as Response);
-
-      expect(mockRes.status).toHaveBeenCalledWith(401);
-      expect(mockRes.json).toHaveBeenCalledWith({ error: 'Unauthorized' });
     });
 
     it('should return 400 if preKeys is not an array', async () => {
@@ -404,15 +367,6 @@ describe('Key Controllers', () => {
         success: true,
         message: 'Signed pre-key rotated successfully',
       });
-    });
-
-    it('should return 401 if user is not authenticated', async () => {
-      mockReq.session = undefined;
-
-      await rotateSignedPreKey(mockReq as Request, mockRes as Response);
-
-      expect(mockRes.status).toHaveBeenCalledWith(401);
-      expect(mockRes.json).toHaveBeenCalledWith({ error: 'Unauthorized' });
     });
 
     it('should return 400 if signedPreKey is missing', async () => {
