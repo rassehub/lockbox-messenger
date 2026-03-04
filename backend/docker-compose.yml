@@ -29,8 +29,6 @@ services:
       context:  ./server
       target: development
     image: lockbox-server
-    environment:
-    - NODE_ENV=development 
     user: "1000:1000"
     env_file:
       - ./server/.env.test
