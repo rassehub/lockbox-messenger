@@ -22,6 +22,29 @@ services:
     profiles: ["dev"]
 
   # --------------------
+  # DATABASE
+  # --------------------
+  db:
+    image: postgres:17.5-alpine3.21
+    environment:
+      POSTGRES_USER: dbuser
+      POSTGRES_PASSWORD: dbpass
+      POSTGRES_DB: lockbox_dev
+    tmpfs:
+      - /var/lib/postgresql/data
+    profiles: ["dev"]
+
+  # --------------------
+  # CACHE
+  # --------------------
+  cache:
+    image: redis:8.0-alpine3.21
+    command: redis-server --save 20 1 --loglevel warning --requirepass cachepass
+    tmpfs:
+      - /data
+    profiles: ["dev"]
+
+  # --------------------
   # SERVER TEST (CI - single run)
   # --------------------
   server_test:
@@ -29,8 +52,6 @@ services:
       context:  ./server
       target: development
     image: lockbox-server
-    environment:
-    - NODE_ENV=development 
     user: "1000:1000"
     env_file:
       - ./server/.env.test

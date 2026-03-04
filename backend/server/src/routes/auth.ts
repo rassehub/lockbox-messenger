@@ -1,13 +1,14 @@
 import { Router } from 'express';
+import { isAuthenticated } from '@/middleware/auth';
 
 import { login, logout, register, me } from '../controllers/authController';
 
 const router = Router();
 
 router.post('/login', login);
-router.delete('/logout', logout);
+router.delete('/logout', isAuthenticated, logout);
 router.post('/register', register);
-router.get('/me', me);
+router.get('/me', isAuthenticated, me);
 
 
 export default router;

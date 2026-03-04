@@ -4,6 +4,7 @@ import { WebSocket } from 'ws';
 import sessionParser from '../middleware/session';
 import authRoutes from '../routes/auth';
 import keyRoutes from '../routes/keys';
+import socialRoutes from '../routes/social';
 
 const map = new Map<string, WebSocket>();
 
@@ -15,6 +16,7 @@ app.use(sessionParser);
 
 app.use('/auth', authRoutes);
 app.use('/keys', keyRoutes);
+app.use('/social', socialRoutes)
 
 
 export { app, sessionParser, map };

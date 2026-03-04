@@ -1,0 +1,246 @@
+import { getUserId, searchUsers } from '@/controllers/socialControllers'
+
+jest.mock('@/utils/logger', () => ({
+    info: jest.fn(),
+    error: jest.fn(),
+}));
+
+// Mock the db module with a configurable findOne
+jest.mock('@/db', () => ({
+    getRepository: jest.fn()
+}));
+
+// Import the mocked module
+import { getRepository } from '@/db';
+
+
+describe('Social Controllers', () => {
+    let mockFindOne: jest.Mock;
+    let mockFind: jest.Mock;
+    let consoleErrorSpy: jest.SpyInstance;
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+
+        // Setup mock repository with configurable findOne
+        mockFindOne = jest.fn();
+        mockFind = jest.fn();
+
+        (getRepository as jest.Mock).mockReturnValue({
+            findOne: mockFindOne,
+            find: mockFind
+        });
+
+        // Suppress console.error in tests
+        consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
+    });
+
+    afterEach(() => {
+        consoleErrorSpy.mockRestore();
+    });
+    describe('Get userId by username', () => {
+        it('should return user when found', async () => {
+            // Mock findOne to return a user
+            const mockUser = {
+                id: 'recipient-123',
+                username: 'someguy'
+            };
+            mockFindOne.mockResolvedValue(mockUser);
+
+            const req = {
+                body: { username: 'someguy' },
+                session: {}
+            } as any;
+            const res = {
+                status: jest.fn().mockReturnThis(),
+                json: jest.fn()
+            } as any;
+
+            await getUserId(req, res);
+
+            expect(mockFindOne).toHaveBeenCalledWith({
+                where: { username: 'someguy' }
+            });
+            expect(res.status).toHaveBeenCalledWith(200);
+            expect(res.json).toHaveBeenCalledWith({
+                success: true,
+                userId: 'recipient-123'
+            });
+        });
+
+        it('should handle user not found', async () => {
+            // Mock findOne to return null (user not found)
+            mockFindOne.mockResolvedValue(null);
+
+            const req = {
+                body: { username: 'fakeguy' },
+                session: {}
+            } as any;
+            const res = {
+                status: jest.fn().mockReturnThis(),
+                json: jest.fn()
+            } as any;
+
+            await getUserId(req, res);
+
+            expect(mockFindOne).toHaveBeenCalledWith({
+                where: { username: 'fakeguy' }
+            });
+            expect(res.status).toHaveBeenCalledWith(404);
+            expect(res.json).toHaveBeenCalledWith({
+                success: false,
+                message: 'User not found'
+            });
+        });
+
+        it('should handle database connection errors', async () => {
+            // Mock findOne to throw a database error
+            const dbError = new Error('Database connection failed');
+            mockFindOne.mockRejectedValue(dbError);
+
+            const req = {
+                body: { username: 'someguy' },
+                session: {}
+            } as any;
+            const res = {
+                status: jest.fn().mockReturnThis(),
+                json: jest.fn()
+            } as any;
+
+            await getUserId(req, res);
+
+            // Verify error was logged
+            expect(console.error).toHaveBeenCalledWith(
+                'Error searching for user:',
+                dbError
+            );
+
+            // Verify response is 500 with error message
+            expect(res.status).toHaveBeenCalledWith(500);
+            expect(res.json).toHaveBeenCalledWith({
+                success: false,
+                message: 'Error searching for user'
+            });
+
+            // Verify findOne was called
+            expect(mockFindOne).toHaveBeenCalledWith({
+                where: { username: 'someguy' }
+            });
+        });
+
+        it('should handle unexpected errors', async () => {
+            // Mock findOne to throw a non-Error object
+            const unexpectedError = 'Something went wrong';
+            mockFindOne.mockRejectedValue(unexpectedError);
+
+            const req = {
+                body: { username: 'someguy' },
+                session: {}
+            } as any;
+            const res = {
+                status: jest.fn().mockReturnThis(),
+                json: jest.fn()
+            } as any;
+
+            await getUserId(req, res);
+
+            // Verify error was logged
+            expect(console.error).toHaveBeenCalledWith(
+                'Error searching for user:',
+                unexpectedError
+            );
+
+            // Verify response is 500 with error message
+            expect(res.status).toHaveBeenCalledWith(500);
+            expect(res.json).toHaveBeenCalledWith({
+                success: false,
+                message: 'Error searching for user'
+            });
+        });
+    });
+    describe('Search users', () => {
+        it('should return matching usernames based on search term', async () => {
+            // Mock find to return multiple users
+            const mockUsers = [
+                { username: 'john123' },
+                { username: 'johnny' },
+                { username: 'johnson' }
+            ];
+            mockFind.mockResolvedValue(mockUsers);
+
+            const req = {
+                body: { username: 'john' },
+                session: {}
+            } as any;
+            const res = {
+                status: jest.fn().mockReturnThis(),
+                json: jest.fn()
+            } as any;
+
+            await searchUsers(req, res);
+
+            // Verify regex search was performed
+            expect(mockFind).toHaveBeenCalledWith({
+                where: {
+                    username: expect.objectContaining({
+                        _type: 'like',
+                        _value: '%john%'
+                    })
+                },
+                take: 20
+            });
+
+            expect(res.status).toHaveBeenCalledWith(200);
+            expect(res.json).toHaveBeenCalledWith({
+                success: true,
+                users: ['john123', 'johnny', 'johnson']
+            });
+        });
+
+        it('should return empty array when no users match', async () => {
+            // Mock find to return empty array
+            mockFind.mockResolvedValue([]);
+
+            const req = {
+                body: { username: 'nonexistent' },
+                session: {}
+            } as any;
+            const res = {
+                status: jest.fn().mockReturnThis(),
+                json: jest.fn()
+            } as any;
+
+            await searchUsers(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(200);
+            expect(res.json).toHaveBeenCalledWith({
+                success: true,
+                users: []
+            });
+        });
+
+        it('should handle database errors', async () => {
+            // Mock find to throw error
+            const dbError = new Error('Database connection failed');
+            mockFind.mockRejectedValue(dbError);
+
+            const req = {
+                body: { username: 'john' },
+                session: {}
+            } as any;
+            const res = {
+                status: jest.fn().mockReturnThis(),
+                json: jest.fn()
+            } as any;
+
+            await searchUsers(req, res);
+
+            expect(console.error).toHaveBeenCalled();
+            expect(res.status).toHaveBeenCalledWith(500);
+            expect(res.json).toHaveBeenCalledWith({
+                success: false,
+                message: 'Error searching for users'
+            });
+        });
+    });
+});

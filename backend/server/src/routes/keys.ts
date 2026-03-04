@@ -8,7 +8,9 @@ import { Router } from "express";
 import { uploadKeyBundle, getKeyBundle, getKeyStatistics, checkPreKeys, addPreKeys, rotateSignedPreKey } from "../controllers/keyControllers";
 const router = Router();
 
+import { isAuthenticated } from "@/middleware/auth";
 
+router.use(isAuthenticated);
 /**
  * POST /api/keys/upload
  * Upload user's key bundle (called after registration or key rotation)

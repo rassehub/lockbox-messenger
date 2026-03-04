@@ -78,7 +78,8 @@ describe ('Auth Controller', () => {
       session: { 
         userId: 'user-123',
         destroy: jest.fn((cb) => cb(null)) 
-      }
+      },
+      user: { id: 'user-123', username: 'testuser' }
     } as any;
     const res = {
       status: jest.fn().mockReturnThis(),
