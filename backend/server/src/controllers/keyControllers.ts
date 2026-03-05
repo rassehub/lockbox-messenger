@@ -80,7 +80,7 @@ export const getKeyStatistics = async (req: Request, res: Response): Promise<voi
     try {
         const userId = req.user.id;
 
-        const stats = await getKeyService().getKeyStats(userId);
+        const stats = await getKeyService().getKeyStatistics(userId);
         res.json({
             success: true,
             stats,

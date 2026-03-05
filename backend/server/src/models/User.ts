@@ -75,12 +75,15 @@ export class User {
     };
   } | null;
 
+  @Column({ type: "integer",  nullable: true })
+  previous_signed_prekey_id!: number;
+
   // Metadata
   @Column({ type: "timestamptz", default: () => "CURRENT_TIMESTAMP" })
   created_at!: Date;
 
   @Column({ type: "timestamptz", default: () => "CURRENT_TIMESTAMP" })
-  keys_updated_at!: Date;
+  signed_prekey_updated_at!: Date;
 }
 
 export type { SignalKeyBundle };

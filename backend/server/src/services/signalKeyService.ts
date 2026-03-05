@@ -35,7 +35,7 @@ export class SignalKeyService {
       identityPubKey: keyBundle.identityPubKey,
       signedPreKey: keyBundle.signedPreKey,
     };
-    user.keys_updated_at = new Date();
+    user.signed_prekey_updated_at = new Date();
 
     // Store one-time pre-keys in separate table with collision prevention
     await this.storeOneTimePreKeys(userId, keyBundle.oneTimePreKeys);
@@ -210,9 +210,9 @@ export class SignalKeyService {
     if (!user || !user.signal_key_bundle) {
       throw new Error("User or key bundle not found");
     }
-
+    user.previous_signed_prekey_id = user.signal_key_bundle.signedPreKey.keyId;
     user.signal_key_bundle.signedPreKey = newSignedPreKey;
-    user.keys_updated_at = new Date();
+    user.signed_prekey_updated_at = new Date();
 
     await this.userRepo.save(user);
   }
@@ -230,6 +230,7 @@ export class SignalKeyService {
   /**
    * Get statistics about a user's keys
    */
+  /*
   async getKeyStats(userId: string): Promise<{
     totalPreKeys: number;
     availablePreKeys: number;
@@ -248,6 +249,8 @@ export class SignalKeyService {
       where: { userId, consumed: true },
     });
 
+
+
     return {
       totalPreKeys: total,
       availablePreKeys: available,
@@ -255,4 +258,66 @@ export class SignalKeyService {
       lastUpdated: user.keys_updated_at,
     };
   }
+*/
+  async getKeyStatistics(userId: string): Promise<{
+    validPreKeyIds: number[];
+    availablePreKeys: number;
+    signedPreKey: {
+      keyId: number;
+      ageDays: number;
+      needsRotation: boolean;
+    };
+    previousSignedPreKeyId: number | null;
+  }> {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user || !user.signal_key_bundle) {
+      throw new Error('User or key bundle not found');
+    }
+
+    const preKeys = await this.preKeyRepo.find({
+      where: { userId },
+      select: ['keyId', 'consumed', 'consumedAt'],
+    });
+
+    const now = new Date();
+    const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+
+    // Determine which key IDs are still valid:
+    // - not consumed, OR
+    // - consumed within the last 14 days (still within grace period)
+    const validPreKeyIds: number[] = [];
+    let availableCount = 0;
+
+    for (const pk of preKeys) {
+      if (!pk.consumed) {
+        validPreKeyIds.push(pk.keyId);
+        availableCount++;
+      } else if (pk.consumedAt && pk.consumedAt >= fourteenDaysAgo) {
+        validPreKeyIds.push(pk.keyId);
+        // consumed keys are not counted as available
+      }
+    }
+
+    // Signed pre‑key data
+    const signedPreKey = user.signal_key_bundle.signedPreKey;
+
+    const signedPreKeyAgeDays = Math.floor(
+      (now.getTime() - user.signed_prekey_updated_at.getTime()) / (24 * 60 * 60 * 1000)
+    );
+    const needsRotation = signedPreKeyAgeDays >= 7; // adjust threshold as needed
+
+    const previousSignedPreKeyId = user.previous_signed_prekey_id;
+
+    return {
+      validPreKeyIds,
+      availablePreKeys: availableCount,
+      signedPreKey: {
+        keyId: signedPreKey.keyId,
+        ageDays: signedPreKeyAgeDays,
+        needsRotation,
+      },
+      previousSignedPreKeyId,
+    };
+  }
 }
+

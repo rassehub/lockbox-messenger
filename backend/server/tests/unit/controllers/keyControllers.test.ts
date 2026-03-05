@@ -3,7 +3,7 @@ import { Request, Response } from 'express';
 // Mock the service methods BEFORE importing controllers
 const mockUploadKeyBundle = jest.fn();
 const mockGetKeyBundle = jest.fn();
-const mockGetKeyStats = jest.fn();
+const mockGetKeyStatistics = jest.fn();
 const mockNeedsMorePreKeys = jest.fn();
 const mockGetAvailablePreKeyCount = jest.fn();
 const mockAddOneTimePreKeys = jest.fn();
@@ -15,7 +15,7 @@ jest.mock('@/services/signalKeyService', () => ({
   SignalKeyService: jest.fn().mockImplementation(() => ({
     uploadKeyBundle: mockUploadKeyBundle,
     getKeyBundle: mockGetKeyBundle,
-    getKeyStats: mockGetKeyStats,
+    getKeyStatistics: mockGetKeyStatistics,
     needsMorePreKeys: mockNeedsMorePreKeys,
     getAvailablePreKeyCount: mockGetAvailablePreKeyCount,
     addOneTimePreKeys: mockAddOneTimePreKeys,
@@ -226,11 +226,11 @@ describe('Key Controllers', () => {
         lastUpdated: new Date('2025-11-10'),
       };
 
-      mockGetKeyStats.mockResolvedValue(mockStats);
+      mockGetKeyStatistics.mockResolvedValue(mockStats);
 
       await getKeyStatistics(mockReq as Request, mockRes as Response);
 
-      expect(mockGetKeyStats).toHaveBeenCalledWith('user-123');
+      expect(mockGetKeyStatistics).toHaveBeenCalledWith('user-123');
       expect(mockRes.json).toHaveBeenCalledWith({
         success: true,
         stats: mockStats,
@@ -238,7 +238,7 @@ describe('Key Controllers', () => {
     });
 
     it('should return 500 if service throws an error', async () => {
-      mockGetKeyStats.mockRejectedValue(new Error('Service error'));
+      mockGetKeyStatistics.mockRejectedValue(new Error('Service error'));
 
       await getKeyStatistics(mockReq as Request, mockRes as Response);
 
