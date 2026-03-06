@@ -59,7 +59,7 @@ export class CryptoManager {
     };
 
     async maintainKeys(): Promise<void> {
-        const preKeyAvailability = await this.api.checkPreKeys();
+        const preKeyAvailability = await this.api.getKeyStatistics();
         const keyStats = await this.api.getKeyStats();
 
         //check if prekeys are running low

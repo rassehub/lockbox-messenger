@@ -153,7 +153,7 @@ describe('KeyService', () => {
     });
   });
 
-  describe('checkPreKeys', () => {
+  describe('getKeyStatistics', () => {
     it('should check if pre-keys need replenishment', async () => {
       const mockResponse = {
         success: true,
@@ -167,7 +167,7 @@ describe('KeyService', () => {
         json: async () => mockResponse
       });
 
-      const result = await service.checkPreKeys();
+      const result = await service.getKeyStatistics();
 
       expect(global.fetch).toHaveBeenCalledWith(
         `${baseUrl}/keys/check-prekeys`,
@@ -193,7 +193,7 @@ describe('KeyService', () => {
         json: async () => mockResponse
       });
 
-      const result = await service.checkPreKeys();
+      const result = await service.getKeyStatistics();
 
       expect(result.needsMorePreKeys).toBe(false);
       expect(result.availableCount).toBe(50);

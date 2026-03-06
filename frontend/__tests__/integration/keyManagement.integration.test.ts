@@ -100,7 +100,7 @@ describe('Key Management Integration', () => {
 
   describe('Existing User Login Flow', () => {
     it('should initialize without uploading keys', async () => {
-      // Mock the checkPreKeys call that happens during initialization
+      // Mock the getKeyStatistics call that happens during initialization
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
         json: async () => ({

@@ -43,7 +43,7 @@ export class KeyApiService implements IKeyApiService {
             throw Error (keyStats.rawResponse.statusText);
     };
     
-    async checkPreKeys(): Promise<PreKeyCheckResponse> {
+    async getKeyStatistics(): Promise<PreKeyCheckResponse> {
         const preKeyAvailability = await this.api.makeRequest("checkPreKeyAvailability");
         if(preKeyAvailability.data)
             return preKeyAvailability.data;

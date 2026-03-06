@@ -47,7 +47,7 @@ export class SignalKeyService {
    * Store one-time pre-keys with automatic keyId collision handling
    * overwrite keys only if marked as consumed. Client ensures key has been processed
    */
-  private async storeOneTimePreKeys(
+  async storeOneTimePreKeys(
     userId: string,
     preKeys: Array<{ keyId: number; publicKey: string }>
   ): Promise<void> {
@@ -155,44 +155,46 @@ export class SignalKeyService {
   }
 
   /**
-   * Get the count of available (unconsumed) pre-keys for a user
-   */
-  async getAvailablePreKeyCount(userId: string): Promise<number> {
-    return await this.preKeyRepo.count({
-      where: {
-        userId,
-        consumed: false,
-      },
-    });
-  }
-
-  /**
-   * Check if user needs to upload more pre-keys
-   * Returns true if they have fewer than the threshold
-   */
-  async needsMorePreKeys(
-    userId: string,
-    threshold: number = 10
-  ): Promise<boolean> {
-    const count = await this.getAvailablePreKeyCount(userId);
-    return count < threshold;
-  }
-
-  /**
    * Delete old consumed pre-keys (cleanup operation)
    */
-  async cleanupOldPreKeys(olderThanDays: number = 30): Promise<number> {
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - olderThanDays);
+  async cleanupOldPreKeys(oldKeysTTL: number = 15, preKeysTTL: number = 45): Promise<void> {
+    const oldKeysCutoffDate = new Date();
+    oldKeysCutoffDate.setDate(oldKeysCutoffDate.getDate() - oldKeysTTL);
 
-    const result = await this.preKeyRepo
+    const PreKeysCutoffDate = new Date();
+    PreKeysCutoffDate.setDate(PreKeysCutoffDate.getDate() - preKeysTTL);
+
+    //delete all expiring keys
+    await this.preKeyRepo.manager.transaction(async (manager) => {
+      manager
+        .getRepository(PreKey)
+        .createQueryBuilder("prekey")
+        .where("consumed = :consumed", { consumed: false })
+        .andWhere("createdAt < :PreKeyscutoffDate", { PreKeysCutoffDate })
+        .setLock("pessimistic_write")
+        .delete();
+    });
+
+    await this.preKeyRepo
       .createQueryBuilder()
       .delete()
       .where("consumed = :consumed", { consumed: true })
-      .andWhere("consumedAt < :cutoffDate", { cutoffDate })
+      .andWhere("consumedAt < :oldKeysCutoffDate", { oldKeysCutoffDate })
       .execute();
 
-    return result.affected || 0;
+    await this.userRepo
+      .createQueryBuilder()
+      .update(User)
+      .set({
+        previous_signed_prekey_id: null,
+        expired_signed_prekey_id: null,
+      })
+      .where(
+        `(previous_signed_prekey_id->>'createdAt')::timestamp < :cutoffDate 
+       OR (expired_signed_prekey_id->>'createdAt')::timestamp < :cutoffDate`,
+        { cutoffDate: oldKeysCutoffDate.toISOString() }
+      )
+      .execute();
   }
 
   /**
@@ -210,55 +212,19 @@ export class SignalKeyService {
     if (!user || !user.signal_key_bundle) {
       throw new Error("User or key bundle not found");
     }
-    user.previous_signed_prekey_id = user.signal_key_bundle.signedPreKey.keyId;
+
+    user.expired_signed_prekey_id = user.previous_signed_prekey_id;
+    user.previous_signed_prekey_id = {
+      keyId: user.signal_key_bundle.signedPreKey.keyId,
+      createdAt: user.signed_prekey_updated_at
+    }
+
     user.signal_key_bundle.signedPreKey = newSignedPreKey;
     user.signed_prekey_updated_at = new Date();
 
     await this.userRepo.save(user);
   }
 
-  /**
-   * Add more one-time pre-keys when running low
-   */
-  async addOneTimePreKeys(
-    userId: string,
-    preKeys: Array<{ keyId: number; publicKey: string }>
-  ): Promise<void> {
-    await this.storeOneTimePreKeys(userId, preKeys);
-  }
-
-  /**
-   * Get statistics about a user's keys
-   */
-  /*
-  async getKeyStats(userId: string): Promise<{
-    totalPreKeys: number;
-    availablePreKeys: number;
-    consumedPreKeys: number;
-    lastUpdated: Date;
-  }> {
-    const user = await this.userRepo.findOne({ where: { id: userId } });
-    if (!user || !user.signal_key_bundle) {
-      throw new Error("User or key bundle not found");
-    }
-    const total = await this.preKeyRepo.count({ where: { userId } });
-    const available = await this.preKeyRepo.count({
-      where: { userId, consumed: false },
-    });
-    const consumed = await this.preKeyRepo.count({
-      where: { userId, consumed: true },
-    });
-
-
-
-    return {
-      totalPreKeys: total,
-      availablePreKeys: available,
-      consumedPreKeys: consumed,
-      lastUpdated: user.keys_updated_at,
-    };
-  }
-*/
   async getKeyStatistics(userId: string): Promise<{
     validPreKeyIds: number[];
     availablePreKeys: number;
@@ -267,7 +233,8 @@ export class SignalKeyService {
       ageDays: number;
       needsRotation: boolean;
     };
-    previousSignedPreKeyId: number | null;
+    previousSignedPKID: number | undefined;
+    expiredSignedPKID: number | undefined;
   }> {
     const user = await this.userRepo.findOne({ where: { id: userId } });
     if (!user || !user.signal_key_bundle) {
@@ -280,11 +247,10 @@ export class SignalKeyService {
     });
 
     const now = new Date();
-    const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+    const fifteenDaysAgo = new Date(now.getTime() - 15 * 24 * 60 * 60 * 1000);
 
     // Determine which key IDs are still valid:
-    // - not consumed, OR
-    // - consumed within the last 14 days (still within grace period)
+    // - not consumed, or consumed within the last 15 days
     const validPreKeyIds: number[] = [];
     let availableCount = 0;
 
@@ -292,9 +258,8 @@ export class SignalKeyService {
       if (!pk.consumed) {
         validPreKeyIds.push(pk.keyId);
         availableCount++;
-      } else if (pk.consumedAt && pk.consumedAt >= fourteenDaysAgo) {
+      } else if (pk.consumedAt && pk.consumedAt >= fifteenDaysAgo) {
         validPreKeyIds.push(pk.keyId);
-        // consumed keys are not counted as available
       }
     }
 
@@ -306,8 +271,8 @@ export class SignalKeyService {
     );
     const needsRotation = signedPreKeyAgeDays >= 7; // adjust threshold as needed
 
-    const previousSignedPreKeyId = user.previous_signed_prekey_id;
-
+    const previousSignedPKID = user.previous_signed_prekey_id?.keyId;
+    const expiredSignedPKID = user.expired_signed_prekey_id?.keyId;
     return {
       validPreKeyIds,
       availablePreKeys: availableCount,
@@ -316,7 +281,8 @@ export class SignalKeyService {
         ageDays: signedPreKeyAgeDays,
         needsRotation,
       },
-      previousSignedPreKeyId,
+      previousSignedPKID,
+      expiredSignedPKID
     };
   }
 }

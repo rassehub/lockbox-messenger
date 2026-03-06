@@ -74,9 +74,12 @@ export class User {
       signature: string;
     };
   } | null;
+  
+  @Column({ type: "jsonb",  nullable: true })
+  previous_signed_prekey_id!: { keyId: number; createdAt: Date } | null;
 
-  @Column({ type: "integer",  nullable: true })
-  previous_signed_prekey_id!: number;
+  @Column({ type: "jsonb",  nullable: true })
+  expired_signed_prekey_id!: { keyId: number; createdAt: Date } | null;
 
   // Metadata
   @Column({ type: "timestamptz", default: () => "CURRENT_TIMESTAMP" })

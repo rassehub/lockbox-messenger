@@ -6,16 +6,20 @@ import setupWebSocketServer from './config/wss';
 import logger from './utils/logger';
 import { initDb, closeDb } from './db';
 import { initCache, closeCache } from './services/redis';
+import { StartCron } from './startCron';
 
 const PORT = parseInt(process.env.PORT || '3000', 10);
 
 (async () => {
   try {
-    await initDb();
     await initCache();
-
+    const dataSource = await initDb();
+    const cleaningJob = StartCron(dataSource);
     const server = http.createServer(app);
     const wss = setupWebSocketServer(server, sessionParser as any, map);
+
+    if(process.env.NODE_ENV === 'development' || 'test')
+      cleaningJob.stop();
 
     server.listen(PORT, '0.0.0.0', () => {
       logger.info(`Server running on http://localhost:${PORT}`);
@@ -23,6 +27,7 @@ const PORT = parseInt(process.env.PORT || '3000', 10);
 
     const shutdown = async (signal: string) => {
       logger.info(`Shutting down on ${signal}`);
+      cleaningJob.stop();
       for (const [, ws] of map) { try { ws.terminate(); } catch {} }
       map.clear();
       await new Promise<void>(resolve => wss.close(() => resolve()));

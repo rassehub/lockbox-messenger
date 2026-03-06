@@ -5,7 +5,7 @@
 
 import { Router } from "express";
 
-import { uploadKeyBundle, getKeyBundle, getKeyStatistics, checkPreKeys, addPreKeys, rotateSignedPreKey } from "../controllers/keyControllers";
+import { uploadKeyBundle, getKeyBundle, getKeyStatistics, addPreKeys, rotateSignedPreKey } from "../controllers/keyControllers";
 const router = Router();
 
 import { isAuthenticated } from "@/middleware/auth";
@@ -28,11 +28,6 @@ router.post("/get-recipient-keybundle", getKeyBundle);
 
 router.get("/stats/me", getKeyStatistics);
 
-/**
- * GET /api/keys/check-prekeys
- * Check if user needs to upload more pre-keys
- */
-router.post("/check-prekeys", checkPreKeys);
 
 /**
  * POST /api/keys/add-prekeys

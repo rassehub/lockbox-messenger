@@ -7,5 +7,5 @@ export interface IKeyApiService {
     rotateSignedPreKey(signedPreKey: SignedPublicPreKeyType) : Promise<void>;
     uploadPreKeys(preKeys: PreKeyType[]): Promise<void>;
     getKeyStats(): Promise<KeyStats>;
-    checkPreKeys():  Promise<PreKeyCheckResponse>;
+    getKeyStatistics():  Promise<PreKeyCheckResponse>;
 };
