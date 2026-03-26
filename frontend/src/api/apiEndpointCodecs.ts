@@ -5,6 +5,7 @@ import {
 
 import type { EndpointSchema } from "./apiEndpointConfig";
 import { SignedPublicPreKeyType, PreKeyType } from "@privacyresearch/libsignal-protocol-typescript";
+import { BooleanSchema } from "yup";
 
 type KeyBundle = {
     registrationId: number;
@@ -16,6 +17,18 @@ type PreKey = {
     keyId: number;
     publicKey: ArrayBuffer;
 }
+
+type KeyStatistics = {
+    validPreKeyIds: number[];
+    availablePreKeys: number;
+    signedPreKey: {
+        keyId: number;
+        ageDays: number;
+        needsRotation: boolean;
+    };
+    previousSignedPKID: number | undefined;
+    expiredSignedPKID: number | undefined;
+};
 
 
 const keyBundleCodec = {
@@ -38,20 +51,20 @@ const keyBundleCodec = {
         }),
     decode: (raw: unknown): KeyBundle => {
         const parsed = raw as {
-            keyBundle:  {
-            registrationId: number,
-            identityPubKey: string,
-            signedPreKey: {
-                keyId: number,
-                publicKey: string,
-                signature: string,
-            },
-            oneTimePreKeys: {
-                keyId: number,
-                publicKey:  string,
-            }[]
+            keyBundle: {
+                registrationId: number,
+                identityPubKey: string,
+                signedPreKey: {
+                    keyId: number,
+                    publicKey: string,
+                    signature: string,
+                },
+                oneTimePreKeys: {
+                    keyId: number,
+                    publicKey: string,
+                }[]
             }
-            }
+        }
         return {
             registrationId: parsed.keyBundle.registrationId,
             identityPubKey: base64ToArrayBuffer(parsed.keyBundle.identityPubKey),
@@ -84,15 +97,15 @@ type EncodeDecode<Req, Res> = {
 
 export type CodecFor<K extends keyof EndpointSchema> =
     EndpointSchema[K]["request"] extends undefined
-        ? EndpointSchema[K]["response"] extends undefined
-            ? {} // nothing needed
-            : DecodeOnly<EndpointSchema[K]["response"]>
-        : EndpointSchema[K]["response"] extends undefined
-            ? EncodeOnly<EndpointSchema[K]["request"]>
-            : EncodeDecode<
-                EndpointSchema[K]["request"],
-                EndpointSchema[K]["response"]
-            >;
+    ? EndpointSchema[K]["response"] extends undefined
+    ? {} // nothing needed
+    : DecodeOnly<EndpointSchema[K]["response"]>
+    : EndpointSchema[K]["response"] extends undefined
+    ? EncodeOnly<EndpointSchema[K]["request"]>
+    : EncodeDecode<
+        EndpointSchema[K]["request"],
+        EndpointSchema[K]["response"]
+    >;
 
 type EndpointCodecs = {
     [K in keyof EndpointSchema]: CodecFor<K>;
@@ -100,34 +113,34 @@ type EndpointCodecs = {
 
 export const apiCodecs: EndpointCodecs = {
     login: {
-        encode: (req) => 
+        encode: (req) =>
             JSON.stringify({
                 phoneNumber: req.phoneNumber,
                 password: req.password,
             }),
         decode: (raw: unknown) => {
-        const parsed = raw as { userId: string };
-        return { userId: parsed.userId };
-    }
+            const parsed = raw as { userId: string };
+            return { userId: parsed.userId };
+        }
     },
     logout: {},
     registerUser: {
-        encode: (req) => 
+        encode: (req) =>
             JSON.stringify({
                 username: req.username,
                 phoneNumber: req.phoneNumber,
                 password: req.password,
             }),
-        decode: (raw: unknown) =>  {
-        const parsed = raw as { userId: string };
-        return { userId: parsed.userId };
-    }
+        decode: (raw: unknown) => {
+            const parsed = raw as { userId: string };
+            return { userId: parsed.userId };
+        }
     },
     fetchCurrentUser: {
-    decode: (raw: unknown): { userId: string } => {
-        const parsed = raw as { userId: string };
-        return { userId: parsed.userId };
-    }
+        decode: (raw: unknown): { userId: string } => {
+            const parsed = raw as { userId: string };
+            return { userId: parsed.userId };
+        }
     },
     uploadKeyBundle: {
         encode: (req: { keyBundle: KeyBundle }): string =>
@@ -158,36 +171,33 @@ export const apiCodecs: EndpointCodecs = {
             return { availableCount: parsed.availableCount }
         }
     },
-    checkPreKeyAvailability: {
-        decode: (raw: unknown): { needsMorePreKeys: boolean, availableCount: number, threshold: number } => {
+    fetchKeyStatistics: {
+        decode: (raw: unknown): KeyStatistics => {
             const parsed = raw as {
-                needsMorePreKeys: boolean,
-                availableCount: number,
-                threshold: number
-            }
-            return {
-                needsMorePreKeys: parsed.needsMorePreKeys,
-                availableCount: parsed.availableCount,
-                threshold: parsed.threshold
-            }
-        }
-    },
-    fetchMyKeyStatistics: {
-        decode: (raw: unknown): { totalPreKeys: number, availablePreKeys: number, consumedPreKeys: number, lastUpdated: Date } => {
-            const parsed = raw as {
+                success: Boolean,
                 stats: {
-                    totalPreKeys: number,
-                    availablePreKeys: number,
-                    consumedPreKeys: number,
-                    lastUpdated: Date
-                }
+                validPreKeyIds: number[];
+                availablePreKeys: number;
+                signedPreKey: {
+                    keyId: number;
+                    ageDays: number;
+                    needsRotation: boolean;
+                };
+                previousSignedPKID: number | undefined;
+                expiredSignedPKID: number | undefined;
             }
+            };
             return {
-                totalPreKeys: parsed.stats.totalPreKeys,
+                validPreKeyIds: parsed.stats.validPreKeyIds,
                 availablePreKeys: parsed.stats.availablePreKeys,
-                consumedPreKeys: parsed.stats.consumedPreKeys,
-                lastUpdated: parsed.stats.lastUpdated
-            }
+                signedPreKey: {
+                    keyId: parsed.stats.signedPreKey.keyId,
+                    ageDays: parsed.stats.signedPreKey.ageDays,
+                    needsRotation: parsed.stats.signedPreKey.needsRotation,
+                },
+                previousSignedPKID: parsed.stats.previousSignedPKID,
+                expiredSignedPKID: parsed.stats.expiredSignedPKID,
+            };
         },
     },
     fetchRecipientKeyBundle: {
@@ -196,7 +206,7 @@ export const apiCodecs: EndpointCodecs = {
                 recipientId: req.recipientId
             }),
         decode: (raw: unknown): { keyBundle: KeyBundle } => {
-            return { keyBundle: keyBundleCodec.decode(raw)}
+            return { keyBundle: keyBundleCodec.decode(raw) }
         }
     }
 }

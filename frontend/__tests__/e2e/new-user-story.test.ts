@@ -107,7 +107,7 @@ describe('Authentication related functions and api-calls', () => {
             alice.cryptoProvider,
             alice.keyApi
         );
-        const keyStats = await alice.api.makeRequest("fetchMyKeyStatistics");
+        const keyStats = await alice.api.makeRequest("fetchKeyStatistics");
         expect(keyStats).toBeDefined;
         expect(keyStats.data.availablePreKeys).toBeGreaterThan(1);
     });
@@ -134,7 +134,7 @@ describe('WebSocket and encryption:', () => {
             bob.cryptoProvider,
             bob.keyApi
         );
-        const keyStats = await bob.api.makeRequest("fetchMyKeyStatistics");
+        const keyStats = await bob.api.makeRequest("fetchKeyStatistics");
         expect(keyStats).toBeDefined;
         expect(keyStats.data.availablePreKeys).toBeGreaterThan(1);
         expect(keyStats.data.availablePreKeys).toBeGreaterThan(1);

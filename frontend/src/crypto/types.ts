@@ -73,15 +73,14 @@ export interface StoredSession {
   deviceId: number;
 }
 
-export interface KeyStats {
-      totalPreKeys: number;
-      availablePreKeys: number;
-      consumedPreKeys: number;
-      lastUpdated: Date;
-}
-
-export interface PreKeyCheckResponse {
-  needsMorePreKeys: boolean;
-  availableCount: number;
-  threshold: number;
+export interface KeyStatistics {
+    validPreKeyIds: number[];
+    availablePreKeys: number;
+    signedPreKey: {
+        keyId: number;
+        ageDays: number;
+        needsRotation: boolean;
+    };
+    previousSignedPKID: number | undefined;
+    expiredSignedPKID: number | undefined;
 }

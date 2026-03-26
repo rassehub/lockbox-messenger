@@ -1,15 +1,8 @@
-import { ApiClient } from "src/api/apiClient";
 import { AuthStorage } from "./authStorage";
-import { createApiFacade } from "../utils/createApiFacade";
 import { ISessionProvider } from "../api/ISessionProvider";
 import { IHttpClient } from "../http/IHttpClient";
 
-/*
-    POSSIBLE IDEAS:
-    -set userId so that it will not get stored
-      -relogin will send getMe request with stored session token, which will send userId
-    -implement refresh token so that if it gets sent with expired session token new ones will be issued
-*/
+
 class AuthService implements ISessionProvider {
   private sessionToken?: string;
   private refreshToken?: string;
@@ -40,6 +33,7 @@ class AuthService implements ISessionProvider {
     this.userId = userId;
     this.sessionToken = session;
     this.refreshToken = refresh;
+    this.authStatus = true;
   }
 
   async isAuthenticated() {
@@ -52,7 +46,7 @@ class AuthService implements ISessionProvider {
       this.userId = session.userId;
       this.sessionToken = session.sessionToken;
       this.refreshToken = session.refreshToken;
-
+      this.authStatus = true;
       return session.userId;
     }
     return undefined;
@@ -136,6 +130,7 @@ class AuthService implements ISessionProvider {
       this.sessionToken = undefined; // Clear session
       this.refreshToken = undefined;
       this.userId = undefined;
+      this.authStatus = false;
     }
   }
 

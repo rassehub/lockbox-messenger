@@ -1,5 +1,4 @@
-import { EncryptedMessage, KeyBundle, UserIdentity,  SignedPublicPreKeyType, PreKeyType } from "../types";
-import { ICryptoStorage } from "./ICryptoStorage";
+import { EncryptedMessage, KeyBundle, SignedPublicPreKeyType, PreKeyType } from "../types";
 
 export interface ICryptoProvider {
     isNewUser: () => boolean;
@@ -14,5 +13,7 @@ export interface ICryptoProvider {
 
     generateKeyBundle: () => Promise<KeyBundle>;
     regenerateSignedPreKey: () => Promise<SignedPublicPreKeyType>;
-    regeneratePreKeys: (count: number) => Promise<PreKeyType[]>;
+    regeneratePreKeys: (count: number, excludedIds: number[]) => Promise<PreKeyType[]>;
+    cleanLocalPreKeys: (validIds: number[]) => Promise<void>;
+    cleanLocalSignedPreKeys: (validIds: number[]) => Promise<void>;
 }

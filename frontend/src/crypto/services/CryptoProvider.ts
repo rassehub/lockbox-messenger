@@ -1,7 +1,7 @@
 import type { EncryptedMessage, KeyBundle, UserIdentity, SignedPublicPreKeyType, PreKeyType, KeyPairType } from "../types";
 import { ICryptoStorage } from "../interfaces/ICryptoStorage";
 import { ICryptoProvider } from "../interfaces/ICryptoProvider";
-import * as utils from '../utils/index'
+import * as utils from '../utils/index';
 
 import type { DeviceType } from '@privacyresearch/libsignal-protocol-typescript/lib/session-types';
 import {
@@ -10,7 +10,6 @@ import {
     SignalProtocolAddress,
 } from '@privacyresearch/libsignal-protocol-typescript';
 
-//handles cryptography using libsignal-protocol, and key storage using crypto-storage
 export class CryptoProvider implements ICryptoProvider {
     private identity: UserIdentity;
     private newUser: boolean;
@@ -18,11 +17,11 @@ export class CryptoProvider implements ICryptoProvider {
     private constructor(private storage: ICryptoStorage, identity: UserIdentity, newUser: boolean) {
         this.identity = identity;
         this.newUser = newUser;
-    };
+    }
 
     static async initializeLocalIdentity(storage: ICryptoStorage, userId: string): Promise<CryptoProvider> {
         let registrationId: number | undefined;
-        let identityKeyPair: KeyPairType<ArrayBuffer> | undefined;
+        let identityKeyPair: KeyPairType | undefined;
         let newUser: boolean;
 
         registrationId = await storage.getLocalRegistrationId();
@@ -36,13 +35,13 @@ export class CryptoProvider implements ICryptoProvider {
             await storage.storeIdentityKeyPair(identityKeyPair);
 
             newUser = true;
-        } else
-            newUser = false
+        } else {
+            newUser = false;
+        }
 
         const identity: UserIdentity = { userId, registrationId, identityKeyPair };
-
-        return new CryptoProvider(storage, identity, newUser)
-    };
+        return new CryptoProvider(storage, identity, newUser);
+    }
 
     isNewUser(): boolean {
         return this.newUser;
@@ -55,13 +54,11 @@ export class CryptoProvider implements ICryptoProvider {
     async encryptMessage(recipientId: string, message: string): Promise<EncryptedMessage> {
         const sessionExists = await this.hasSession(recipientId);
         if (!sessionExists)
-            throw new Error(
-                `No session exists with ${recipientId}. Please establish a session.`
-            );
+            throw new Error(`No session exists with ${recipientId}. Please establish a session.`);
+
         const cipher = this.getSessionCipher(recipientId);
         const messageBuffer = utils.buffer.stringToArrayBuffer(message);
         const ciphertext = await cipher.encrypt(messageBuffer);
-
         const registrationId = await this.storage.getLocalRegistrationId();
 
         return {
@@ -69,13 +66,12 @@ export class CryptoProvider implements ICryptoProvider {
             body: ciphertext.body || '',
             registrationId: registrationId || 0,
         };
-    };
+    }
 
     async decryptMessage(senderId: string, encryptedMessage: EncryptedMessage): Promise<string> {
         const cipher = this.getSessionCipher(senderId);
         let plaintext: ArrayBuffer;
 
-        // Type 3 is used for initial messages, Type 1 is used for subsequent messages
         if (encryptedMessage.type === 3) {
             plaintext = await cipher.decryptPreKeyWhisperMessage(encryptedMessage.body);
         } else if (encryptedMessage.type === 1) {
@@ -85,7 +81,7 @@ export class CryptoProvider implements ICryptoProvider {
         }
 
         return utils.buffer.arrayBufferToString(plaintext);
-    };
+    }
 
     private getSessionCipher(recipientId: string) {
         const address = new SignalProtocolAddress(recipientId, 1);
@@ -97,7 +93,7 @@ export class CryptoProvider implements ICryptoProvider {
         const sessionIdentifier = this.storage.getSessionIdentifier(address);
         const session = await this.storage.loadSession(sessionIdentifier);
         return !!session;
-    };
+    }
 
     async establishSession(recipientId: string, keyBundle: KeyBundle): Promise<void> {
         const address = new SignalProtocolAddress(recipientId, 1);
@@ -111,28 +107,28 @@ export class CryptoProvider implements ICryptoProvider {
         };
 
         await sessionBuilder.processPreKey(device);
-    };
+    }
 
     async removeSession(recipientId: string): Promise<void> {
         const address = new SignalProtocolAddress(recipientId, 1);
         const sessionIdentifier = this.storage.getSessionIdentifier(address);
         await this.storage.removeSession(sessionIdentifier);
-    };
+    }
 
     async removeAllSessions(): Promise<void> {
         await this.storage.removeAllSessions();
-    };
+    }
 
     async generateKeyBundle(): Promise<KeyBundle> {
         const pubSPK = await this.regenerateSignedPreKey();
-        const pubPK = await this.regeneratePreKeys(100);
+        const pubPK = await this.regeneratePreKeys(100, []);
         return {
             registrationId: this.identity.registrationId,
             identityPubKey: this.identity.identityKeyPair.pubKey,
             signedPreKey: pubSPK,
             oneTimePreKeys: pubPK,
         };
-    };
+    }
 
     async regenerateSignedPreKey(): Promise<SignedPublicPreKeyType> {
         const signedPreKeyId = utils.keys.generateKeyId();
@@ -141,30 +137,45 @@ export class CryptoProvider implements ICryptoProvider {
         await this.storage.storeSignedPreKey(signedPreKeyId, signedPreKey.keyPair);
         await this.storage.storeSignedPreKeyId(signedPreKeyId);
 
-        const pubSPK = await utils.keys.signedPreKeyToPublic(signedPreKeyId, signedPreKey);
+        return utils.keys.signedPreKeyToPublic(signedPreKeyId, signedPreKey);
+    }
 
-        return pubSPK;
-    };
+    async regeneratePreKeys(count: number, excludedIds: number[]): Promise<PreKeyType[]> {
+        const excluded = new Set(excludedIds);
+        const idsToUse: number[] = [];
+        let candidate = 1;
 
-    async regeneratePreKeys(count: number): Promise<PreKeyType[]> {
-        const MAX_KEY_ID = 500;
-        const idPool = Array.from({ length: MAX_KEY_ID }, (_, i) => i + 1);
-
-        const existingKeys = await this.storage.loadAllPreKeys();
-        const existingKeyIds = new Set(existingKeys?.map(key => key.keyId));
-
-        const availableIds = idPool.filter(id => !existingKeyIds.has(id));
-
-        if (availableIds.length < count) {
-            throw new Error(`Not enough available key IDs. Need ${count}, but only ${availableIds.length} available (1-${MAX_KEY_ID})`);
+        while (idsToUse.length < count) {
+            if (!excluded.has(candidate))
+                idsToUse.push(candidate);
+            candidate++;
         }
-        const idsToUse = availableIds.slice(0, count);
 
         const preKeys = await utils.keys.generatePreKeysFromIds(idsToUse);
-
         await this.storage.storePreKeys(preKeys);
 
-        const pubPK = utils.keys.preKeyArrayToPublic(preKeys);
-        return pubPK;
+        return utils.keys.preKeyArrayToPublic(preKeys);
+    }
+
+    async cleanLocalPreKeys(validIds: number[]): Promise<void> {
+        const localPreKeys = await this.storage.loadAllPreKeys();
+        if (!localPreKeys) return;
+
+        const validSet = new Set(validIds);
+        for (const key of localPreKeys) {
+            if (!validSet.has(key.keyId))
+                await this.storage.removePreKey(key.keyId);
+        }
+    }
+
+    async cleanLocalSignedPreKeys(validIds: number[]): Promise<void> {
+        const localSignedPreKeys = await this.storage.loadAllSignedPreKeys();
+        if (!localSignedPreKeys) return;
+
+        const validSet = new Set(validIds);
+        for (const key of localSignedPreKeys) {
+            if (!validSet.has(key.keyId))
+                await this.storage.removeSignedPreKey(key.keyId);
+        }
     }
 }
