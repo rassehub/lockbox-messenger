@@ -1,4 +1,4 @@
-import React from "react";
+import { useState } from "react";
 import { StyleSheet, View, TextInput, Image } from "react-native";
 
 const searchIcon = require('../assets/search.png');
@@ -8,7 +8,7 @@ type SearchBarProps = {
 }
 
 const SearchBar = ({onSearch}: SearchBarProps) => {
-    const [searchText, setSearchText] = React.useState('');
+    const [searchText, setSearchText] = useState('');
 
     return (
         <View style={styles.searchBar}>

@@ -1,7 +1,7 @@
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
-import { Contact } from "../types/Contact";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { Contact } from "../types/Contact";
 import { StackParams } from "../../App";
 import { useTheme } from "../ThemeContext";
 
@@ -11,14 +11,15 @@ type ContactListItemProps = {
 
 const ContactListItem: React.FC<ContactListItemProps> = ({contact}) => {
     const { isDarkTheme } = useTheme();
-
     const navigation = useNavigation<NativeStackNavigationProp<StackParams>>();
+
     const avatarSource = contact.avatarUrl
         ? { uri: contact.avatarUrl }
         : isDarkTheme ? require('../assets/avatar-dark.png') : require('../assets/avatar.png');
     const lastSeen = contact.lastSeen
         ? contact.lastSeen
         : '';
+        
     const createChatId = () => {
         let result = '';
         const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';

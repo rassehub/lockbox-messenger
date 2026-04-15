@@ -1,12 +1,11 @@
 import { Image, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
-import { useTheme } from "../../ThemeContext";
-import { useAuthentication } from "../../AuthContext";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useTheme } from "../../ThemeContext";
+import { useAuthentication } from "../../AuthContext";
 import { StackParams } from "../../../App";
 import { useState } from "react";
 
-const logout = require('../../assets/logout.png');
 const logoutDark = require('../../assets/logout-dark.png');
 
 const trash = require('../../assets/delete.png');

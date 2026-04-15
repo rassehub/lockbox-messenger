@@ -1,7 +1,7 @@
 import { Image, Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
 import SearchBar from "../components/SearchBar";
 import ContactList from "../components/ContactsList";
-import { useState } from "react";
 import { useTheme } from "../ThemeContext";
 import { dummyContacts } from "../mockData/Contatcs";
 import { Contact } from "../types/Contact";
@@ -96,7 +96,6 @@ const styles = StyleSheet.create({
         color: '#A8A5FF',
         paddingLeft: '2%',
     },
-
     centeredView: {
         flex: 1,
         justifyContent: 'center',

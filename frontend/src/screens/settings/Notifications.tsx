@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from "react-native";
-import SwitchSetting from "../../components/SwitchSetting";
 import { useState } from "react";
+import SwitchSetting from "../../components/SwitchSetting";
 
 const NotificationSettings = () => {
     const [getNotifications, setGetNotifications] = useState(true)

@@ -1,5 +1,4 @@
-import { FlatList, StyleSheet } from "react-native"
-import { dummyChats } from "../mockData/ChatItems";
+import { FlatList, StyleSheet } from "react-native";
 import ChatListItem from "./ChatListItem";
 import { ChatItem } from "../types/ChatListItem";
 

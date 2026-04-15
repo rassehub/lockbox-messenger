@@ -1,5 +1,4 @@
 import { FlatList, StyleSheet } from "react-native"
-import { dummyContacts } from "../mockData/Contatcs"
 import ContactListItem from "./ContactListItem"
 import { Contact } from "../types/Contact"
 

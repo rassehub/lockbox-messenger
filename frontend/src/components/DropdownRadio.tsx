@@ -41,7 +41,7 @@ const DropdownRadio = ({ dropdownTitle, formConfiguration, initialValues, onSubm
                         initialValues={initialValues}
                         onSubmit={onSubmit}
                         >
-                        {({ values, setFieldValue, isSubmitting }) => (
+                        {({ values, setFieldValue }) => (
                             <View>
                             {formConfiguration.fields.map((field) => (
                                 <View key={field.name}>
@@ -116,10 +116,6 @@ const styles = StyleSheet.create({
     },
     radioLabel: {
         fontSize: 14,
-    },
-    errorText: {
-        fontSize: 12,
-        color: 'red',
     },
 });
 

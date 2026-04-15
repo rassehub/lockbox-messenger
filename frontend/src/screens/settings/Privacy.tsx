@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
 import DropdownRadio from "../../components/DropdownRadio";
 import SwitchSetting from "../../components/SwitchSetting";
-import { useState } from "react";
 
 const PrivacySettings = () => {
     const formConfiguration = {
@@ -79,7 +79,7 @@ const styles = StyleSheet.create({
         color: '#A8A5FF',
         fontSize: 14,
         paddingTop: '10%',
-    }
+    },
 });
 
 export default PrivacySettings;

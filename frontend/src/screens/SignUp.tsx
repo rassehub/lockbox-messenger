@@ -1,17 +1,15 @@
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native"
-import { useTheme } from "../ThemeContext";
-import AuthenticationForm from "../components/AuthenticationForm";
-import AuthButton from "../components/AuthButton";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { StackParams } from "../../App";
 import { useRef } from "react";
 import { FormikProps } from "formik";
+import AuthenticationForm from "../components/AuthenticationForm";
+import AuthButton from "../components/AuthButton";
+import { StackParams } from "../../App";
 
 const logoPlaceholder = require('../assets/logo-placeholder.png')
 
 const SignUpScreen = () => {
-    const { isDarkTheme } = useTheme();
     const navigation = useNavigation<NativeStackNavigationProp<StackParams>>();
     
     const formRef = useRef<FormikProps<{ email: string; phonenumber: string; userName: string; password: string; confirmPassword: string; }> | null>(null);
