@@ -5,74 +5,99 @@ import AuthButton from "../components/AuthButton";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { StackParams } from "../../App";
+import { useRef } from "react";
+import { FormikProps } from "formik";
 
 const logoPlaceholder = require('../assets/logo-placeholder.png')
 
 const SignUpScreen = () => {
     const { isDarkTheme } = useTheme();
     const navigation = useNavigation<NativeStackNavigationProp<StackParams>>();
+    
+    const formRef = useRef<FormikProps<{ email: string; phonenumber: string; userName: string; password: string; confirmPassword: string; }> | null>(null);
 
     const formConfiguration = {
         fields: [
             {
                 name: "email",
                 label: "Email",
-                type: "input",
-                inputType: "email",
-                component: "input",
                 icon: require('../assets/email.png'),
+                inputType: "text",
             },
             {
-                name: "username",
+                name: "phonenumber",
+                label: "Phone number",
+                icon: require('../assets/email.png'),
+                inputType: "phonenumber",
+            },
+            {
+                name: "userName",
                 label: "Username",
-                type: "input",
-                inputType: "text",
-                component: "input",
                 icon: require('../assets/user.png'),
+                inputType: "text",
             },
             {
                 name: "password",
                 label: "Password",
-                type: "input",
-                inputType: "password",
-                component: "input",
                 icon: require('../assets/lock.png'),
+                inputType: "password",
             },
             {
                 name: "confirmPassword",
                 label: "Repeat Password",
-                type: "input",
-                inputType: "password",
-                component: "input",
                 icon: require('../assets/lock.png'),
+                inputType: "password",
             },
-        ]
-    }
+        ],
+    } satisfies {
+        fields: {
+            name: "email" | "phonenumber" | "userName" | "password" | "confirmPassword";
+            label: string;
+            icon: any;
+            inputType?: "text" | "phonenumber" | "password";
+        }[];
+    };
 
     const initialValues = {
         email: "",
+        phonenumber: "",
         userName: "",
         password: "",
         confirmPassword: "",
     }
 
-    const handleSignUp = () => {
+    type SignUpValues = {
+        email: string;
+        phonenumber: string;
+        userName: string;
+        password: string;
+        confirmPassword: string;
+    }
+
+    const handleSignUp = async (values: SignUpValues) => {
         console.log("handle signup");
+        console.log("email: ", values.email);
+        console.log("phone number: ", values.phonenumber);
+        console.log("username: ", values.userName);
+
+        // TO DO: some sort of check that response for creating account was succesful
+        navigation.navigate("Login");
     }
 
     return(
         <View style={styles.mainContainer}>
             <Image style={styles.logo} source={logoPlaceholder}/>
             <Text style={styles.title}>Login</Text>
-            <AuthenticationForm
+            <AuthenticationForm<SignUpValues>
                 formConfiguration={formConfiguration}
                 initialValues={initialValues}
                 onSubmit={handleSignUp}
+                formRef={formRef}
             />
             <TouchableOpacity>
                 <Text style={styles.forgotPassword}>Forgot Password?</Text>
             </TouchableOpacity>
-            <AuthButton buttonText="Login" onPressed={handleSignUp} />
+            <AuthButton buttonText="Sign up" onPressed={() => formRef.current?.handleSubmit()} />
             <Text style={styles.bottomText}>Already have an account? 
                 <TouchableOpacity
                     onPress={() => {
