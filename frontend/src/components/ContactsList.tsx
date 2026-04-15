@@ -23,7 +23,7 @@ const ContactList = ({contacts}: ContactListProps) => {
 
 const styles = StyleSheet.create({
     contactList: {
-
+        paddingTop: 10,
     },
 });
 

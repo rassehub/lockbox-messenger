@@ -8,7 +8,7 @@ type SearchBarProps = {
 }
 
 const SearchBar = ({onSearch}: SearchBarProps) => {
-    const [searchText, setSearchText] = React.useState('Search');
+    const [searchText, setSearchText] = React.useState('');
 
     return (
         <View style={styles.searchBar}>
@@ -18,6 +18,8 @@ const SearchBar = ({onSearch}: SearchBarProps) => {
                     setSearchText(text);
                     onSearch(text);
                 }}
+                placeholder="Search"
+                placeholderTextColor="#A8A5FF"
                 value={searchText}
             />
             <Image source={searchIcon} style={styles.searchIcon}/>
