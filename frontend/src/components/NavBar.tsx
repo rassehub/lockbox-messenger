@@ -1,4 +1,4 @@
-import { Animated, Dimensions, View, StyleSheet, Image, TouchableOpacity } from "react-native";
+import { Animated, Dimensions, View, StyleSheet, Image, TouchableOpacity, Keyboard, Platform } from "react-native";
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -17,6 +17,38 @@ const NavBar = () => {
     const navigation = useNavigation<NativeStackNavigationProp<StackParams>>()
 
     const [selected, setSelected] = useState('home');
+    const [keyboardOpen, setKeyboardOpen] = useState(false);
+
+    const navTranslateY = useRef(new Animated.Value(0)).current;
+    const navOpacity = useRef(new Animated.Value(1)).current;
+
+    useEffect(() => {
+        const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+        const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+
+        const showSub = Keyboard.addListener(showEvent, () => setKeyboardOpen(true));
+        const hideSub = Keyboard.addListener(hideEvent, () => setKeyboardOpen(false));
+
+        return () => {
+            showSub.remove();
+            hideSub.remove();
+        }
+    }, []);
+
+    useEffect(() => {
+        Animated.parallel([
+            Animated.timing(navTranslateY, {
+                toValue: keyboardOpen ? 120 : 0,
+                duration: 220,
+                useNativeDriver: true,
+            }),
+            Animated.timing(navOpacity, {
+                toValue: keyboardOpen ? 0 : 1,
+                duration: 180,
+                useNativeDriver: true,
+            })
+        ]).start();
+    }, [keyboardOpen, navTranslateY, navOpacity]);
 
     const {width} = Dimensions.get('window');
     const positions = [
@@ -48,7 +80,16 @@ const NavBar = () => {
 
     return (
         <View>
-            <View style={styles.navBar}>
+            <Animated.View 
+                pointerEvents={keyboardOpen ? "none" : "auto"}
+                style={[
+                    styles.navBar,
+                    {
+                        opacity: navOpacity,
+                        transform: [{translateY: navTranslateY}],
+                    },
+                ]}
+            >
                 <Animated.Image 
                     style={[
                         styles.activeBackground,
@@ -76,14 +117,13 @@ const NavBar = () => {
                         <Animated.Image style={{bottom: profileBottom}} source={profile} />
                     </TouchableOpacity>  
                 </View> 
-            </View>
+            </Animated.View>
         </View>
-    )
-}
+    );
+};
 
 const styles = StyleSheet.create({
     navBar: {
-        
         backgroundColor: '#A8A5FF',
         width: '100%',
         position: 'absolute',
