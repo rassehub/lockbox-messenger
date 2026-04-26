@@ -10,6 +10,7 @@ jest.mock('@react-native-async-storage/async-storage', () =>
 global.WebSocket = jest.fn();
 
 import { jest } from '@jest/globals';
+import crypto from 'crypto';
 
 // Global storage
 const mockStore = new Map();
@@ -51,6 +52,32 @@ jest.mock('react-native-keychain', () => ({
   // Optional test helpers
   __mockStore: mockStore
 }));
+
+jest.mock('react-native-aes-crypto', () => {
+  const mockCrypto = require('crypto');
+  return {
+    __esModule: true,
+    default: {
+      randomKey: jest.fn(async (bytes) => mockCrypto.randomBytes(bytes).toString('hex')),
+      encrypt: jest.fn(async (text, key, iv, _mode) => {
+        const cipher = mockCrypto.createCipheriv(
+          'aes-256-cbc',
+          Buffer.from(key, 'hex'),
+          Buffer.from(iv, 'hex')
+        );
+        return cipher.update(text, 'utf8', 'hex') + cipher.final('hex');
+      }),
+      decrypt: jest.fn(async (ciphertext, key, iv, _mode) => {
+        const decipher = mockCrypto.createDecipheriv(
+          'aes-256-cbc',
+          Buffer.from(key, 'hex'),
+          Buffer.from(iv, 'hex')
+        );
+        return decipher.update(ciphertext, 'hex', 'utf8') + decipher.final('utf8');
+      }),
+    },
+  };
+});
 
 // Clear before each test
 beforeAll(() => {
