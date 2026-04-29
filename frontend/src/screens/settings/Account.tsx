@@ -1,12 +1,11 @@
 import { Image, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
-import { useTheme } from "../../ThemeContext";
-import { useAuthentication } from "../../AuthContext";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useTheme } from "../../ThemeContext";
+import { useAuthentication } from "../../AuthContext";
 import { StackParams } from "../../../App";
 import { useState } from "react";
 
-const logout = require('../../assets/logout.png');
 const logoutDark = require('../../assets/logout-dark.png');
 
 const trash = require('../../assets/delete.png');
@@ -14,10 +13,15 @@ const trashDark = require('../../assets/delete-dark.png');
 
 const AccountSettings = () => {
     const { isDarkTheme } = useTheme();
-    const { handleAuthentication } = useAuthentication();
+    const { logout } = useAuthentication();
     const navigation = useNavigation<NativeStackNavigationProp<StackParams>>();
     const [username, onUsernameChanged] = useState('');
     const [email, onEmailChanged] = useState('');
+
+    const handleLogout = async () => {
+        await logout();
+        navigation.navigate('Login');
+    }
 
     return(
         <View style={styles.mainContainer}>
@@ -44,12 +48,7 @@ const AccountSettings = () => {
             <Text style={styles.categoryText}>Danger zone</Text>
 
             <Pressable 
-                onPress={() => {
-                    const logout = handleAuthentication();
-                    if (!logout) {
-                        navigation.navigate('Login');
-                    }
-                }}
+                onPress={handleLogout}
                 style={styles.base}
             >
                 <Text style={styles.settingText}>Logout</Text>

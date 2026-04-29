@@ -1,7 +1,7 @@
-import { FlatList, LayoutAnimation, Platform, StyleSheet, TextInput, UIManager, View } from "react-native";
+import { FlatList, StyleSheet, TextInput, View } from "react-native";
+import React, { useState } from "react";
 import ChatBubble from "../components/ChatBubble";
 import { Message } from "../types/Message";
-import React, { useEffect, useState } from "react";
 import { dummyChats } from "../mockData/ChatItems";
 
 const ChatScreen = ({route}: any) => {

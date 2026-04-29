@@ -1,17 +1,13 @@
-import React, { useCallback, useEffect, useState } from 'react'
-import { Image, View, Text, StyleSheet, Pressable, Modal, FlatList, ScrollView, Platform, PermissionsAndroid } from 'react-native'
+import { useCallback, useState } from 'react';
+import { Image, View, Text, StyleSheet, Pressable, Modal, Platform, PermissionsAndroid } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { StackParams } from '../../App';
 import { CameraOptions, ImageLibraryOptions, launchCamera, launchImageLibrary } from 'react-native-image-picker';
-
 import SettingItem from '../components/SettingCategoryItem';
-
+import { StackParams } from '../../App';
 import { dummyUsers } from '../mockData/Users';
 import { useTheme } from '../ThemeContext';
 
-const profPic = require('../assets/profile-pic.jpg');
-const profilePicture = require('../assets/avatar-big.png');
 const profilePictureDark = require('../assets/avatar-big-dark.png');
 
 const ProfileScreen = ({route}: any) => {
@@ -35,14 +31,14 @@ const ProfileScreen = ({route}: any) => {
         }
     }
 
-    const onButtonPress = useCallback(async (type: 'capture' | 'library', options : CameraOptions | ImageLibraryOptions) => {
-       getPermissions(type);
-       console.log(getPermissions);
+    const onButtonPress = useCallback(async (type: 'capture' | 'library', options: CameraOptions | ImageLibraryOptions) => {
+        getPermissions(type);
+        console.log(getPermissions);
 
         const cb = (res: any) => {
             console.log('image-picker response', res);
             setResponse(res);
-            if(res?.assets) {
+            if (res?.assets) {
                 console.log(res.assets[0].uri);
                 setSelectedImage(res.assets[0].uri);
                 console.log(selectedImage);
@@ -52,7 +48,7 @@ const ProfileScreen = ({route}: any) => {
             console.log(selectedImage);
         };
 
-        if(type === 'capture') {
+        if (type === 'capture') {
             launchCamera(options, cb);
         } else {
             launchImageLibrary(options, cb);
@@ -202,11 +198,6 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         fontWeight: 'bold',
     },
-    buttonStyle: {
-        color: 'white',
-        fontWeight: 'bold',
-        textAlign: 'center',
-    },
     profilePictureContainer: {
         borderRadius: '50%',
         width: 160,
@@ -219,11 +210,6 @@ const styles = StyleSheet.create({
         width: 160,
         height: 160,
         resizeMode: 'cover'
-    },
-    editIcon: {
-        position: 'absolute',
-        right: 10,
-        bottom: 10,
     },
     name: {
         fontSize: 18,

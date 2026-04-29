@@ -1,7 +1,7 @@
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
-import { ChatItem } from "../types/ChatListItem";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { ChatItem } from "../types/ChatListItem";
 import { StackParams } from "../../App";
 import { dummyContacts } from "../mockData/Contatcs";
 import { useTheme } from "../ThemeContext";

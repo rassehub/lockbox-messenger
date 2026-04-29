@@ -1,8 +1,8 @@
-import { Image, StyleSheet, View, Text, Alert } from "react-native";
-import { dummyContacts } from "../mockData/Contatcs";
-import SwitchSetting from "../components/SwitchSetting";
+import { Image, StyleSheet, View, Text } from "react-native";
 import { useState } from "react";
+import SwitchSetting from "../components/SwitchSetting";
 import DropdownRadio from "../components/DropdownRadio";
+import { dummyContacts } from "../mockData/Contatcs";
 import { useTheme } from "../ThemeContext";
 
 const profilePicture = require('../assets/avatar-big.png');
@@ -14,7 +14,6 @@ const FriendProfileScreen = ({route}: any) => {
     const contact = dummyContacts.filter(
         (contact) => contact.userId === senderId
     );
-    console.log(contact)
 
     const formConfiguration = {
         fields: [
@@ -57,7 +56,7 @@ const FriendProfileScreen = ({route}: any) => {
 
     return (
         <View style={styles.mainContainer}>
-            <Image style={styles.profilePicture} source={isDarkTheme ? profilePictureDark : profilePicture}/>
+            <Image source={isDarkTheme ? profilePictureDark : profilePicture}/>
             <Text style={[styles.name, {color: isDarkTheme ? '#A8A5FF' : '#594EFF'}]}>{contact[0].name}</Text>
             <View>
                 <DropdownRadio 
@@ -85,9 +84,6 @@ const styles = StyleSheet.create({
     mainContainer: {
         alignItems: 'center',
         flex: 1,
-    },
-    profilePicture: {
-        
     },
     name: {
         fontSize: 18,

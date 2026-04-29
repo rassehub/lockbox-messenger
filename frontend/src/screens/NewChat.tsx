@@ -1,9 +1,10 @@
 import { Image, Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
 import SearchBar from "../components/SearchBar";
 import ContactList from "../components/ContactsList";
-import { useState } from "react";
 import { useTheme } from "../ThemeContext";
 import { dummyContacts } from "../mockData/Contatcs";
+import { Contact } from "../types/Contact";
 
 const avatar = require('../assets/new.png');
 const avatarDark = require('../assets/new-dark.png');
@@ -13,10 +14,13 @@ const NewChatScreen = () => {
     const [modalVisible, setModalVisible] = useState(false);
     const initialContacts = dummyContacts;
     const [contacts, setContacts] = useState(initialContacts);
-    console.log('new chat: ', contacts);
+
+    const initialNewContacts: Contact[] = [];
+    const [newContacts, setNewContacts] = useState(initialNewContacts);
 
     const handleModalSearch = (searchText: string) => {
         console.log('modal search');
+        //setNewContacts(response);
     }
 
     const handleSearch = (searchText: string) => {
@@ -25,7 +29,6 @@ const NewChatScreen = () => {
             : initialContacts.filter((contact) => contact.name.toLowerCase().includes(searchText.toLowerCase()));
         setContacts(updatedContacts);
         console.log(updatedContacts);
-        console.log('Search text: ', searchText);
     }
 
     return(
@@ -44,6 +47,7 @@ const NewChatScreen = () => {
                     }]}>
                         <Text style={[styles.modalText, {color: isDarkTheme ? '#A8A5FF' : '#594EFF'}]}>Add new contact</Text>
                         <SearchBar onSearch={handleModalSearch}/>
+                        <ContactList contacts={newContacts} />
                         <Pressable
                             style={styles.button}
                             onPress={() => setModalVisible(!modalVisible)}>
@@ -92,7 +96,6 @@ const styles = StyleSheet.create({
         color: '#A8A5FF',
         paddingLeft: '2%',
     },
-
     centeredView: {
         flex: 1,
         justifyContent: 'center',
