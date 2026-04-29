@@ -85,26 +85,20 @@ export const endpointConfig = {
     },
   },
 
-  checkPreKeyAvailability: {
-    url: "/keys/check-prekeys",
-    method: "POST",
-    request: undefined,
-    response: {} as {
-      needsMorePreKeys: boolean;
-      availableCount: number;
-      threshold: number;
-    },
-  },
-
-  fetchMyKeyStatistics: {
+  fetchKeyStatistics: {
     url: "/keys/stats/me",
     method: "GET",
     request: undefined,
     response: {} as {
-      totalPreKeys: number;
+      validPreKeyIds: number[];
       availablePreKeys: number;
-      consumedPreKeys: number;
-      lastUpdated: Date;
+      signedPreKey: {
+        keyId: number;
+        ageDays: number;
+        needsRotation: boolean;
+      };
+      previousSignedPKID: number | undefined;
+      expiredSignedPKID: number | undefined;
     },
   },
 

@@ -1,78 +1,76 @@
-import { ICryptoProvider } from "../interfaces/ICryptoProvider"
-import { IKeyApiService } from "../interfaces/IKeyApiService"
-import { EncryptedMessage, KeyBundle, UserIdentity } from "../types"
+import { ICryptoProvider } from "../interfaces/ICryptoProvider";
+import { IKeyApiService } from "../interfaces/IKeyApiService";
+import { EncryptedMessage, KeyBundle } from "../types";
 
-//handles cryptography and key related server communication using crypto-provider and key-api-service
+const PREKEY_TARGET = 100;
+
 export class CryptoManager {
     private crypto: ICryptoProvider;
     private api: IKeyApiService;
 
-    private constructor(
-        crypto: ICryptoProvider,
-        api: IKeyApiService,
-        maintainsKeys: boolean,
-    ) {
+    private constructor(crypto: ICryptoProvider, api: IKeyApiService, maintainsKeys: boolean) {
         this.crypto = crypto;
         this.api = api;
-        if(maintainsKeys)
+        if (maintainsKeys)
             this.maintainKeys();
-    };
+    }
 
-    static async initializeUser(
-        crypto: ICryptoProvider,
-        api: IKeyApiService,
-    ): Promise<CryptoManager> {
-        let keyBundle: KeyBundle;
-
-        const newUser = crypto.isNewUser();
-
-        if (newUser) {
-            keyBundle = await crypto.generateKeyBundle()
+    static async initializeUser(crypto: ICryptoProvider, api: IKeyApiService): Promise<CryptoManager> {
+        if (crypto.isNewUser()) {
+            const keyBundle = await crypto.generateKeyBundle();
             await api.uploadKeyBundle(keyBundle);
             crypto.setNewUser(false);
             return new CryptoManager(crypto, api, false);
-        } else
-            return new CryptoManager(crypto, api, true);
+        }
+        return new CryptoManager(crypto, api, true);
     }
 
     async encryptMessage(recipientId: string, message: string): Promise<EncryptedMessage> {
-        const isSession = await this.crypto.hasSession(recipientId, 1)
+        const isSession = await this.crypto.hasSession(recipientId, 1);
         if (!isSession) {
             const reKeyBundle = await this.api.fetchRecipientKeyBundle(recipientId);
             await this.crypto.establishSession(recipientId, reKeyBundle);
         }
-        const encryptedMessage = await this.crypto.encryptMessage(recipientId, message);
-        return encryptedMessage;
-    };
+        return this.crypto.encryptMessage(recipientId, message);
+    }
 
     async decryptMessage(senderId: string, encryptedMessage: EncryptedMessage): Promise<string> {
-        const message = await this.crypto.decryptMessage(senderId, encryptedMessage);
-        return message;
-    };
+        return this.crypto.decryptMessage(senderId, encryptedMessage);
+    }
 
     async removeSession(recipientId: string): Promise<void> {
         await this.crypto.removeSession(recipientId);
-    };
+    }
 
     async removeAllSessions(): Promise<void> {
         await this.crypto.removeAllSessions();
-    };
+    }
 
     async maintainKeys(): Promise<void> {
-        const preKeyAvailability = await this.api.checkPreKeys();
-        const keyStats = await this.api.getKeyStats();
+        const stats = await this.api.getKeyStatistics();
 
-        //check if prekeys are running low
-        if (preKeyAvailability.needsMorePreKeys) {
-            const preKeys = await this.crypto.regeneratePreKeys(100 - preKeyAvailability.availableCount);
-            await this.api.uploadPreKeys(preKeys);
+        // Remove local prekeys that server no longer tracks
+        await this.crypto.cleanLocalPreKeys(stats.validPreKeyIds);
+
+        // Remove local signed prekeys not referenced by server (current, previous, expired)
+        const validSignedIds = [
+            stats.signedPreKey.keyId,
+            stats.previousSignedPKID,
+            stats.expiredSignedPKID,
+        ].filter((id): id is number => id !== undefined);
+        await this.crypto.cleanLocalSignedPreKeys(validSignedIds);
+
+        // Replenish prekeys — exclude IDs already on server to guarantee uniqueness
+        if (stats.availablePreKeys < PREKEY_TARGET) {
+            const count = PREKEY_TARGET - stats.availablePreKeys;
+            const newPreKeys = await this.crypto.regeneratePreKeys(count, stats.validPreKeyIds);
+            await this.api.uploadPreKeys(newPreKeys);
         }
 
-        //check if signed prekey needs to be updated
-        const daysSinceUpdate = (Date.now() - new Date(keyStats.lastUpdated).getTime()) / (1000 * 60 * 60 * 24);
-        if (daysSinceUpdate > 30) {
+        // Rotate signed prekey if server flags it as needed
+        if (stats.signedPreKey.needsRotation) {
             const signedPreKey = await this.crypto.regenerateSignedPreKey();
             await this.api.rotateSignedPreKey(signedPreKey);
         }
-    };
+    }
 }

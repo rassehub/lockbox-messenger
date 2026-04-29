@@ -3,7 +3,7 @@ import { Request, Response } from 'express';
 // Mock the service methods BEFORE importing controllers
 const mockUploadKeyBundle = jest.fn();
 const mockGetKeyBundle = jest.fn();
-const mockGetKeyStats = jest.fn();
+const mockGetKeyStatistics = jest.fn();
 const mockNeedsMorePreKeys = jest.fn();
 const mockGetAvailablePreKeyCount = jest.fn();
 const mockAddOneTimePreKeys = jest.fn();
@@ -15,9 +15,8 @@ jest.mock('@/services/signalKeyService', () => ({
   SignalKeyService: jest.fn().mockImplementation(() => ({
     uploadKeyBundle: mockUploadKeyBundle,
     getKeyBundle: mockGetKeyBundle,
-    getKeyStats: mockGetKeyStats,
+    getKeyStatistics: mockGetKeyStatistics,
     needsMorePreKeys: mockNeedsMorePreKeys,
-    getAvailablePreKeyCount: mockGetAvailablePreKeyCount,
     addOneTimePreKeys: mockAddOneTimePreKeys,
     rotateSignedPreKey: mockRotateSignedPreKey,
     cleanupOldPreKeys: mockCleanupOldPreKeys,
@@ -40,7 +39,7 @@ import {
   uploadKeyBundle,
   getKeyBundle,
   getKeyStatistics,
-  checkPreKeys,
+  
   addPreKeys,
   rotateSignedPreKey,
 } from '@/controllers/keyControllers';
@@ -226,11 +225,11 @@ describe('Key Controllers', () => {
         lastUpdated: new Date('2025-11-10'),
       };
 
-      mockGetKeyStats.mockResolvedValue(mockStats);
+      mockGetKeyStatistics.mockResolvedValue(mockStats);
 
       await getKeyStatistics(mockReq as Request, mockRes as Response);
 
-      expect(mockGetKeyStats).toHaveBeenCalledWith('user-123');
+      expect(mockGetKeyStatistics).toHaveBeenCalledWith('user-123');
       expect(mockRes.json).toHaveBeenCalledWith({
         success: true,
         stats: mockStats,
@@ -238,7 +237,7 @@ describe('Key Controllers', () => {
     });
 
     it('should return 500 if service throws an error', async () => {
-      mockGetKeyStats.mockRejectedValue(new Error('Service error'));
+      mockGetKeyStatistics.mockRejectedValue(new Error('Service error'));
 
       await getKeyStatistics(mockReq as Request, mockRes as Response);
 
@@ -249,15 +248,15 @@ describe('Key Controllers', () => {
     });
   });
 
-  describe('checkPreKeys', () => {
+  describe('getKeyStatistics', () => {
     it('should check pre-keys and return status', async () => {
-      mockNeedsMorePreKeys.mockResolvedValue(true);
-      mockGetAvailablePreKeyCount.mockResolvedValue(5);
+      mockGetKeyStatistics.mockResolvedValue(true);
+      mockGetKeyStatistics.mockResolvedValue(5);
 
-      await checkPreKeys(mockReq as Request, mockRes as Response);
+      await getKeyStatistics(mockReq as Request, mockRes as Response);
 
-      expect(mockNeedsMorePreKeys).toHaveBeenCalledWith('user-123', 10);
-      expect(mockGetAvailablePreKeyCount).toHaveBeenCalledWith('user-123');
+      expect(mockGetKeyStatistics).toHaveBeenCalledWith('user-123', 10);
+      expect(mockGetKeyStatistics).toHaveBeenCalledWith('user-123');
       expect(mockRes.json).toHaveBeenCalledWith({
         success: true,
         needsMorePreKeys: true,
@@ -267,10 +266,10 @@ describe('Key Controllers', () => {
     });
 
     it('should return false when user has enough pre-keys', async () => {
-      mockNeedsMorePreKeys.mockResolvedValue(false);
-      mockGetAvailablePreKeyCount.mockResolvedValue(50);
+      mockGetKeyStatistics.mockResolvedValue(false);
+      mockGetKeyStatistics.mockResolvedValue(50);
 
-      await checkPreKeys(mockReq as Request, mockRes as Response);
+      await getKeyStatistics(mockReq as Request, mockRes as Response);
 
       expect(mockRes.json).toHaveBeenCalledWith({
         success: true,
@@ -281,9 +280,9 @@ describe('Key Controllers', () => {
     });
 
     it('should return 500 if service throws an error', async () => {
-      mockNeedsMorePreKeys.mockRejectedValue(new Error('Service error'));
+      mockGetKeyStatistics.mockRejectedValue(new Error('Service error'));
 
-      await checkPreKeys(mockReq as Request, mockRes as Response);
+      await getKeyStatistics(mockReq as Request, mockRes as Response);
 
       expect(mockRes.status).toHaveBeenCalledWith(500);
       expect(mockRes.json).toHaveBeenCalledWith({
@@ -301,16 +300,15 @@ describe('Key Controllers', () => {
 
       mockReq.body = { preKeys };
       mockAddOneTimePreKeys.mockResolvedValue(undefined);
-      mockGetAvailablePreKeyCount.mockResolvedValue(52);
+      mockGetKeyStatistics.mockResolvedValue(52);
 
       await addPreKeys(mockReq as Request, mockRes as Response);
 
       expect(mockAddOneTimePreKeys).toHaveBeenCalledWith('user-123', preKeys);
-      expect(mockGetAvailablePreKeyCount).toHaveBeenCalledWith('user-123');
+      expect(mockGetKeyStatistics).toHaveBeenCalledWith('user-123');
       expect(mockRes.json).toHaveBeenCalledWith({
         success: true,
-        message: 'Added 2 pre-keys',
-        availableCount: 52,
+        message: 'Pre-keys added successfully',
       });
     });
 

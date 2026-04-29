@@ -28,6 +28,6 @@ export interface ICryptoStorage {
     loadIdentityKey: (identifier: string) => Promise<ArrayBuffer | undefined>
     loadSignedPreKeyId: () => Promise<number | undefined>
     loadAllPreKeys: () => Promise<PreKeyPairType[] | undefined>
-
+    loadAllSignedPreKeys: () => Promise<{ keyId: number; keyPair: KeyPairType }[] | undefined>;
     //arrayBuffersEqual: () => Promise<void>
 }

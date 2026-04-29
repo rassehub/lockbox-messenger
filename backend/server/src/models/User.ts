@@ -74,13 +74,19 @@ export class User {
       signature: string;
     };
   } | null;
+  
+  @Column({ type: "jsonb",  nullable: true })
+  previous_signed_prekey_id!: { keyId: number; createdAt: Date } | null;
+
+  @Column({ type: "jsonb",  nullable: true })
+  expired_signed_prekey_id!: { keyId: number; createdAt: Date } | null;
 
   // Metadata
   @Column({ type: "timestamptz", default: () => "CURRENT_TIMESTAMP" })
   created_at!: Date;
 
   @Column({ type: "timestamptz", default: () => "CURRENT_TIMESTAMP" })
-  keys_updated_at!: Date;
+  signed_prekey_updated_at!: Date;
 }
 
 export type { SignalKeyBundle };

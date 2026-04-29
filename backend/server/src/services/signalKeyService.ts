@@ -6,6 +6,7 @@
 import { Repository, DataSource } from "typeorm";
 import { User, SignalKeyBundle } from "../models/User";
 import { PreKey } from "../models/User";
+import { In } from "typeorm";
 
 export class SignalKeyService {
   private userRepo: Repository<User>;
@@ -34,7 +35,7 @@ export class SignalKeyService {
       identityPubKey: keyBundle.identityPubKey,
       signedPreKey: keyBundle.signedPreKey,
     };
-    user.keys_updated_at = new Date();
+    user.signed_prekey_updated_at = new Date();
 
     // Store one-time pre-keys in separate table with collision prevention
     await this.storeOneTimePreKeys(userId, keyBundle.oneTimePreKeys);
@@ -44,72 +45,50 @@ export class SignalKeyService {
 
   /**
    * Store one-time pre-keys with automatic keyId collision handling
+   * overwrite keys only if marked as consumed. Client ensures key has been processed
    */
-  private async storeOneTimePreKeys(
+  async storeOneTimePreKeys(
     userId: string,
     preKeys: Array<{ keyId: number; publicKey: string }>
   ): Promise<void> {
-    for (const preKey of preKeys) {
-      try {
-        // Try to insert the pre-key
-        const newPreKey = this.preKeyRepo.create({
-          userId,
-          keyId: preKey.keyId,
-          publicKey: preKey.publicKey,
-          consumed: false,
-        });
+    const keyIds = preKeys.map(pk => pk.keyId);
 
-        await this.preKeyRepo.save(newPreKey);
-      } catch (error: any) {
-        // Check if it's a unique constraint violation
-        if (error.code === "23505") {
-          // PostgreSQL unique violation
-          console.warn(
-            `PreKey collision detected for userId=${userId}, keyId=${preKey.keyId}. Generating new ID...`
-          );
-
-          // Generate a new keyId that's guaranteed to be unique for this user
-          const newKeyId = await this.generateUniqueKeyId(userId);
-
-          const newPreKey = this.preKeyRepo.create({
-            userId,
-            keyId: newKeyId,
-            publicKey: preKey.publicKey,
-            consumed: false,
-          });
-
-          await this.preKeyRepo.save(newPreKey);
-        } else {
-          throw error;
-        }
+    const existingKeys = await this.preKeyRepo.find({
+      where: {
+        userId,
+        keyId: In(keyIds)
       }
+    });
+
+    const consumedConflicts = existingKeys.filter(key => key.consumed === true);
+    const activeConflicts = existingKeys.filter(key => key.consumed === false);
+
+    if (activeConflicts.length > 0) {
+      const collidingIds = activeConflicts.map(k => k.keyId);
+      throw new Error(
+        `Active pre-key collision detected for userId=${userId}, keyIds=${collidingIds.join(', ')}. ` +
+        `Client should have prevented this.`
+      );
     }
-  }
 
-  /**
-   * Generate a unique keyId for a specific user
-   */
-  private async generateUniqueKeyId(userId: string): Promise<number> {
-    let attempts = 0;
-    const maxAttempts = 100;
-
-    while (attempts < maxAttempts) {
-      // Generate random 24-bit number (0 to 16,777,215)
-      const keyId = Math.floor(Math.random() * 16777215);
-
-      // Check if this keyId exists for this user
-      const exists = await this.preKeyRepo.findOne({
-        where: { userId, keyId },
+    if (consumedConflicts.length > 0) {
+      const consumedIds = consumedConflicts.map(k => k.keyId);
+      await this.preKeyRepo.delete({
+        userId,
+        keyId: In(consumedIds)
       });
 
-      if (!exists) {
-        return keyId;
-      }
-
-      attempts++;
+      console.log(`Replaced ${consumedConflicts.length} consumed pre-keys for user ${userId}`);
     }
 
-    throw new Error("Failed to generate unique keyId after 100 attempts");
+    const newPreKeys = preKeys.map(preKey => this.preKeyRepo.create({
+      userId,
+      keyId: preKey.keyId,
+      publicKey: preKey.publicKey,
+      consumed: false,
+    }));
+
+    await this.preKeyRepo.save(newPreKeys);
   }
 
   /**
@@ -176,44 +155,46 @@ export class SignalKeyService {
   }
 
   /**
-   * Get the count of available (unconsumed) pre-keys for a user
-   */
-  async getAvailablePreKeyCount(userId: string): Promise<number> {
-    return await this.preKeyRepo.count({
-      where: {
-        userId,
-        consumed: false,
-      },
-    });
-  }
-
-  /**
-   * Check if user needs to upload more pre-keys
-   * Returns true if they have fewer than the threshold
-   */
-  async needsMorePreKeys(
-    userId: string,
-    threshold: number = 10
-  ): Promise<boolean> {
-    const count = await this.getAvailablePreKeyCount(userId);
-    return count < threshold;
-  }
-
-  /**
    * Delete old consumed pre-keys (cleanup operation)
    */
-  async cleanupOldPreKeys(olderThanDays: number = 30): Promise<number> {
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - olderThanDays);
+  async cleanupOldPreKeys(oldKeysTTL: number = 15, preKeysTTL: number = 45): Promise<void> {
+    const oldKeysCutoffDate = new Date();
+    oldKeysCutoffDate.setDate(oldKeysCutoffDate.getDate() - oldKeysTTL);
 
-    const result = await this.preKeyRepo
+    const PreKeysCutoffDate = new Date();
+    PreKeysCutoffDate.setDate(PreKeysCutoffDate.getDate() - preKeysTTL);
+
+    //delete all expiring keys
+    await this.preKeyRepo.manager.transaction(async (manager) => {
+      manager
+        .getRepository(PreKey)
+        .createQueryBuilder("prekey")
+        .where("consumed = :consumed", { consumed: false })
+        .andWhere("createdAt < :PreKeyscutoffDate", { PreKeysCutoffDate })
+        .setLock("pessimistic_write")
+        .delete();
+    });
+
+    await this.preKeyRepo
       .createQueryBuilder()
       .delete()
       .where("consumed = :consumed", { consumed: true })
-      .andWhere("consumedAt < :cutoffDate", { cutoffDate })
+      .andWhere("consumedAt < :oldKeysCutoffDate", { oldKeysCutoffDate })
       .execute();
 
-    return result.affected || 0;
+    await this.userRepo
+      .createQueryBuilder()
+      .update(User)
+      .set({
+        previous_signed_prekey_id: null,
+        expired_signed_prekey_id: null,
+      })
+      .where(
+        `(previous_signed_prekey_id->>'createdAt')::timestamp < :cutoffDate 
+       OR (expired_signed_prekey_id->>'createdAt')::timestamp < :cutoffDate`,
+        { cutoffDate: oldKeysCutoffDate.toISOString() }
+      )
+      .execute();
   }
 
   /**
@@ -232,48 +213,77 @@ export class SignalKeyService {
       throw new Error("User or key bundle not found");
     }
 
+    user.expired_signed_prekey_id = user.previous_signed_prekey_id;
+    user.previous_signed_prekey_id = {
+      keyId: user.signal_key_bundle.signedPreKey.keyId,
+      createdAt: user.signed_prekey_updated_at
+    }
+
     user.signal_key_bundle.signedPreKey = newSignedPreKey;
-    user.keys_updated_at = new Date();
+    user.signed_prekey_updated_at = new Date();
 
     await this.userRepo.save(user);
   }
 
-  /**
-   * Add more one-time pre-keys when running low
-   */
-  async addOneTimePreKeys(
-    userId: string,
-    preKeys: Array<{ keyId: number; publicKey: string }>
-  ): Promise<void> {
-    await this.storeOneTimePreKeys(userId, preKeys);
-  }
-
-  /**
-   * Get statistics about a user's keys
-   */
-  async getKeyStats(userId: string): Promise<{
-    totalPreKeys: number;
+  async getKeyStatistics(userId: string): Promise<{
+    validPreKeyIds: number[];
     availablePreKeys: number;
-    consumedPreKeys: number;
-    lastUpdated: Date;
+    signedPreKey: {
+      keyId: number;
+      ageDays: number;
+      needsRotation: boolean;
+    };
+    previousSignedPKID: number | undefined;
+    expiredSignedPKID: number | undefined;
   }> {
     const user = await this.userRepo.findOne({ where: { id: userId } });
     if (!user || !user.signal_key_bundle) {
-      throw new Error("User or key bundle not found");
+      throw new Error('User or key bundle not found');
     }
-    const total = await this.preKeyRepo.count({ where: { userId } });
-    const available = await this.preKeyRepo.count({
-      where: { userId, consumed: false },
-    });
-    const consumed = await this.preKeyRepo.count({
-      where: { userId, consumed: true },
+
+    const preKeys = await this.preKeyRepo.find({
+      where: { userId },
+      select: ['keyId', 'consumed', 'consumedAt'],
     });
 
+    const now = new Date();
+    const fifteenDaysAgo = new Date(now.getTime() - 15 * 24 * 60 * 60 * 1000);
+
+    // Determine which key IDs are still valid:
+    // - not consumed, or consumed within the last 15 days
+    const validPreKeyIds: number[] = [];
+    let availableCount = 0;
+
+    for (const pk of preKeys) {
+      if (!pk.consumed) {
+        validPreKeyIds.push(pk.keyId);
+        availableCount++;
+      } else if (pk.consumedAt && pk.consumedAt >= fifteenDaysAgo) {
+        validPreKeyIds.push(pk.keyId);
+      }
+    }
+
+    // Signed pre‑key data
+    const signedPreKey = user.signal_key_bundle.signedPreKey;
+
+    const signedPreKeyAgeDays = Math.floor(
+      (now.getTime() - user.signed_prekey_updated_at.getTime()) / (24 * 60 * 60 * 1000)
+    );
+    const needsRotation = signedPreKeyAgeDays >= 7; // adjust threshold as needed
+
+    const previousSignedPKID = user.previous_signed_prekey_id?.keyId;
+    const expiredSignedPKID = user.expired_signed_prekey_id?.keyId;
     return {
-      totalPreKeys: total,
-      availablePreKeys: available,
-      consumedPreKeys: consumed,
-      lastUpdated: user.keys_updated_at,
+      validPreKeyIds,
+      availablePreKeys: availableCount,
+      signedPreKey: {
+        keyId: signedPreKey.keyId,
+        ageDays: signedPreKeyAgeDays,
+        needsRotation,
+      },
+      previousSignedPKID,
+      expiredSignedPKID
     };
   }
 }
+

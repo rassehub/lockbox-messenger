@@ -33,7 +33,7 @@ export const uploadKeyBundle = async (req: Request, res: Response): Promise<void
             res.status(400).json({ error: "Invalid key bundle format" });
             return;
         }
-        await getKeyService().cleanupOldPreKeys(0);
+
         await getKeyService().uploadKeyBundle(userId, keyBundle);
 
         res.json({
@@ -54,7 +54,6 @@ export const getKeyBundle = async (req: Request, res: Response): Promise<void> =
         return;
     }
     try {
-
         const keyBundle = await getKeyService().getKeyBundle(recipientId);
 
         res.json({
@@ -63,7 +62,6 @@ export const getKeyBundle = async (req: Request, res: Response): Promise<void> =
         });
     } catch (error: any) {
         console.error("Error fetching key bundle:", error);
-
         if (error.message.includes("No available pre-keys")) {
             res.status(503).json({
                 error: "User has no available pre-keys",
@@ -76,11 +74,34 @@ export const getKeyBundle = async (req: Request, res: Response): Promise<void> =
     }
 };
 
+export const addPreKeys = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const userId = req.user.id;
+        const { preKeys } = req.body;
+
+        if (!Array.isArray(preKeys) || preKeys.length === 0) {
+            res.status(400).json({ error: "Invalid pre-keys format" });
+            return;
+        }
+
+        await getKeyService().storeOneTimePreKeys(userId, preKeys);
+
+        res.json({
+            success: true,
+            message: "Pre-keys added successfully"
+        });
+    } catch (error) {
+        console.error("Error adding pre-keys:", error);
+        res.status(500).json({ error: "Failed to add pre-keys" });
+    }
+};
+
+
 export const getKeyStatistics = async (req: Request, res: Response): Promise<void> => {
     try {
         const userId = req.user.id;
 
-        const stats = await getKeyService().getKeyStats(userId);
+        const stats = await getKeyService().getKeyStatistics(userId);
         res.json({
             success: true,
             stats,
@@ -91,59 +112,10 @@ export const getKeyStatistics = async (req: Request, res: Response): Promise<voi
     }
 };
 
-export const checkPreKeys = async (req: Request, res: Response): Promise<void> => {
-    logger.info(`request user id: ${req.session?.userId}`)
-    try {
-        const userId = req.user.id;
-        logger.info(`getKeyStats called with userId: ${userId}`);
-
-        const needsMore = await getKeyService().needsMorePreKeys(userId, 10);
-        const count = await getKeyService().getAvailablePreKeyCount(userId);
-        logger.info(`needs more: ${needsMore}`);
-        logger.info(`count: ${count}`)
-
-        res.json({
-            success: true,
-            needsMorePreKeys: needsMore,
-            availableCount: count,
-            threshold: 10,
-        });
-    } catch (error) {
-        console.error("Error checking pre-keys:", error);
-        res.status(500).json({ error: "Failed to check pre-keys" });
-    }
-};
-
-export const addPreKeys = async (req: Request, res: Response): Promise<void> => {
-    try {
-        const userId = req.user.id;
-
-        const { preKeys } = req.body;
-
-        if (!Array.isArray(preKeys) || preKeys.length === 0) {
-            res.status(400).json({ error: "Invalid pre-keys format" });
-            return;
-        }
-
-        await getKeyService().addOneTimePreKeys(userId, preKeys);
-
-        const newCount = await getKeyService().getAvailablePreKeyCount(userId);
-
-        res.json({
-            success: true,
-            message: `Added ${preKeys.length} pre-keys`,
-            availableCount: newCount,
-        });
-    } catch (error) {
-        console.error("Error adding pre-keys:", error);
-        res.status(500).json({ error: "Failed to add pre-keys" });
-    }
-};
 
 export const rotateSignedPreKey = async (req: Request, res: Response): Promise<void> => {
     try {
         const userId = req.user.id;
-
         const { signedPreKey } = req.body;
 
         if (

@@ -9,7 +9,7 @@ module.exports = {
   testPathIgnorePatterns: ['/node_modules/', '/android/', '/ios/'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   transformIgnorePatterns: [
-    'node_modules/(?!(react-native|@react-native|@react-navigation)/)',
+    'node_modules/(?!(react-native|@react-native|react-native-aes-crypto|react-native-keychain|@react-native-async-storage/async-storage)/)',
   ],
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
@@ -20,5 +20,5 @@ module.exports = {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
   maxWorkers: 1,
-  
+
 };

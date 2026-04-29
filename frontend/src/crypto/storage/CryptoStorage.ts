@@ -13,21 +13,21 @@ import { encryptionCodecs } from './cryptoStorageCodecs';
 import { EncryptionStorageSchema } from './cryptoStorageSchema';
 import { ICryptoStorage } from '../interfaces/ICryptoStorage';
 
-export class CryptoStorage  implements ICryptoStorage {
+export class CryptoStorage implements ICryptoStorage {
   private static instance: CryptoStorage;
-  private storage 
+  private storage
 
   constructor(userId: string) {
     this.storage = new SecureStorage<EncryptionStorageSchema, typeof encryptionCodecs>(userId, encryptionCodecs);
   }
-  
+
   public static getInstance(userId: string): CryptoStorage {
     if (!CryptoStorage.instance) {
       CryptoStorage.instance = new CryptoStorage(userId);
     }
     return CryptoStorage.instance;
   }
-  
+
   private arrayBuffersEqual(buf1: ArrayBuffer, buf2: ArrayBuffer): boolean {
     if (buf1.byteLength !== buf2.byteLength) return false;
 
@@ -142,16 +142,16 @@ export class CryptoStorage  implements ICryptoStorage {
   /**
    * Store a pre-key
    */
-async storePreKeys(preKeys: {keyId: string | number, keyPair: KeyPairType}[]): Promise<void> {
+  async storePreKeys(preKeys: { keyId: string | number, keyPair: KeyPairType }[]): Promise<void> {
     const existingRecord = await this.storage.getFullRecord('preKeys') || {};
 
-    for(const item of preKeys){
-        const id = String(item.keyId);
-        existingRecord[id] = item.keyPair;
+    for (const item of preKeys) {
+      const id = String(item.keyId);
+      existingRecord[id] = item.keyPair;
     }
 
     await this.storage.setItem('preKeys', existingRecord);
-}
+  }
 
   async replacePreKeys(keyPairs: PreKeyPairType[]) {
     const record: Record<string, KeyPairType> = {};
@@ -180,6 +180,17 @@ async storePreKeys(preKeys: {keyId: string | number, keyPair: KeyPairType}[]): P
     return data ? data : undefined;
   }
 
+  async loadAllSignedPreKeys(): Promise<{ keyId: number; keyPair: KeyPairType }[] | undefined> {
+    const data = await this.storage.getFullRecord('signedPreKeys');
+    if (data) {
+      return Object.entries(data).map(([id, keyPair]) => ({
+        keyId: Number(id),
+        keyPair,
+      }));
+    }
+    return undefined;
+  }
+
   /**
    * Store a signed pre-key
    */
@@ -201,7 +212,7 @@ async storePreKeys(preKeys: {keyId: string | number, keyPair: KeyPairType}[]): P
     await this.storage.setItem("signedPreKeyId", keyId)
   }
 
-  async loadSignedPreKeyId() : Promise<number | undefined> {
+  async loadSignedPreKeyId(): Promise<number | undefined> {
     const data = await this.storage.getItem("signedPreKeyId")
     return data ? data : undefined
   }
