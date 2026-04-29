@@ -1,6 +1,8 @@
 jest.mock('@/services/redis', () => ({
   addMessage: jest.fn(),
-  getMessages: jest.fn(),
+  getMessages: jest.fn().mockResolvedValue([]),
+  initCache: jest.fn(),
+  closeCache: jest.fn(),
 }));
 
 import { addMessage, getMessages } from '@/services/redis';

@@ -18,6 +18,10 @@ export async function initCache() {
   return client;
 }
 
+export function getCache() {
+  return ensure();
+}
+
 export async function closeCache() {
   if (client) {
     await client.quit();
@@ -36,7 +40,7 @@ export async function addMessage(recipientId: string, message: any) {
     const r = ensure();
     const key = `user:${recipientId}:messages`;
     await r.lpush(key, JSON.stringify(message));
-    await r.expire(key, 86400);
+    await r.expire(key, 14*24*60*60);
   } catch (e) {
     // swallow for WS path (forwarding already done)
     logger.error(e as Error);

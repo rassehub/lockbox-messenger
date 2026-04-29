@@ -3,6 +3,7 @@
     "target": "ES6",
     "module": "CommonJS",
     "types": ["jest", "node"],
+    "typeRoots": ["./node_modules/@types", "./src/types"],
     "outDir": "./dist",
     "rootDir": "./",
     "strict": true,
@@ -12,6 +13,7 @@
     "moduleResolution": "node",
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
+    "resolveJsonModule": true,
     "paths": {
       "@/*": ["./src/*"],
       "@tests/*": ["./tests/*"]
@@ -19,10 +21,19 @@
   },
   "include": [
     "src/**/*",
-    "tests/**/*"
+    "tests/**/*",
+    "src/types/**/*.d.ts"
   ],
   "exclude": [
     "node_modules",
     "dist"
-  ]
+  ],
+  "ts-node": {
+    "files": true,
+    "transpileOnly": false,
+    "require": ["tsconfig-paths/register"],
+    "compilerOptions": {
+      "module": "CommonJS"
+    }
+  }
 }

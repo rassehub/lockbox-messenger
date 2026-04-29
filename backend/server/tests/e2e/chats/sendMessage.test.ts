@@ -1,0 +1,186 @@
+import http from 'http';
+import request from 'supertest';
+import { WebSocket } from 'ws';
+import { createServer } from '@/createServer';
+
+jest.mock('@/utils/logger', () => ({
+  info: jest.fn(),
+  error: jest.fn(),
+}));
+
+const uniqueUsername = (prefix: string) =>
+  `${prefix}+${Date.now()}_${Math.random().toString(36).slice(2)}`;
+
+describe('WSS messages', () => {
+  let server: http.Server;
+  let wss: any;
+  let map = new Map();
+  let baseUrl: string;
+
+  beforeAll(async () => {
+    jest.spyOn(console, 'log').mockImplementation(() => {});
+    ({ server, wss, map } = createServer());
+    await new Promise<void>((resolve) => {
+      server.listen(0, () => {
+        const { port } = server.address() as { port: number };
+        baseUrl = `http://127.0.0.1:${port}`;
+        resolve();
+      });
+    });
+  });
+
+  afterAll(async () => {
+    for (const [, ws] of map) { try { ws.terminate(); } catch {} }
+    map.clear();
+    // Guard against undefined wss/server if beforeAll failed
+    if (wss) {
+      await new Promise<void>((resolve) => wss.close(() => resolve()));
+    }
+    if (server) {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
+
+  afterEach(() => {
+    for (const [, ws] of map) { try { ws.terminate(); } catch {} }
+    map.clear();
+  });
+
+  const login = async (phoneNumber: string, password: string) => {
+    const res = await request(baseUrl).post('/auth/login').send({ phoneNumber, password }).expect(200);
+    const raw = res.headers['set-cookie'] || [];
+    const arr = Array.isArray(raw) ? raw : [raw];
+    const cookie = arr.map((c: string) => c.split(';')[0]).join('; ');
+    const me = await request(baseUrl).get('/auth/me').set('Cookie', cookie).expect(200);
+    return { cookie, userId: me.body.userId as string };
+  };
+
+  const register = async (username: string, phoneNumber: string, password: string) => {
+    await request(baseUrl).post('/auth/register').send({ username, phoneNumber, password }).expect(201);
+  };
+
+  it('forwards message to an online recipient', async () => {
+    const senderUsername = uniqueUsername('u');
+    const recipientUsername = uniqueUsername('r');
+    const senderphoneNumber = uniqueUsername('sender');
+    const recipientphoneNumber = uniqueUsername('recipient');
+    await register(senderUsername, senderphoneNumber, 'pw');
+    await register(recipientUsername, recipientphoneNumber, 'pw');
+    const sender = await login(senderphoneNumber, 'pw');
+    const recipient = await login(recipientphoneNumber, 'pw');
+
+    const port = (server.address() as { port: number }).port;
+
+    const recipientWs = new WebSocket(`ws://127.0.0.1:${port}`, {
+      headers: { Cookie: recipient.cookie },
+    });
+    await new Promise<void>((resolve, reject) => {
+      recipientWs.once('open', resolve);
+      recipientWs.once('error', reject);
+    });
+
+    const senderWs = new WebSocket(`ws://127.0.0.1:${port}`, {
+      headers: { Cookie: sender.cookie },
+    });
+    await new Promise<void>((resolve, reject) => {
+      senderWs.once('open', resolve);
+      senderWs.once('error', reject);
+    });
+
+    const received = new Promise<any>((resolve, reject) => {
+      const to = setTimeout(() => reject(new Error('recipient timeout')), 3000);
+      recipientWs.once('message', (buf) => {
+        clearTimeout(to);
+        resolve(JSON.parse(buf.toString()));
+      });
+    });
+
+    const ack = new Promise<any>((resolve, reject) => {
+      const to = setTimeout(() => reject(new Error('ack timeout')), 3000);
+      senderWs.once('message', (buf) => {
+        clearTimeout(to);
+        resolve(JSON.parse(buf.toString()));
+      });
+    });
+
+    senderWs.send(JSON.stringify({
+      type: 'SEND',
+      recipientId: recipient.userId,
+      ciphertext: 'hello',
+    }));
+
+    const msg = await received;
+    const ackMsg = await ack;
+
+    expect(msg.type).toBe('MESSAGE');
+    expect(msg.ciphertext).toBe('hello');
+    expect(typeof msg.sender).toBe('string');
+    expect(ackMsg).toEqual(expect.objectContaining({ type: 'ACK', ok: true }));
+
+    senderWs.close();
+    recipientWs.close();
+  });
+
+  it('delivers queued message when recipient connects later', async () => {
+    const senderUsername = uniqueUsername('u');
+    const recipientUsername = uniqueUsername('r');
+    const senderphoneNumber = uniqueUsername('sender');
+    const recipientphoneNumber = uniqueUsername('recipient');
+    await register(senderUsername, senderphoneNumber, 'pw');
+    await register(recipientUsername, recipientphoneNumber, 'pw');
+    const sender = await login(senderphoneNumber, 'pw');
+    const recipient = await login(recipientphoneNumber, 'pw');
+
+    const port = (server.address() as { port: number }).port;
+
+    const senderWs = new WebSocket(`ws://127.0.0.1:${port}`, {
+      headers: { Cookie: sender.cookie },
+    });
+    await new Promise<void>((resolve, reject) => {
+      senderWs.once('open', resolve);
+      senderWs.once('error', reject);
+    });
+
+    const ack = new Promise<any>((resolve, reject) => {
+      const to = setTimeout(() => reject(new Error('ack timeout')), 4000);
+      senderWs.once('message', (buf) => {
+        clearTimeout(to);
+        resolve(JSON.parse(buf.toString()));
+      });
+    });
+
+    senderWs.send(JSON.stringify({
+      type: 'SEND',
+      recipientId: recipient.userId,
+      ciphertext: 'queued-offline',
+    }));
+
+    const ackMsg = await ack;
+    expect(ackMsg).toEqual(expect.objectContaining({ type: 'ACK', ok: true }));
+
+    // Recipient connects later and should receive queued message
+    const recipientWs = new WebSocket(`ws://127.0.0.1:${port}`, {
+      headers: { Cookie: recipient.cookie },
+    });
+
+    const received = new Promise<any>((resolve, reject) => {
+      const to = setTimeout(() => reject(new Error('queued message timeout')), 4000);
+      recipientWs.once('message', (buf) => {
+        clearTimeout(to);
+        resolve(JSON.parse(buf.toString()));
+      });
+    });
+
+    await new Promise<void>((resolve, reject) => {
+      recipientWs.once('open', resolve);
+      recipientWs.once('error', reject);
+    });
+
+    const msg = await received;
+    expect(msg.type).toBe('MESSAGE');
+    expect(msg.ciphertext).toBe('queued-offline');
+
+    senderWs.close();
+    recipientWs.close();
+  });
+});
