@@ -7,8 +7,8 @@ RUN npm ci --include=dev
 COPY . .
 
 FROM base AS production
-RUN npm ci --only=production
+RUN npm ci
 COPY . .
-RUN npm run build
+RUN npm run build && npm prune --omit=dev
 EXPOSE 3000
-CMD ["node", "dist/index.js"]
+CMD ["node", "dist/server.js"]
