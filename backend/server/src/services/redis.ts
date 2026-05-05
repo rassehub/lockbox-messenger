@@ -7,8 +7,8 @@ export async function initCache() {
   if (client) return client;
   client = new Redis({
     host: process.env.REDIS_HOST || "localhost",
-    port: 6379,
-    password: "cachepass",
+    port: Number(process.env.REDIS_PORT) || 6379,
+    password: process.env.REDIS_PASSWORD || "cachepass",
   });
   client.on('error', (e: Error) => logger.error(e));
   await new Promise<void>((resolve, reject) => {

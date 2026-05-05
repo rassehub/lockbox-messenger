@@ -1,5 +1,5 @@
 import session from 'express-session';
-const RedisStore = require('connect-redis');
+const RedisStore = eval('require')('connect-redis').RedisStore;
 import Redis from 'ioredis';
 
 declare module 'express-session' {
@@ -16,7 +16,11 @@ declare global {
   }
 }
 
-const redisClient = new Redis(process.env.REDIS_URL || 'redis://:cachepass@cache:6379');
+const redisClient = new Redis({
+    host: process.env.REDIS_HOST || "localhost",
+    port: Number(process.env.REDIS_PORT) || 6379,
+    password: process.env.REDIS_PASSWORD || "cachepass",
+  });
 const store = new RedisStore({ client: redisClient });
 const sessionParser = session({
   store,
