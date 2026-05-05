@@ -1,5 +1,5 @@
 import session from 'express-session';
-const RedisStore = require('connect-redis').default;
+const RedisStore = require('connect-redis');
 import Redis from 'ioredis';
 
 declare module 'express-session' {
