@@ -5,7 +5,7 @@ import { app, initApp, map } from './config/expressApp';
 import setupWebSocketServer from './config/wss';
 import logger from './utils/logger';
 import { initDb, closeDb } from './db';
-import { initCache, closeCache, getCache } from './services/redis';
+import { initCache, closeCache } from './services/redis';
 import { StartCron } from './startCron';
 import { createSessionParser } from './middleware/session';
 const PORT = parseInt(process.env.PORT || '3000', 10);
@@ -13,11 +13,6 @@ const PORT = parseInt(process.env.PORT || '3000', 10);
 (async () => {
   try {
     await initCache();
-    await initCache();
-const r = getCache();
-const testResult = await r.set('test-key', 'hello');
-const testGet = await r.get('test-key');
-console.log('REDIS TEST:', testResult, testGet);
     const sessionParser = createSessionParser();
     initApp(sessionParser);
     const dataSource = await initDb();
