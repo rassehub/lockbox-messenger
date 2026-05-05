@@ -3,7 +3,7 @@
 import { Request, Response } from 'express';
 import { SignalKeyService } from "../services/signalKeyService";
 import { getDataSource } from "../db";
-import logger from '@/utils/logger';
+import logger from '../utils/logger';
 
 // Lazy initialization - create service only when first accessed
 let keyService: SignalKeyService | null = null;

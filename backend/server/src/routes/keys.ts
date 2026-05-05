@@ -8,7 +8,7 @@ import { Router } from "express";
 import { uploadKeyBundle, getKeyBundle, getKeyStatistics, addPreKeys, rotateSignedPreKey } from "../controllers/keyControllers";
 const router = Router();
 
-import { isAuthenticated } from "@/middleware/auth";
+import { isAuthenticated } from "../middleware/auth";
 
 router.use(isAuthenticated);
 /**
