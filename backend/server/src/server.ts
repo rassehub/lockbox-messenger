@@ -1,18 +1,20 @@
 /// <reference path="./types/express.d.ts" />
 
 import http from 'http';
-import { app, sessionParser, map } from './config/expressApp';
+import { app, initApp, map } from './config/expressApp';
 import setupWebSocketServer from './config/wss';
 import logger from './utils/logger';
 import { initDb, closeDb } from './db';
 import { initCache, closeCache } from './services/redis';
 import { StartCron } from './startCron';
-
+import { createSessionParser } from './middleware/session';
 const PORT = parseInt(process.env.PORT || '3000', 10);
 
 (async () => {
   try {
     await initCache();
+    const sessionParser = createSessionParser();
+    initApp(sessionParser);
     const dataSource = await initDb();
     const cleaningJob = StartCron(dataSource);
     const server = http.createServer(app);
