@@ -1,13 +1,13 @@
 import session from 'express-session';
+const RedisStore = require('connect-redis').default;
+import Redis from 'ioredis';
 
-// Extend express-session types
 declare module 'express-session' {
   interface SessionData {
     userId: string;
   }
 }
 
-// Extend Express Request type
 declare global {
   namespace Express {
     interface Request {
@@ -16,11 +16,17 @@ declare global {
   }
 }
 
-// Export the session parser middleware
+const redisClient = new Redis(process.env.REDIS_URL || 'redis://:cachepass@cache:6379');
+const store = new RedisStore({ client: redisClient });
 const sessionParser = session({
+  store,
   saveUninitialized: false,
-  secret: '$eCuRiTy',
-  resave: false
+  secret: process.env.SESSION_SECRET || '$eCuRiTy',
+  resave: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 1000 * 60 * 60 * 24, // 24h
+  },
 });
 
 export default sessionParser;
