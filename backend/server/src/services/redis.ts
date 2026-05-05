@@ -16,6 +16,7 @@ export async function initCache() {
     client!.once('ready', () => resolve());
     client!.once('error', (err) => reject(err));
   });
+  
   return client;
 }
 

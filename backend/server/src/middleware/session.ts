@@ -1,5 +1,5 @@
 import session from 'express-session';
-const RedisStore = eval('require')('connect-redis').RedisStore;
+import RedisStore from 'connect-redis';
 import { getCache } from '../services/redis';
 
 declare module 'express-session' {
@@ -17,9 +17,8 @@ declare global {
 }
 
 export function createSessionParser() {
-  const store = new RedisStore({ client: getCache() });
   return session({
-    store,
+    store: new RedisStore({ client: getCache() }),
     saveUninitialized: false,
     secret: process.env.SESSION_SECRET || '$eCuRiTy',
     resave: false,
