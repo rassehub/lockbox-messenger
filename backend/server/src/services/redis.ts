@@ -10,7 +10,6 @@ export async function initCache() {
     port: Number(process.env.REDIS_PORT) || 6379,
     username: process.env.REDIS_USERNAME || "default",
     password: process.env.REDIS_PASSWORD || "cachepass",
-    tls: process.env.REDIS_HOST ? {} : undefined,
   });
   client.on('error', (e: Error) => logger.error(e));
   await new Promise<void>((resolve, reject) => {
