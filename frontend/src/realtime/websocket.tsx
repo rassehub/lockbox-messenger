@@ -1,4 +1,4 @@
-import WebSocket from 'ws';
+//import WebSocket from 'ws';
 import { ISessionProvider } from "../api/ISessionProvider";
 
 
@@ -9,34 +9,46 @@ type WebSocketEvent =
   | 'message'
   | 'error'
   | 'close'
-  | 'ping'
+  /*| 'ping'
   | 'pong'
-  | 'unexpected-response';
+  | 'unexpected-response'*/;
 
 
 export class WebSocketService {
   private ws: WebSocket | null = null;
-  private messageHandlers = new Map<string, MessageHandler>();
+  //private messageHandlers = new Map<string, MessageHandler>();
 
   constructor(private session: ISessionProvider) { }
 
   connect() {
-    const cookie = this.session.getSessionToken()
+    /*const cookie = this.session.getSessionToken()
 
     this.ws = new WebSocket('ws://127.0.0.1:3000', {
       headers: {
         'Content-Type': 'application/json',
         'Cookie': cookie ? cookie : "",
       },
-    });
+    });*/
+    const token = this.session.getSessionToken()
+    const url = token
+      ? `ws://127.0.0.1:3000?token=${encodeURIComponent(token)}`
+      : `ws://127.0.0.1:3000`;
+
+    this.ws = new WebSocket(url);
   }
 
   on(event: WebSocketEvent, handler: (...args: any[]) => void) {
-    this.ws?.on(event, handler);
+    //this.ws?.on(event, handler);
+    this.ws?.addEventListener(event, handler as EventListener);
   }
 
   once(event: WebSocketEvent, handler: (...args: any[]) => void) {
-    this.ws?.once(event, handler);
+    //this.ws?.once(event, handler);
+    const wrapped = (...args: any[]) => {
+      this.ws?.removeEventListener(event, wrapped as EventListener);
+      handler(...args);
+    };
+    this.ws?.addEventListener(event, wrapped as EventListener);
   }
 
   sendMessage(recipientId: string, ciphertext: { type: number; body: string }) {
@@ -49,13 +61,13 @@ export class WebSocketService {
       JSON.stringify({
         type: 'SEND',
         recipientId,
-        ciphertext: ciphertext
+        ciphertext//: ciphertext
       })
     );
   }
 
   onMessage<T = any>(handler: (message: T) => void) {
-    this.ws?.on('message', (raw) => {
+    /*this.ws?.on('message', (raw) => {
       const text =
         typeof raw === 'string'
           ? raw
@@ -71,6 +83,12 @@ export class WebSocketService {
 
       handler(message);
     });
+  }*/
+
+    this.ws?.addEventListener('message', (event: any) => {
+      const text = typeof event.data === 'string' ? event.data : String(event.data);
+      handler(JSON.parse(text));
+    })
   }
 
   disconnect() {

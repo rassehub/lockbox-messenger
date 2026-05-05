@@ -11,9 +11,9 @@ import { useAuthentication } from "../AuthContext";
 const logoPlaceholder = require('../assets/logo-placeholder.png');
 
 const LoginScreen = () => {
-    const { isAuthenticated, loading, handleAuthentication } = useAuthentication();
+    const { isAuthenticated, loading, login } = useAuthentication();
     const navigation = useNavigation<NativeStackNavigationProp<StackParams>>();
-
+    
     const formRef = useRef<FormikProps<{ phonenumber: string; password: string; }> | null>(null);
 
     useEffect(() => {
@@ -23,8 +23,9 @@ const LoginScreen = () => {
     }, [loading, isAuthenticated, navigation]);
 
     const handleLogin = async (values: LoginValues) => {
-        const authenticated = await handleAuthentication(values.phonenumber, values.password);
-        if(authenticated) {
+        console.log("handle login");
+        const authenticated = await login(values.phonenumber, values.password);
+        if(!authenticated) {
             navigation.navigate("Home");
         } else {
             console.log("Authentication failed");
