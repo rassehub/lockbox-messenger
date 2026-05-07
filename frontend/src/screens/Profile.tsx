@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Image, View, Text, StyleSheet, Pressable, Modal, Platform, PermissionsAndroid } from 'react-native';
+import { Image, View, Text, StyleSheet, Pressable, Modal, Platform, PermissionsAndroid, Animated } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { CameraOptions, ImageLibraryOptions, launchCamera, launchImageLibrary } from 'react-native-image-picker';
@@ -9,6 +9,8 @@ import { dummyUsers } from '../mockData/Users';
 import { useTheme } from '../ThemeContext';
 
 const profilePictureDark = require('../assets/avatar-big-dark.png');
+const camera = require('../assets/camera.png');
+const gallery = require('../assets/image.png');
 
 const ProfileScreen = ({route}: any) => {
     const { isDarkTheme } = useTheme();
@@ -82,16 +84,20 @@ const ProfileScreen = ({route}: any) => {
                     setProfilePicModalVisible(!profilePicModalVisible);
                 }}>
                 <View style={styles.profilePictureModal} onTouchEnd={() => setProfilePicModalVisible(false)}>
-                    <View style={styles.buttonContainer}>
-                        {actions.map(({title, type, options}) => {
+                    <View style={[styles.buttonContainer, {
+                    backgroundColor: isDarkTheme ? '#1E1E1E' : '#FFFFFF',
+                    shadowColor: isDarkTheme ? '#A8A5FF' : '#000',
+                }]}>
+                        {actions.map(({title, type, options, image}) => {
                             return (
                                 <Pressable 
                                     style={styles.button}
                                     key={title}
                                     onPress={() => onButtonPress(type, options)}>
+                                    <Animated.Image style={styles.cameraIcons} source={image}/>
                                     <Text style={[
                                         styles.buttonText,
-                                        { color: isDarkTheme ? '#161616' : '#FFFFFF'}
+                                        { color: isDarkTheme ?  '#FFFFFF' : '#161616'}
                                     ]}>{title}</Text>
                                 </Pressable>
                             );
@@ -132,6 +138,7 @@ interface Action {
     title: string;
     type: 'capture' | 'library';
     options: CameraOptions | ImageLibraryOptions;
+    image: any;
 }
 
 const actions: Action[] = [
@@ -143,6 +150,7 @@ const actions: Action[] = [
             mediaType: 'photo',
             includeBase64: false,
         },
+        image: camera
     },
     {
         title: 'Select Image',
@@ -152,6 +160,7 @@ const actions: Action[] = [
             mediaType: 'photo',
             includeBase64: false,
         },
+        image: gallery
     },
 ]
 
@@ -169,25 +178,24 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     buttonContainer: {
+        flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
         width: '60%',
-        backgroundColor: '#1C1C1C',
+        backgroundColor: '#212121',
         paddingTop: 30,
         paddingBottom: 30,
         borderRadius: 20,
         shadowOffset: {
-          width: -10,
-          height: 4,
+          width: 50,
+          height: 50,
         },
-        shadowOpacity: 0.5,
-        shadowRadius: 4,
+        shadowOpacity: 1,
+        shadowRadius: 50,
         elevation: 5,
     },
     button: {
-        width: 120,
-        backgroundColor: '#A8A5FF',
-        borderRadius: 20,
+        width: '50%',
         marginTop: 10,
         marginBottom: 10,
         paddingVertical: 10,
@@ -220,7 +228,13 @@ const styles = StyleSheet.create({
     settingsContainer: {
         width: '100%',
         alignItems: 'flex-start',
-    }
+    },
+    cameraIcons: {
+        width: 24,
+        height: 24,
+        alignSelf: 'center',
+        marginBottom: 10,
+    },
 })
 
 export default ProfileScreen;
