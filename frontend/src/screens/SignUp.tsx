@@ -13,20 +13,14 @@ const logoPlaceholder = require('../assets/logo-placeholder.png')
 const SignUpScreen = () => {
     const { register } = useAuthentication();
     const navigation = useNavigation<NativeStackNavigationProp<StackParams>>();
-    const formRef = useRef<FormikProps<{ email: string; phonenumber: string; userName: string; password: string; confirmPassword: string; }> | null>(null);
+    const formRef = useRef<FormikProps<{ phonenumber: string; userName: string; password: string; confirmPassword: string; }> | null>(null);
 
     const formConfiguration = {
         fields: [
             {
-                name: "email",
-                label: "Email",
-                icon: require('../assets/email.png'),
-                inputType: "text",
-            },
-            {
                 name: "phonenumber",
                 label: "Phone number",
-                icon: require('../assets/email.png'),
+                icon: require('../assets/phone.png'),
                 inputType: "phonenumber",
             },
             {
@@ -50,7 +44,7 @@ const SignUpScreen = () => {
         ],
     } satisfies {
         fields: {
-            name: "email" | "phonenumber" | "userName" | "password" | "confirmPassword";
+            name: "phonenumber" | "userName" | "password" | "confirmPassword";
             label: string;
             icon: any;
             inputType?: "text" | "phonenumber" | "password";
@@ -58,7 +52,6 @@ const SignUpScreen = () => {
     };
 
     const initialValues = {
-        email: "",
         phonenumber: "",
         userName: "",
         password: "",
@@ -66,7 +59,6 @@ const SignUpScreen = () => {
     }
 
     type SignUpValues = {
-        email: string;
         phonenumber: string;
         userName: string;
         password: string;
@@ -83,9 +75,9 @@ const SignUpScreen = () => {
 
             const registered = await register(values.userName, values.phonenumber, values.password);
             if(registered) {
-                navigation.navigate("Home");
+                navigation.navigate("Login");
             } else {
-                console.log("Registering failde");
+                console.log("Registering failed");
             }
         } catch (err: any) {
             Alert.alert("Signup failed", err?.message ?? "Unknown error");
@@ -102,9 +94,6 @@ const SignUpScreen = () => {
                 onSubmit={handleSignUp}
                 formRef={formRef}
             />
-            <TouchableOpacity>
-                <Text style={styles.forgotPassword}>Forgot Password?</Text>
-            </TouchableOpacity>
             <AuthButton buttonText="Sign up" onPressed={() => formRef.current?.handleSubmit()} />
             <Text style={styles.bottomText}>Already have an account? 
                 <TouchableOpacity

@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { bootstrap, AppSession, PartialSession } from "./bootstrap";
 
-const SERVER_URL = 'https://';
+const SERVER_URL = 'https://lockbox-messenger.onrender.com';
 
 type SessionContextType = {
     session: AppSession | null;
@@ -9,6 +9,7 @@ type SessionContextType = {
     loading: boolean;
     setSession: (session: AppSession) => void;
     clearSession: () => void;
+    getNewPartial: () => Promise<PartialSession | null>;
 };
 
 const SessionContext = createContext<SessionContextType | undefined>(undefined);
@@ -33,8 +34,24 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setPartial(null);
     };
 
+    const getNewPartial = async (): Promise<PartialSession | null> => {
+        try {
+            const result = await bootstrap(SERVER_URL);
+            if('completeInit' in result) {
+                setPartial(result)
+                return result;
+            } else {
+                setSession(result);
+                return null;
+            }
+        } catch(err) {
+            console.log('getNewPartial error', err);
+            return null;
+        }
+    }
+
     return(
-        <SessionContext.Provider value={{ session, partial, loading, setSession, clearSession }}>
+        <SessionContext.Provider value={{ session, partial, loading, setSession, clearSession, getNewPartial }}>
             {children}
         </SessionContext.Provider>
     );

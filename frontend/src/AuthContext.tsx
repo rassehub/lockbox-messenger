@@ -1,20 +1,12 @@
 import { createContext, useCallback, useContext, useEffect, useState, useRef } from "react"
-/*import { User } from "./types/User";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { AuthService } from "src/auth/auth";
-import { HttpClient } from "src/http/HttpClient";
-import { Alert } from "react-native";
-import { useHttpClient } from "./ClientContext";*/
 import { useSession } from "./SessionContext";
+import { ChatStorage } from "./chat/chatStorage";
 
 type AuthContextType = {
-    //user: User | null;
     userId: string | null;
-    //token: string | undefined;
     isAuthenticated: boolean;
     loading: boolean;
-    //loadStoredAuth: () => Promise<void>;
-    //handleAuthentication: (phonenumber: string, password: string) => Promise<boolean>;
+    chatStorage: ChatStorage | undefined;
     login: (phoneNumber: string, password: string) => Promise<boolean>;
     register: (username: string, phoneNumber: string, password: string) => Promise<boolean>;
     logout: () => Promise<void>;
@@ -23,13 +15,21 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const { session, partial, loading, setSession, clearSession } = useSession();
+    const { session, partial, loading, setSession, clearSession, getNewPartial } = useSession();
+    const [chatStorage, setChatStorage] = useState<ChatStorage>();
     
     const login = async (phoneNumber: string, password: string) : Promise<boolean> => {
-        if(!partial) return false;
+        let currPartial = partial;
+        if(!currPartial) {
+            currPartial = await getNewPartial();
+        }
+        if(!currPartial) return false;
         try {
-            const userId = await partial.auth.login(phoneNumber, password);
-            const fullSession = await partial.completeInit(userId);
+            const userId = await currPartial.auth.login(phoneNumber, password);
+            const fullSession = await currPartial.completeInit(userId);
+            setSession(fullSession);
+            setChatStorage(fullSession.chatStorage);
+
             return true;
         } catch {
             return false;
@@ -40,8 +40,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if(!partial) return false;
         try {
             const userId = await partial.auth.register(username, phoneNumber, password);
-            const fullSession = await partial.completeInit(userId);
-            setSession(fullSession);
             return true;
         } catch {
             return false;
@@ -52,13 +50,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if(!session) return;
         await session.auth.logout();
         clearSession();
-        /*await Promise.all([
-            AsyncStorage.removeItem("authToken"),
-            AsyncStorage.removeItem("userData"),
-            console.log('logout')
-        ]);
-        setToken(undefined);
-        setUser(undefined);*/
     };
     
     return(
@@ -66,9 +57,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             userId: session?.userId ?? null,  
             isAuthenticated: session !== null, 
             loading, 
+            chatStorage,
             login,
             register,
-            logout 
+            logout,
         }}>
             {children}
         </AuthContext.Provider>
