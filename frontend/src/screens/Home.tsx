@@ -1,22 +1,50 @@
 import { View, Text, StyleSheet } from "react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import SearchBar from "../components/SearchBar";
 import ChatList from "../components/ChatList";
 import PlusButton from "../components/PlusButton";
 import { useTheme } from "../ThemeContext";
-import { dummyChats } from "../mockData/ChatItems";
+import { useChat } from "../ChatContext";
+import { ChatItem } from "../types/ChatListItem";
 
 const HomeScreen = () => {
     const { isDarkTheme } = useTheme();
-    const initialChats = dummyChats.filter((chat) => chat.chatId !== null);
-    const [filteredChats, setFilteredChats] = useState(initialChats);
+    const { storage } = useChat();
+
+    const [allChats, setAllChats] = useState<ChatItem[]>([]);
+    const [filteredChats, setFilteredChats] = useState<ChatItem[]>([]);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        const loadChats = async () => {
+            if (!storage) return;
+            const chats = await storage.getChatList();
+
+            const unique = Array.from(
+                new Map(chats.map((c) => [c.recipient || c.chatId, c])).values()
+            ).sort((a, b) => b.timeStamp.localeCompare(a.timeStamp));
+
+            if (!cancelled) {
+                setAllChats(unique);
+                setFilteredChats(unique);
+            }
+        };
+
+        loadChats();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [storage]);
 
     const handleSearch = (searchText: string) => {
-        const updatedChats = !searchText 
-            ? initialChats 
-            : initialChats.filter((chat) => chat.recipient.toLowerCase().includes(searchText.toLowerCase()));
+        const q = searchText.trim().toLowerCase();
+        const updatedChats = !q
+            ? allChats
+            : allChats.filter((chat) => chat.recipient.toLowerCase().includes(q));
         setFilteredChats(updatedChats);
-    }
+    };
 
     return (
         <View style={styles.mainContainer}>

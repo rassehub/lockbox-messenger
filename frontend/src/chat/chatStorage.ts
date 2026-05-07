@@ -3,6 +3,7 @@ import { chatCodecs } from './chatStorageCodecs';
 import type { ChatStorageSchema } from './chatStorageSchema';
 import type { Contact } from '../types/Contact';
 import type { Message } from '../types/Message';
+import type { ChatItem } from '../types/ChatListItem';
 
 export class ChatStorage {
   private storage;
@@ -39,6 +40,21 @@ export class ChatStorage {
     const existing = await this.storage.getRecordItem('messages', chatId) ?? [];
     existing.push(message);
     await this.storage.upsertRecordItem('messages', chatId, existing);
+  }
+
+  async getChatList(): Promise<ChatItem[]> {
+    const messagesByChat = await this.storage.getFullRecord('messages');
+    if (!messagesByChat) return [];
+
+    return Object.entries(messagesByChat).map(([chatId, message]) => {
+      const latest = message[message.length - 1];
+      return {
+        chatId,
+        recipient: chatId, 
+        timeStamp: latest?.timeStamp ?? '',
+        message,
+      };
+    });
   }
 
   async getMessages(chatId: string): Promise<Message[]> {
