@@ -6,10 +6,14 @@ import PlusButton from "../components/PlusButton";
 import { useTheme } from "../ThemeContext";
 import { useChat } from "../ChatContext";
 import { ChatItem } from "../types/ChatListItem";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { StackParams } from "../../App";
 
 const HomeScreen = () => {
     const { isDarkTheme } = useTheme();
-    const { storage } = useChat();
+    const { storage, messages } = useChat();
+    const navigation = useNavigation<NativeStackNavigationProp<StackParams>>();
 
     const [allChats, setAllChats] = useState<ChatItem[]>([]);
     const [filteredChats, setFilteredChats] = useState<ChatItem[]>([]);
@@ -18,7 +22,7 @@ const HomeScreen = () => {
         let cancelled = false;
 
         const loadChats = async () => {
-            if (!storage) return;
+            if(!storage) return;
             const chats = await storage.getChatList();
 
             const unique = Array.from(
@@ -36,7 +40,7 @@ const HomeScreen = () => {
         return () => {
             cancelled = true;
         };
-    }, [storage]);
+    }, [storage, messages]);
 
     const handleSearch = (searchText: string) => {
         const q = searchText.trim().toLowerCase();
@@ -46,13 +50,17 @@ const HomeScreen = () => {
         setFilteredChats(updatedChats);
     };
 
+    const handleNavigation = () => {
+        navigation.navigate('NewChat');
+    }
+
     return (
         <View style={styles.mainContainer}>
             <Text style={[styles.title, { color: isDarkTheme ? '#A8A5FF' : '#594EFF' }]}>Messages</Text>
             <SearchBar onSearch={handleSearch} />
             <ChatList chats={filteredChats}/>
             <View style={styles.buttonContainer}>
-                <PlusButton />
+                <PlusButton onPress={() => handleNavigation()}/>
             </View>
         </View>
     )
