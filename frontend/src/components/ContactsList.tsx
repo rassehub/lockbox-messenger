@@ -3,12 +3,12 @@ import ContactListItem from "./ContactListItem"
 import { Contact } from "../types/Contact"
 
 type ContactListProps = {
+    usage: string;
     contacts: Contact[];
 }
 
-const ContactList = ({contacts}: ContactListProps) => {
-    const renderContact = ({ item } : { item: Contact }) => <ContactListItem contact={item} />
-    console.log('testi: ', contacts);
+const ContactList: React.FC<ContactListProps> = ({usage, contacts}) => {
+    const renderContact = ({ item } : { item: Contact }) => <ContactListItem usage={usage} contact={item} />
 
     return (
         <FlatList 

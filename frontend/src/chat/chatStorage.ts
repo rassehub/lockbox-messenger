@@ -3,7 +3,6 @@ import { chatCodecs } from './chatStorageCodecs';
 import type { ChatStorageSchema } from './chatStorageSchema';
 import type { Contact } from '../types/Contact';
 import type { Message } from '../types/Message';
-import type { ChatItem } from '../types/ChatListItem';
 
 export class ChatStorage {
   private storage;
@@ -42,7 +41,7 @@ export class ChatStorage {
     await this.storage.upsertRecordItem('messages', chatId, existing);
   }
 
-  async getChatList(): Promise<ChatItem[]> {
+  async getChatList() {
     const messagesByChat = await this.storage.getFullRecord('messages');
     if (!messagesByChat) return [];
 

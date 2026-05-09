@@ -1,52 +1,43 @@
 import { FlatList, StyleSheet, TextInput, View } from "react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import ChatBubble from "../components/ChatBubble";
 import { Message } from "../types/Message";
-import { dummyChats } from "../mockData/ChatItems";
 import { useChat } from "../ChatContext";
-import { ChatStorage } from "../chat/chatStorage";
-import { useAuthentication } from "../AuthContext";
 
 const ChatScreen = ({route}: any) => {
-    const { messages, isConnected, sendMessage } = useChat();
+    const { messages, sendMessage, loadChat } = useChat();
     const [text, onChangeText] = useState('Message');
 
-    const createMessageId = () => {
-        let result = '';
-        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-        const charactersLength = characters.length;
-        let counter = 0;
-        while (counter < 5) {
-            result += characters.charAt(Math.floor(Math.random() * charactersLength));
-            counter += 1;
-        }
-        return result;
-    };
-
     const chatId = route.params.chatId;
-    const chat = dummyChats.find((chat) => chat.chatId === chatId);
-    const [chatMessages, setChatMessages] = useState(chat ? chat.message : []);
-    const recipient = chat?.recipient ?? null;
-    if(!chat || !recipient) {
-        navigation.navigate('Home');
-    }
+    const [recipient, setRecipient] = useState<string>();
 
-    const renderMessage = ({ item }: { item: Message }) => ( <ChatBubble message={item} senderID={chatMessages[0].senderID} /> );
+    useEffect(() => {
+        const init = async () => {
+            const chat = await loadChat(chatId);
+            if (chat && chat.length) {
+                setRecipient('a5469e03-d5ae-4b3f-893a-3eb48954a15c');
+                return;
+            }
+            const fromContext = messages.find(m => m.chatID === chatId);
+            if (fromContext) setRecipient(fromContext.senderID);
+        };
+        init();
+    }, [chatId]);
 
-    const handleSendMessage = () => {
-        if(text.trim() === '') return;
-        if(!recipient) return;
+    const chatMessages = messages.filter((m) => m.chatID === chatId);
 
-        sendMessage(recipient, text);
+    const renderMessage = ({ item }: { item: Message }) => (
+        <ChatBubble message={item} senderID={chatMessages[0]?.senderID ?? ""} />
+    );
 
-        setChatMessages(chatMessages => [...chatMessages, {
-            messageID: createMessageId(),
-            chatID: chatId,
-            senderID: '2',
-            contents: text,
-            timeStamp: new Date().toString(),
-        }]);
-
+    const handleSendMessage = async () => {
+        if (text.trim() === '') return;
+        if (!recipient) return;
+        try {
+          await sendMessage(chatId, recipient, text);
+        } catch (err) {
+          console.warn('sendMessage failed', err);
+        }
         onChangeText('Message');
     }
 
@@ -55,12 +46,13 @@ const ChatScreen = ({route}: any) => {
             <FlatList
                 style={styles.list}
                 data={chatMessages}
+                extraData={messages}
                 renderItem={renderMessage}
                 keyExtractor={(item) => item.messageID}
             />
             <TextInput 
                 style={[styles.textInput, { bottom: text !== 'Message' ? 0 : 100 }]}
-                onPress={() => onChangeText('')}
+                onFocus={() => onChangeText('')}
                 onChangeText={onChangeText}
                 value={text}
                 onSubmitEditing={handleSendMessage}

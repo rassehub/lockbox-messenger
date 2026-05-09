@@ -1,23 +1,24 @@
-import { useNavigation } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Image, Pressable, StyleSheet } from "react-native";
-import { StackParams } from "../../App";
+import { Image, ImageStyle, Pressable, StyleSheet, TextStyle } from "react-native";
 import { useTheme } from "../ThemeContext";
 
 const plus = require('../assets/plus.png');
 const plusDark = require('../assets/plus-dark.png');
+const check = require('../assets/check.png');
 
-const PlusButton = () => {
+interface PlusButtonProps {
+    onPress: () => void;
+    styleProp?: TextStyle;
+    iconStyleProp?: ImageStyle;
+}
+
+const PlusButton: React.FC<PlusButtonProps> = ({ onPress, styleProp, iconStyleProp }) => {
     const { isDarkTheme } = useTheme();
-    const navigation = useNavigation<NativeStackNavigationProp<StackParams>>();
 
     return (
         <Pressable 
-            style={styles.button}
-            onPress={() => {
-                navigation.navigate('NewChat')
-            }}>
-            <Image source={isDarkTheme ? plusDark : plus} style={styles.buttonIcon}/>
+            style={[styles.button, styleProp]}
+            onPress={onPress}>
+            <Image source={isDarkTheme ? plusDark : plus} style={[styles.buttonIcon, iconStyleProp]}/>
         </Pressable>
     )
 }
