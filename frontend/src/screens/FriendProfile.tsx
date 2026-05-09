@@ -1,14 +1,18 @@
-import { Image, StyleSheet, View, Text } from "react-native";
+import { Image, StyleSheet, View, Text, Pressable } from "react-native";
 import { useState } from "react";
 import SwitchSetting from "../components/SwitchSetting";
 import DropdownRadio from "../components/DropdownRadio";
 import { dummyContacts } from "../mockData/Contatcs";
 import { useTheme } from "../ThemeContext";
+import { useChat } from "../ChatContext";
 
 const profilePicture = require('../assets/avatar-big.png');
-const profilePictureDark = require('../assets/avatar-big-dark.png')
+const profilePictureDark = require('../assets/avatar-big-dark.png');
+const trash = require('../assets/delete.png');
+const trashDark = require('../assets/delete-dark.png');
 
 const FriendProfileScreen = ({route}: any) => {
+    const { storage } = useChat();
     const { isDarkTheme } = useTheme();
     const senderId = route.params.userId;
     const contact = dummyContacts.filter(
@@ -54,6 +58,11 @@ const FriendProfileScreen = ({route}: any) => {
         return newState;
     };
 
+    const handleRemoveContact = async () => {
+        if(!storage) return;
+        await storage.removeContact(senderId);
+    }
+
     return (
         <View style={styles.mainContainer}>
             <Image source={isDarkTheme ? profilePictureDark : profilePicture}/>
@@ -76,6 +85,10 @@ const FriendProfileScreen = ({route}: any) => {
                     onHandlePressed={handleSecondSwitch}
                 />
             </View>
+            <Pressable style={styles.base} onPress={() => handleRemoveContact()}>
+                <Text style={styles.settingText}>Remove Contact</Text>
+                <Image style={styles.settingIcon} source={isDarkTheme ? trashDark : trash}/>
+            </Pressable>
         </View>
     )
 }
@@ -89,6 +102,23 @@ const styles = StyleSheet.create({
         fontSize: 18,
         color: '#594EFF',
         fontWeight: 'bold',
+    },
+    base: {
+        flexDirection: 'row',
+        width: '100%',
+        alignItems: 'center',
+        paddingTop: '5%',
+    },
+    settingText: {
+        color: '#A8A5FF',
+        fontSize: 16,
+        fontWeight: 'bold',
+        width: '89%',
+    },
+    settingIcon: {
+        marginTop: '2%',
+        width: 24,
+        height: 24,
     },
 })
 
