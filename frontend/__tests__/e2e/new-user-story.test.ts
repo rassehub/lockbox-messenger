@@ -25,7 +25,7 @@ export interface ClientContext {
 
 
 export function createClientContext(): ClientContext {
-    const transport = new HttpClient("http://127.0.0.1:3000")
+    const transport = new HttpClient("https://lockbox-messenger.onrender.com")
     const auth = new AuthService(transport)
     const api = new ApiClient(auth, transport)
     const ws = new WebSocketService(auth)

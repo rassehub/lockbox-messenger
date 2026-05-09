@@ -123,7 +123,9 @@ export const apiCodecs: EndpointCodecs = {
             return { userId: parsed.userId };
         }
     },
+
     logout: {},
+
     registerUser: {
         encode: (req) =>
             JSON.stringify({
@@ -136,16 +138,45 @@ export const apiCodecs: EndpointCodecs = {
             return { userId: parsed.userId };
         }
     },
+
     fetchCurrentUser: {
         decode: (raw: unknown): { userId: string } => {
             const parsed = raw as { userId: string };
             return { userId: parsed.userId };
         }
     },
+
+    searchUsers: {
+        encode: (req: { userQuery: string }): string =>
+            JSON.stringify({
+                username: req.userQuery,
+            }),
+        decode: (raw: unknown): { usernames: string[] } => {
+            const parsed = raw as { usernames: string[] };
+            return {
+                usernames: parsed.usernames,
+            };
+        }
+    },
+
+    getUserId: {
+        encode: (req: { username: string }): string =>
+            JSON.stringify({
+                username: req.username,
+            }),
+        decode: (raw: unknown): { userId: string } => {
+            const parsed = raw as { userId: string };
+            return {
+                userId: parsed.userId,
+            };
+        }
+    },
+
     uploadKeyBundle: {
         encode: (req: { keyBundle: KeyBundle }): string =>
             keyBundleCodec.encode(req),
     },
+
     rotateSignedPreKey: {
         encode: (req: { signedPreKey: SignedPublicPreKeyType }): string =>
             JSON.stringify({
@@ -156,6 +187,7 @@ export const apiCodecs: EndpointCodecs = {
                 }
             })
     },
+
     addPreKeys: {
         encode: (req: { preKeys: PreKey[] }): string =>
             JSON.stringify({
@@ -171,21 +203,22 @@ export const apiCodecs: EndpointCodecs = {
             return { availableCount: parsed.availableCount }
         }
     },
+
     fetchKeyStatistics: {
         decode: (raw: unknown): KeyStatistics => {
             const parsed = raw as {
                 success: Boolean,
                 stats: {
-                validPreKeyIds: number[];
-                availablePreKeys: number;
-                signedPreKey: {
-                    keyId: number;
-                    ageDays: number;
-                    needsRotation: boolean;
-                };
-                previousSignedPKID: number | undefined;
-                expiredSignedPKID: number | undefined;
-            }
+                    validPreKeyIds: number[];
+                    availablePreKeys: number;
+                    signedPreKey: {
+                        keyId: number;
+                        ageDays: number;
+                        needsRotation: boolean;
+                    };
+                    previousSignedPKID: number | undefined;
+                    expiredSignedPKID: number | undefined;
+                }
             };
             return {
                 validPreKeyIds: parsed.stats.validPreKeyIds,
@@ -200,6 +233,7 @@ export const apiCodecs: EndpointCodecs = {
             };
         },
     },
+
     fetchRecipientKeyBundle: {
         encode: (req: { recipientId: string }): string =>
             JSON.stringify({
