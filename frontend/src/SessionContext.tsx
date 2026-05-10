@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { bootstrap, AppSession, PartialSession } from "./bootstrap";
 
-const SERVER_URL = 'https://lockbox-messenger.onrender.com';
+const SERVER_URL = 'https://ydinmarsu.dns.army';
 
 type SessionContextType = {
     session: AppSession | null;

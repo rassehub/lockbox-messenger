@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from "react"
 import { Message } from "./types/Message";
 import { useSession } from "./SessionContext";
 import { ChatStorage } from "./chat/chatStorage";
+import { EncryptedMessage } from "./crypto/types";
 
 type ChatContextType = {
   messages: Message[];
@@ -9,6 +10,8 @@ type ChatContextType = {
   storage: ChatStorage | undefined;
   loadChat: (chatId: string) => Promise<Message[]>;
   sendMessage: (chatId: string, recipientId: string, text: string) => Promise<void>;
+  searchUsers: (searchText: string) => Promise<string[]>;
+  getUserId: (username: string) => Promise<string>;
   connect: () => void;
   disconnect: () => void;
 };
@@ -22,7 +25,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    if(!session) {
+    if (!session) {
       setIsConnected(false);
       setStorage(undefined);
       setMessages([]);
@@ -56,7 +59,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [session]);
 
   const loadChat = async (chatId: string) => {
-    if(!storage) return [];
+    if (!storage) return [];
     const chat = await storage.getMessages(chatId);
     const validatedMessages = (chat ?? []).filter(
       (item): item is Message => item !== null && item !== undefined
@@ -69,45 +72,62 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   const sendMessage = async (chatId: string, recipientId: string, text: string): Promise<void> => {
-  if (!session) throw new Error('No active session');
+    if (!session) throw new Error('No active session');
 
-  const message: Message = {
-    messageID: (globalThis as any)?.crypto?.randomUUID?.() ?? `local-${Date.now()}`,
-    chatID: chatId,
-    senderID: session.userId,
-    contents: text,
-    timeStamp: new Date().toISOString(),
-    timeRead: undefined,
+    const message: Message = {
+      messageID: (globalThis as any)?.crypto?.randomUUID?.() ?? `local-${Date.now()}`,
+      chatID: chatId,
+      senderID: session.userId,
+      contents: text,
+      timeStamp: new Date().toISOString(),
+      timeRead: undefined,
+    };
+
+    setMessages((prev) => {
+      const next = [...prev, message];
+      return next;
+    });
+
+    /*let encrypted;
+    try {
+      encrypted = await session.cryptoManager.encryptMessage(recipientId, text);
+    } catch(err) {
+      console.error('encryptMessage failed', err);
+      throw err;
+    }*/
+    const test: EncryptedMessage = {
+      type: 12,
+      body: text,
+      registrationId: 1
+    }
+
+    try {
+      session.ws.sendMessage(recipientId, test);
+    } catch (err) {
+      console.warn('ws.sendMessage failed', err);
+    }
+
+    if (!storage) return;
+    storage.appendMessage(chatId, message);
   };
 
-  setMessages((prev) => {
-    const next = [...prev, message];
-    return next;
-  });
-
-  let encrypted;
-  try {
-    encrypted = await session.cryptoManager.encryptMessage(recipientId, text);
-  } catch(err) {
-    console.error('encryptMessage failed', err);
-    throw err;
+  const searchUsers = async (searchText: string): Promise<string[]> => {
+    if (!session) return [];
+    const res = await session.api.makeRequest('searchUsers', { userQuery: searchText });
+    return res.data.usernames;
   }
 
-  try {
-    session.ws.sendMessage(recipientId, encrypted);
-  } catch (err) {
-    console.warn('ws.sendMessage failed', err);
+  const getUserId = async (username: string): Promise<string> => {
+    if(!session) return '';
+    const res = await session.api.makeRequest('getUserId', {username: username});
+    return res.data.userId;
   }
-
-  if(!storage) return;
-  storage.appendMessage(chatId, message);
-};
 
   const connect = () => session?.ws.connect();
   const disconnect = () => session?.ws.disconnect();
 
   return(
-    <ChatContext.Provider value={{ messages, isConnected, storage, loadChat, sendMessage, connect, disconnect}}>
+    <ChatContext.Provider value={{ messages, isConnected, storage, loadChat, sendMessage, searchUsers, getUserId, connect, disconnect}}>
       {children}
     </ChatContext.Provider>
   );

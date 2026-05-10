@@ -15,17 +15,15 @@ export class WebSocketService {
   constructor(private session: ISessionProvider) { }
 
   connect() {
-    const cookie = this.session.getSessionToken()
+  const token = this.session.getSessionToken();
+  const url = `wss://ydinmarsu.dns.army?token=${encodeURIComponent(token ?? '')}`;
 
-    this.ws = new WebSocket('wss://lockbox-messenger.onrender.com');
-    
-    this.ws.onopen = () => {
-      this.ws?.send(JSON.stringify({
-        type: 'AUTH',
-        cookie: cookie ? cookie : ""
-      }));
-    };
-  }
+  this.ws = new WebSocket(url);
+
+  this.ws.onopen = () => {
+    console.log('WebSocket connected and authenticated via query param');
+  };
+}
 
   on(event: WebSocketEvent, handler: (...args: any[]) => void) {
     if (event === 'open') this.ws!.onopen = handler as any;
