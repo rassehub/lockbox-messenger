@@ -1,13 +1,13 @@
 import session from 'express-session';
+import RedisStore from 'connect-redis';
+import { getCache } from '../services/redis';
 
-// Extend express-session types
 declare module 'express-session' {
   interface SessionData {
     userId: string;
   }
 }
 
-// Extend Express Request type
 declare global {
   namespace Express {
     interface Request {
@@ -16,11 +16,15 @@ declare global {
   }
 }
 
-// Export the session parser middleware
-const sessionParser = session({
-  saveUninitialized: false,
-  secret: '$eCuRiTy',
-  resave: false
-});
-
-export default sessionParser;
+export function createSessionParser() {
+  return session({
+    store: new RedisStore({ client: getCache() }),
+    saveUninitialized: false,
+    secret: process.env.SESSION_SECRET || '$eCuRiTy',
+    resave: false,
+    cookie: {
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 1000 * 60 * 60 * 24,
+    },
+  });
+}

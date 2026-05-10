@@ -55,6 +55,29 @@ export const endpointConfig = {
     },
   },
 
+  //social routes
+  getUserId: {
+    url: "/social/get-user-id",
+    method: "POST",
+    request: {} as {
+      username: string;
+    },
+    response: {} as {
+      userId: string;
+    },
+  },
+
+  searchUsers: {
+    url: "/social/search-users",
+    method: "POST",
+    request: {} as {
+      userQuery: string;
+    },
+    response: {} as {
+      usernames: string[];
+    },
+  },
+
   // key routes
   uploadKeyBundle: {
     url: "/keys/upload",

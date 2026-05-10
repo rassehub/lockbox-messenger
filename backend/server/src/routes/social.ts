@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { isAuthenticated } from "@/middleware/auth";
-import { getUserId, searchUsers } from "@/controllers/socialControllers";
+import { isAuthenticated } from "../middleware/auth";
+import { getUserId, searchUsers } from "../controllers/socialControllers";
 
 const router = Router();
 router.use(isAuthenticated);
