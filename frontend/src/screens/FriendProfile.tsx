@@ -1,6 +1,5 @@
 import { Image, StyleSheet, View, Text, Pressable } from "react-native";
 import { useState } from "react";
-import SwitchSetting from "../components/SwitchSetting";
 import DropdownRadio from "../components/DropdownRadio";
 import { dummyContacts } from "../mockData/Contatcs";
 import { useTheme } from "../ThemeContext";
@@ -41,23 +40,6 @@ const FriendProfileScreen = ({route}: any) => {
         console.log("handle submit");
     }
 
-    const [switchState, setSwitchState] = useState(false);
-    const [secondSwitchState, setSecondSwitchState] = useState(false);
-
-    const handleSwitch = () => {
-        console.log("Switch turned!");
-        const newState = !switchState;
-        setSwitchState(newState);
-        return newState;
-    };
-
-    const handleSecondSwitch = () => {
-        console.log("Switch turned!");
-        const newState = !secondSwitchState;
-        setSecondSwitchState(newState);
-        return newState;
-    };
-
     const handleRemoveContact = async () => {
         if(!storage) return;
         await storage.removeContact(senderId);
@@ -67,28 +49,19 @@ const FriendProfileScreen = ({route}: any) => {
         <View style={styles.mainContainer}>
             <Image source={isDarkTheme ? profilePictureDark : profilePicture}/>
             <Text style={[styles.name, {color: isDarkTheme ? '#A8A5FF' : '#594EFF'}]}>{contact[0].name}</Text>
-            <View>
+            <View style={styles.settingsView}>
                 <DropdownRadio 
                     dropdownTitle="Disappearing messages"
                     formConfiguration={formConfiguration}
                     initialValues={initialValues}
                     onSubmit={handleSubmit}
                 />
-                <SwitchSetting
-                    initialState={false}
-                    settingText={"Setting switch on"}
-                    onHandlePressed={handleSwitch}
-                />
-                <SwitchSetting
-                    initialState={false}
-                    settingText={"Setting switch off"}
-                    onHandlePressed={handleSecondSwitch}
-                />
+                <Text style={styles.categoryText}>Danger zone</Text>
+                <Pressable style={styles.base} onPress={() => handleRemoveContact()}>
+                    <Text style={styles.settingText}>Remove Contact</Text>
+                    <Image style={styles.settingIcon} source={isDarkTheme ? trashDark : trash} />
+                </Pressable>
             </View>
-            <Pressable style={styles.base} onPress={() => handleRemoveContact()}>
-                <Text style={styles.settingText}>Remove Contact</Text>
-                <Image style={styles.settingIcon} source={isDarkTheme ? trashDark : trash}/>
-            </Pressable>
         </View>
     )
 }
@@ -103,9 +76,20 @@ const styles = StyleSheet.create({
         color: '#594EFF',
         fontWeight: 'bold',
     },
+    settingsView: {
+        flex: 1,
+        paddingTop: '5%',
+        paddingHorizontal: '5%',
+    },
+    categoryText: {
+        color: '#A8A5FF',
+        fontSize: 14,
+        paddingTop: '10%',
+    },
     base: {
         flexDirection: 'row',
-        width: '100%',
+        justifyContent: 'space-between',
+        width: '97%',
         alignItems: 'center',
         paddingTop: '5%',
     },
@@ -113,7 +97,6 @@ const styles = StyleSheet.create({
         color: '#A8A5FF',
         fontSize: 16,
         fontWeight: 'bold',
-        width: '89%',
     },
     settingIcon: {
         marginTop: '2%',

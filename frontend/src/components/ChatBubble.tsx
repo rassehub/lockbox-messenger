@@ -24,7 +24,7 @@ const styles = StyleSheet.create({
     receivedBubble: {
         backgroundColor: '#594EFF',
         borderRadius: 40,
-        paddingVertical: '5%',
+        paddingVertical: '4%',
         paddingHorizontal: '8%',
         margin: '2%',
         minWidth: '40%',
@@ -34,7 +34,7 @@ const styles = StyleSheet.create({
     sentBubble: {
         backgroundColor: '#A8A5FF',
         borderRadius: 40,
-        paddingVertical: '5%',
+        paddingVertical: '4%',
         paddingHorizontal: '8%',
         margin: '2%',
         minWidth: '40%',
@@ -53,15 +53,14 @@ const styles = StyleSheet.create({
     message: {
         fontSize: 14,
         color: '#FFFFFF',
+        paddingRight: 30
     },
     noIcon: {
         height: 0
     },
     icon: {
         alignSelf: 'flex-end',
-        marginTop: -10,
         marginBottom: -5,
-        marginLeft: 45,
         width: 20,
         height: 20,
     }

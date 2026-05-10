@@ -3,7 +3,6 @@ import { useTheme } from "../ThemeContext";
 
 const plus = require('../assets/plus.png');
 const plusDark = require('../assets/plus-dark.png');
-const check = require('../assets/check.png');
 
 interface PlusButtonProps {
     onPress: () => void;
