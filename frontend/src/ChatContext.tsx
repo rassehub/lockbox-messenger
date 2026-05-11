@@ -3,6 +3,7 @@ import { Message } from "./types/Message";
 import { useSession } from "./SessionContext";
 import { ChatStorage } from "./chat/chatStorage";
 import { EncryptedMessage } from "./crypto/types";
+import { AppSession } from "./bootstrap";
 
 type ChatContextType = {
   messages: Message[];
@@ -23,7 +24,10 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [storage, setStorage] = useState<ChatStorage>();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isConnected, setIsConnected] = useState(false);
-
+  const connectWs = async(s: AppSession) => {
+      const t = await s.auth.getWsTicket();
+      s.ws.connect(t);
+    }
   useEffect(() => {
     if (!session) {
       setIsConnected(false);
@@ -32,7 +36,9 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
-    session.ws.connect();
+
+    connectWs(session);
+    
     setIsConnected(true);
     setStorage(session.chatStorage);
 
@@ -128,8 +134,8 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const res = await session.api.makeRequest('getUserId', {username: username});
     return res.data.userId;
   }
-
-  const connect = () => session?.ws.connect();
+  
+  const connect = () => connectWs(session);
   const disconnect = () => session?.ws.disconnect();
 
   return(

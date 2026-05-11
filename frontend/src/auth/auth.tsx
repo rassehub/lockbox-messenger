@@ -155,7 +155,7 @@ class AuthService implements ISessionProvider {
     return userId
   }
 
-  async getWsTicket() {
+  async getWsTicket(): Promise<string> {
     let ticket;
     const res = await this.http.send({
       url: "/auth/ws-ticket",

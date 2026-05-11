@@ -1,5 +1,3 @@
-import { ISessionProvider } from "../api/ISessionProvider";
-
 type MessageHandler = (data: any) => void;
 
 type WebSocketEvent =
@@ -12,18 +10,16 @@ export class WebSocketService {
   private ws: WebSocket | null = null;
   private messageHandlers = new Map<string, MessageHandler>();
 
-  constructor(private session: ISessionProvider) { }
+  constructor() { }
 
-  connect() {
-  const token = this.session.getSessionToken();
-  const url = `wss://ydinmarsu.dns.army?token=${encodeURIComponent(token ?? '')}`;
+  connect(ticket: string) {
+    const url = `wss://ydinmarsu.dns.army?token=${encodeURIComponent(ticket ?? '')}`;
+    this.ws = new WebSocket(url);
 
-  this.ws = new WebSocket(url);
-
-  this.ws.onopen = () => {
-    console.log('WebSocket connected and authenticated via query param');
-  };
-}
+    this.ws.onopen = () => {
+      console.log('WebSocket connected and authenticated via query param');
+    };
+  }
 
   on(event: WebSocketEvent, handler: (...args: any[]) => void) {
     if (event === 'open') this.ws!.onopen = handler as any;
@@ -35,7 +31,7 @@ export class WebSocketService {
   once(event: WebSocketEvent, handler: (...args: any[]) => void) {
     const wrappedHandler = (...args: any[]) => {
       handler(...args);
-      this.on(event, () => {}); 
+      this.on(event, () => { });
     };
     this.on(event, wrappedHandler);
   }
