@@ -23,7 +23,7 @@ export class WebSocketService {
   connect() {
     const cookie = this.session.getSessionToken()
 
-    this.ws = new WebSocket('wss://lockbox-messenger.onrender.com', {
+    this.ws = new WebSocket('ws://127.0.0.1:3000', {
       headers: {
         'Content-Type': 'application/json',
         'Cookie': cookie ? cookie : "",

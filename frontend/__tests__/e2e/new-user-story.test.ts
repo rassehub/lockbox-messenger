@@ -25,7 +25,7 @@ export interface ClientContext {
 
 
 export function createClientContext(): ClientContext {
-    const transport = new HttpClient("https://lockbox-messenger.onrender.com")
+    const transport = new HttpClient("http://127.0.0.1:3000")
     const auth = new AuthService(transport)
     const api = new ApiClient(auth, transport)
     const ws = new WebSocketService(auth)
@@ -225,12 +225,15 @@ describe('User story related testing', () => {
         });
         it('should receive messsage from cache and deccrypt it properly', async () => {
             alice.ws.connect();
+            await expect(waitForOpen(alice.ws)).resolves.toBeUndefined();
+
             const offlineMessage = await alice.cryptoManager.encryptMessage(bob.userId, "offline message");
 
             alice.ws.sendMessage(bob.userId, offlineMessage);
             alice.ws.disconnect();
 
             bob.ws.connect();
+            await expect(waitForOpen(bob.ws)).resolves.toBeUndefined();
 
             const messagePromise = waitForMessage(bob.ws)
 
