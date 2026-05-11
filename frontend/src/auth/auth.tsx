@@ -158,7 +158,7 @@ class AuthService implements ISessionProvider {
   async getWsTicket() {
     let ticket;
     const res = await this.http.send({
-      url: "/auth/we-ticket",
+      url: "/auth/ws-ticket",
       method: "POST",
       headers: {
         "Content-Type": "application/json",
