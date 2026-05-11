@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
-
+import crypto from 'crypto';
+import { getCache } from '@/services/redis';
 import logger from '../utils/logger';
 import { getRepository } from "../db";
 import { User } from "../models/User";
@@ -90,6 +91,14 @@ export const logout = async (req: Request, res: Response) => {
     res.status(200).send({ result: 'OK', message: 'Session destroyed' });
   });
 }
+
+export const wsTicket = async (req: Request, res: Response) => {
+  const ticket = crypto.randomBytes(32).toString('hex');
+  const redis = getCache();
+  // 30-second TTL, single use
+  await redis.set(`ws-ticket:${ticket}`, req.session.userId!, 'EX', 30);
+  res.json({ ticket });
+};
 
 export const me = async (req: Request, res: Response) => {
   res.json({ userId: req.user.id });

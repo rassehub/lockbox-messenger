@@ -3,7 +3,7 @@ import logger from '../utils/logger';
 import { IncomingMessage } from 'http';
 import session from 'express-session';
 import * as http from 'http';
-import { addMessage, getMessages } from '../services/redis';
+import { addMessage, getMessages, getCache } from '../services/redis';
 
 function onSocketError(err: Error) {
   logger.error(err);
@@ -23,64 +23,64 @@ function setupWebSocketServer(
   server.on('upgrade', (request: IncomingMessage, socket, head) => {
     socket.on('error', onSocketError);
 
-    logger.info('Parsing session from request...');
+    sessionParser(request as any, {} as any, async () => {
+      try {
+        const req = request as CustomRequest;
+        let userId = req.session.userId;
 
-    sessionParser(request as any, {} as any, () => {
-      const req = request as CustomRequest;
-      
-      // Check for userId in session (cookie auth) OR query param (token auth for mobile)
-      let userId = req.session.userId;
-      
-      if (!userId && req.url) {
-        // Try to get token from query string for React Native clients
-        const url = new URL(req.url, `http://${req.headers.host}`);
-        const token = url.searchParams.get('token');
-        if (token) {
-          // In production, verify JWT and extract userId
-          // For now, assume token === sessionToken from cookie store
-          userId = token; // Simplified - you should verify JWT here
-          logger.info(`Token-based auth: ${userId}`);
+        if (!userId && req.url) {
+          const url = new URL(req.url, `http://${req.headers.host}`);
+          const ticket = url.searchParams.get('ticket');
+          if (ticket) {
+            const redis = getCache();
+            const ticketKey = `ws-ticket:${ticket}`;
+            const resolved = await redis.get(ticketKey);
+            if (resolved) {
+              await redis.del(ticketKey);
+              userId = resolved;
+            }
+          }
         }
-      }
-      
-      if (!userId) {
-        socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+
+        if (!userId) {
+          socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+          socket.destroy();
+          return;
+        }
+
+        socket.removeListener('error', onSocketError);
+        (req as any).userId = userId;
+
+        wss.handleUpgrade(req, socket, head, (ws) => {
+          wss.emit('connection', ws, req);
+        });
+      } catch (err) {
+        logger.error(err as Error);
         socket.destroy();
-        return;
       }
-
-      logger.info('Session is parsed!');
-      socket.removeListener('error', onSocketError);
-
-      // Attach userId to request for connection handler
-      (req as any).userId = userId;
-
-      wss.handleUpgrade(req, socket, head, (ws) => {
-        wss.emit('connection', ws, req);
-      });
     });
   });
 
-    wss.on('connection', (ws: WebSocket, request: CustomRequest) => {
+  wss.on('connection', (ws: WebSocket, request: CustomRequest) => {
     // Get userId from session or from our attached property (token auth)
     const userId = request.session.userId || (request as any).userId;
     if (!userId) {
       ws.close(1008, 'No user ID');
       return;
     }
-    
+
     map.set(userId, ws);
 
 
     ws.on('error', console.error);
 
-        // Deliver any queued (offline) messages
+    // Deliver any queued (offline) messages
     (async () => {
       try {
         const pending = await getMessages(userId);
         if (pending.length) {
           logger.info(`Delivering ${pending.length} queued messages to ${userId}`);
-      }
+        }
         for (const msg of pending) {
           ws.send(JSON.stringify({ type: 'MESSAGE', ...msg }));
         }
@@ -88,8 +88,8 @@ function setupWebSocketServer(
         logger.error(e as Error);
       }
     })();
-    
-      ws.on('message', async (message: Buffer) => {
+
+    ws.on('message', async (message: Buffer) => {
       logger.info(`Received message ${message.toString()} from user ${userId}`);
       try {
         const parsed = JSON.parse(message.toString());
@@ -103,19 +103,19 @@ function setupWebSocketServer(
 
           const payload = { sender: userId, ciphertext, timestamp: new Date() };
 
-        // Forward immediately if recipient is online (don’t depend on Redis)
-        const recipientWs = map.get(recipientId);
-        if (recipientWs && recipientWs.readyState === WebSocket.OPEN) {
-          recipientWs.send(JSON.stringify({ type: 'MESSAGE', ...payload }));
+          // Forward immediately if recipient is online (don’t depend on Redis)
+          const recipientWs = map.get(recipientId);
+          if (recipientWs && recipientWs.readyState === WebSocket.OPEN) {
+            recipientWs.send(JSON.stringify({ type: 'MESSAGE', ...payload }));
+          }
+
+          // ACK promptly
+          ws.send(JSON.stringify({ type: 'ACK', ok: true }));
+
+          // Queue in background; log on failure
+          Promise.resolve(addMessage(recipientId, payload)).catch((e) => logger.error(e));
+          return;
         }
-
-        // ACK promptly
-        ws.send(JSON.stringify({ type: 'ACK', ok: true }));
-
-        // Queue in background; log on failure
-        Promise.resolve(addMessage(recipientId, payload)).catch((e) => logger.error(e));
-        return;
-      }
 
         // Unknown type
         ws.send(JSON.stringify({ type: 'ACK', ok: false, error: 'Unknown type' }));
