@@ -42,7 +42,7 @@ class AuthService implements ISessionProvider {
 
   async loadExistingSession(): Promise<string | undefined> {
     const session = await this.store.loadExistingSession();
-    if(session) {
+    if (session) {
       this.userId = session.userId;
       this.sessionToken = session.sessionToken;
       this.refreshToken = session.refreshToken;
@@ -59,21 +59,21 @@ class AuthService implements ISessionProvider {
     const res = await this.http.send({
       url: "/auth/register",
       method: "POST",
-      headers: { "Content-Type":  "application/json"},
-      body: JSON.stringify({username, phoneNumber, password})
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, phoneNumber, password })
     })
-    
+
     if (!res.ok) {
       throw new Error(`Error: ${res.statusText}`);
     }
-    
+
     setCookie = res.headers.get("set-cookie");
-    
+
     const data = await res.json();
     userId = data.userId ? data.userId : null;
 
     if (setCookie && userId) {
-      await this.setNewAuthSession(userId, setCookie,  "");
+      await this.setNewAuthSession(userId, setCookie, "");
       console.log(`SUCCESS: register user ${userId}`);
       return userId;
     }
@@ -88,21 +88,21 @@ class AuthService implements ISessionProvider {
     const res = await this.http.send({
       url: "/auth/login",
       method: "POST",
-      headers: { "Content-Type":  "application/json"},
-      body: JSON.stringify({phoneNumber, password})
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phoneNumber, password })
     })
-    
+
     if (!res.ok) {
       throw new Error(`Error: ${res.statusText}`);
     }
-    
+
     setCookie = res.headers.get("set-cookie");
-    
+
     const data = await res.json();
     userId = data.userId ? data.userId : null;
 
     if (setCookie && userId) {
-      await this.setNewAuthSession(userId, setCookie,  "");
+      await this.setNewAuthSession(userId, setCookie, "");
       console.log(`SUCCESS: login user ${userId}`);
       return userId;
     }
@@ -115,16 +115,16 @@ class AuthService implements ISessionProvider {
       url: "/auth/logout",
       method: "DELETE",
       headers: {
-         "Content-Type":  "application/json",
-         'Cookie': this.sessionToken ? this.sessionToken : "",
+        "Content-Type": "application/json",
+        'Cookie': this.sessionToken ? this.sessionToken : "",
       }
     })
-    
+
     if (!res.ok) {
       throw new Error(`Error: ${res.statusText}`);
     }
-    
-    if(res.ok && this.userId) {
+
+    if (res.ok && this.userId) {
       this.store.removeAuthSession(this.userId);
       console.log(`SUCCESS: logged out user: ${this.userId}`);
       this.sessionToken = undefined; // Clear session
@@ -140,11 +140,11 @@ class AuthService implements ISessionProvider {
       url: "/auth/me",
       method: "GET",
       headers: {
-         "Content-Type":  "application/json",
-         'Cookie': this.sessionToken ? this.sessionToken : "",
+        "Content-Type": "application/json",
+        'Cookie': this.sessionToken ? this.sessionToken : "",
       }
     })
-    
+
     if (!res.ok) {
       throw new Error(`Error: ${res.statusText}`);
     }
@@ -153,6 +153,27 @@ class AuthService implements ISessionProvider {
     userId = data.userId ? data.userId : null;
 
     return userId
+  }
+
+  async getWsTicket() {
+    let ticket;
+    const res = await this.http.send({
+      url: "/auth/we-ticket",
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        'Cookie': this.sessionToken ? this.sessionToken : "",
+      }
+    })
+
+    if (!res.ok) {
+      throw new Error(`Error: ${res.statusText}`);
+    }
+
+    const data = await res.json();
+    ticket = data.ticket ? data.ticket : null;
+
+    return ticket
   }
 }
 
