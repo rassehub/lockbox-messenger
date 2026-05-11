@@ -9,6 +9,7 @@ import { ChatItem } from "../types/ChatListItem";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { StackParams } from "../../App";
+import { Contact } from "../types/Contact";
 
 const HomeScreen = () => {
     const { isDarkTheme } = useTheme();
@@ -22,21 +23,32 @@ const HomeScreen = () => {
         let cancelled = false;
 
         const loadChats = async () => {
-            if(!storage) return;
-            const chats = await storage.getChatList();
+            if (!storage) return;
 
-            const unique = Array.from(
-                new Map(chats.map((c) => [c.recipient || c.chatId, c])).values()
-            ).sort((a, b) => b.timeStamp.localeCompare(a.timeStamp));
+            const chats = await storage.getChatList();
+            const contacts = await storage.getAllContacts();
+
+            const contactById = new Map(
+                contacts.map((c) => [String(c.userId).trim(), c])
+            );
+
+            const chatsWithNames = chats.map((chat) => {
+                const contact = contactById.get(String(chat.recipient).trim());
+
+                return {
+                    ...chat,
+                    name: contact?.name ?? chat.recipient,
+                    avatarUrl: contact?.avatarUrl,
+                };
+            });
 
             if (!cancelled) {
-                setAllChats(unique);
-                setFilteredChats(unique);
+                setAllChats(chatsWithNames);
+                setFilteredChats(chatsWithNames);
             }
         };
 
         loadChats();
-
         return () => {
             cancelled = true;
         };
@@ -58,9 +70,9 @@ const HomeScreen = () => {
         <View style={styles.mainContainer}>
             <Text style={[styles.title, { color: isDarkTheme ? '#A8A5FF' : '#594EFF' }]}>Messages</Text>
             <SearchBar onSearch={handleSearch} />
-            <ChatList chats={filteredChats}/>
+            <ChatList chats={filteredChats} />
             <View style={styles.buttonContainer}>
-                <PlusButton onPress={() => handleNavigation()}/>
+                <PlusButton onPress={() => handleNavigation()} />
             </View>
         </View>
     )

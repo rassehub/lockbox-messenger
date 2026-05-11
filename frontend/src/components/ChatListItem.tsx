@@ -5,6 +5,8 @@ import { ChatItem } from "../types/ChatListItem";
 import { StackParams } from "../../App";
 import { dummyContacts } from "../mockData/Contatcs";
 import { useTheme } from "../ThemeContext";
+import { useEffect, useState } from "react";
+import { useChat } from "../ChatContext";
 
 type ChatListItemProps = {
     chat: ChatItem;
@@ -17,9 +19,10 @@ const ChatListItem: React.FC<ChatListItemProps> = ({chat}) => {
         ? { uri: chat.avatarUrl}
         : isDarkTheme ? require('../assets/avatar-dark.png') : require('../assets/avatar.png');
 
-    const lastMessage = chat.message[chat.message.length - 1].contents;
-    const chatId = chat.chatId;
-    const userId = dummyContacts.find(contact => contact.chatId === chatId)?.userId || 'Unknown';
+    const userId = chat.recipient;
+
+    const lastMessage = chat.message[chat.message.length - 1]?.contents ?? '';
+    const recipientName = chat.name ?? chat.recipient;
 
     return (
         <View style={styles.chatListItem}>
@@ -36,7 +39,7 @@ const ChatListItem: React.FC<ChatListItemProps> = ({chat}) => {
                     })
                 }}>
                 <View style={styles.chatInfo}>
-                    <Text style={[styles.recipient, { color: isDarkTheme ? '#A8A5FF' : '#594EFF' }]}>{chat.recipient}</Text>
+                    <Text style={[styles.recipient, { color: isDarkTheme ? '#A8A5FF' : '#594EFF' }]}>{recipientName}</Text>
                     <Text style={styles.time}>
                         {new Date(chat.timeStamp).toLocaleTimeString([], {
                         hour: '2-digit',

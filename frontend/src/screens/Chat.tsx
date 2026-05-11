@@ -31,8 +31,8 @@ const ChatScreen = ({route}: any) => {
 
         const init = async () => {
             const chat = await loadChat(chatId);
-            if (chat && chat.length) {
-                setRecipient('e0e76e9c-ce56-4356-a775-7b7a43e6e0f0');
+            if (chat) {
+                setRecipient('aeb4193e-372a-46c4-889f-a475528a14bb');
                 return;
             }
             const fromContext = messages.find(m => m.chatID === chatId);
@@ -60,7 +60,7 @@ const ChatScreen = ({route}: any) => {
     }, [chatMessages.length]);
 
     const renderMessage = ({ item }: { item: Message }) => (
-        <ChatBubble message={item} senderID={chatMessages[0]?.senderID ?? ""} />
+        <ChatBubble message={item} senderID={recipient ?? ''} />
     );
 
     const handleSendMessage = async () => {

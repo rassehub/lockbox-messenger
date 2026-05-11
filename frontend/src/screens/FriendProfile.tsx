@@ -1,9 +1,10 @@
 import { Image, StyleSheet, View, Text, Pressable } from "react-native";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import DropdownRadio from "../components/DropdownRadio";
 import { dummyContacts } from "../mockData/Contatcs";
 import { useTheme } from "../ThemeContext";
 import { useChat } from "../ChatContext";
+import { Contact } from "../types/Contact";
 
 const profilePicture = require('../assets/avatar-big.png');
 const profilePictureDark = require('../assets/avatar-big-dark.png');
@@ -14,9 +15,19 @@ const FriendProfileScreen = ({route}: any) => {
     const { storage } = useChat();
     const { isDarkTheme } = useTheme();
     const senderId = route.params.userId;
-    const contact = dummyContacts.filter(
-        (contact) => contact.userId === senderId
-    );
+    const [name, setName] = useState<string>();
+
+    useEffect(() => {
+        const loadContact = async () => {
+            if(!storage) return;
+            const contact = await storage.getContact(senderId);
+            console.log('id:', senderId)
+            console.log(contact)
+            setName(contact?.name);
+        }
+
+        loadContact();
+    }, []);
 
     const formConfiguration = {
         fields: [
@@ -48,7 +59,7 @@ const FriendProfileScreen = ({route}: any) => {
     return (
         <View style={styles.mainContainer}>
             <Image source={isDarkTheme ? profilePictureDark : profilePicture}/>
-            <Text style={[styles.name, {color: isDarkTheme ? '#A8A5FF' : '#594EFF'}]}>{contact[0].name}</Text>
+            <Text style={[styles.name, {color: isDarkTheme ? '#A8A5FF' : '#594EFF'}]}>{name}</Text>
             <View style={styles.settingsView}>
                 <DropdownRadio 
                     dropdownTitle="Disappearing messages"

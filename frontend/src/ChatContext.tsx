@@ -42,6 +42,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         messageID: raw.messageID || raw.messageId,
         chatID: raw.chatID || raw.chatId,
         senderID: raw.senderID || raw.sender,
+        contactID: raw.senderID || raw.sender,
         contents: plaintext,
         timeStamp: raw.timeStamp || raw.timeSent,
         timeRead: undefined,
@@ -67,7 +68,9 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const uniqueMessages = Array.from(
       new Map(validatedMessages.map((m) => [m.messageID, m])).values()
     );
+
     setMessages(uniqueMessages);
+    console.log(uniqueMessages)
     return uniqueMessages;
   }
 
@@ -78,6 +81,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       messageID: (globalThis as any)?.crypto?.randomUUID?.() ?? `local-${Date.now()}`,
       chatID: chatId,
       senderID: session.userId,
+      contactID: recipientId,
       contents: text,
       timeStamp: new Date().toISOString(),
       timeRead: undefined,
@@ -113,7 +117,9 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const searchUsers = async (searchText: string): Promise<string[]> => {
     if (!session) return [];
+    console.log('test')
     const res = await session.api.makeRequest('searchUsers', { userQuery: searchText });
+    console.log('res:', res);
     return res.data.usernames;
   }
 

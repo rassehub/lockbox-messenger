@@ -49,7 +49,7 @@ export class ChatStorage {
       const latest = message[message.length - 1];
       return {
         chatId,
-        recipient: chatId, 
+        recipient: latest?.contactID ?? chatId, 
         timeStamp: latest?.timeStamp ?? '',
         message,
       };

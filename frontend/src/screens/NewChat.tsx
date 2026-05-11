@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import SearchBar from "../components/SearchBar";
 import ContactList from "../components/ContactsList";
 import { useTheme } from "../ThemeContext";
-import { dummyContacts } from "../mockData/Contatcs";
 import { Contact } from "../types/Contact";
 import { useChat } from "../ChatContext";
 
@@ -11,7 +10,7 @@ const avatar = require('../assets/new.png');
 const avatarDark = require('../assets/new-dark.png');
 
 const NewChatScreen = () => {
-    const { storage } = useChat();
+    const { storage, searchUsers, getUserId } = useChat();
     const { isDarkTheme } = useTheme();
     const [modalVisible, setModalVisible] = useState(false);
     const [initalContacts, setInitialContacts] = useState<Contact[]>();
@@ -29,11 +28,28 @@ const NewChatScreen = () => {
         };
 
         loadContacts();
+        console.log(contacts);
     }, [])
 
-    const handleSearchNewContacts = (searchText: string) => {
-        console.log('modal search');
-        //setNewContacts(response);
+    const handleSearchNewContacts = async (searchText: string) => {
+        const results = await searchUsers(searchText);
+        console.log(results);
+        const usernames = Array.isArray(results)
+            ? results
+            : [];
+
+        const newContacts: Contact[] = await Promise.all(
+            usernames.map(async (username) => {
+                const userId = await getUserId(username);
+
+                return {
+                    userId: userId,
+                    name: username,
+                } as Contact;
+            })
+        );
+        console.log(newContacts);
+        setNewContacts(newContacts);
     }
 
     const handleSearchOwnContacts = (searchText: string) => {
