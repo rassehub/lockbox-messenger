@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Image, View, Text, StyleSheet, Pressable, Modal, Platform, PermissionsAndroid, Animated } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -7,21 +7,36 @@ import SettingItem from '../components/SettingCategoryItem';
 import { StackParams } from '../../App';
 import { dummyUsers } from '../mockData/Users';
 import { useTheme } from '../ThemeContext';
+import { useChat } from '../ChatContext';
 
 const profilePictureDark = require('../assets/avatar-big-dark.png');
 const camera = require('../assets/camera.png');
 const gallery = require('../assets/image.png');
 
 const ProfileScreen = ({route}: any) => {
+    const { storage } = useChat();
     const { isDarkTheme } = useTheme();
     const navigation = useNavigation<NativeStackNavigationProp<StackParams>>();
 
     const [profilePicModalVisible, setProfilePicModalVisible] = useState(false);    
     const [selectedImage, setSelectedImage] = useState<any>(profilePictureDark);
     const [response, setResponse] = useState<any>(null);
+    const [name, setName] = useState<string>();
 
     const userId = route.params.userId;
-    const user = dummyUsers.filter((user) => user.userID === userId);
+
+    useEffect(() => {
+        const getMyInfo = async () => {
+            if(!storage) return;
+            const me = await storage.getMyInfo();
+            console.log('route:', route)
+            console.log('me', me)
+            console.log(userId)
+            if (me) setName(me.name);
+        }
+
+        getMyInfo();
+    }, []);
 
     const getPermissions = (type : 'capture' | 'library') => {
         console.log(type);
@@ -115,7 +130,7 @@ const ProfileScreen = ({route}: any) => {
                 </View>
             </Pressable>
             
-            <Text style={[styles.name, { color: isDarkTheme ? '#A8A5FF' : '#594EFF' }]}>{user[0].displayName ? user[0].displayName : user[0].userName}</Text>
+            <Text style={[styles.name, { color: isDarkTheme ? '#A8A5FF' : '#594EFF' }]}>{name}</Text>
             <View style={styles.settingsContainer}>
                 <Pressable onPress={() => {navigation.navigate('AccountSettings')}}>
                     <SettingItem category='Account' description='Security notifications' />

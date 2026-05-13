@@ -3,7 +3,9 @@ import { useSession } from "./SessionContext";
 import { ChatStorage } from "./chat/chatStorage";
 
 type AuthContextType = {
-    userId: string | null;
+    userId: string;
+    username: string;
+    phonenumber: string;
     isAuthenticated: boolean;
     loading: boolean;
     chatStorage: ChatStorage | undefined;
@@ -17,6 +19,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { session, partial, loading, setSession, clearSession, getNewPartial } = useSession();
     const [chatStorage, setChatStorage] = useState<ChatStorage>();
+    const [username, setUsername] = useState<string>();
+    const [phonenumber, setPhonenumber] = useState<string>();
     
     const login = async (phoneNumber: string, password: string) : Promise<boolean> => {
         let currPartial = partial;
@@ -29,7 +33,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const fullSession = await currPartial.completeInit(userId);
             setSession(fullSession);
             setChatStorage(fullSession.chatStorage);
-
             return true;
         } catch {
             return false;
@@ -39,7 +42,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const register = async (username: string, phoneNumber: string, password: string): Promise<boolean> => {
         if(!partial) return false;
         try {
-            const userId = await partial.auth.register(username, phoneNumber, password);
+            const registered = await partial.auth.register(username, phoneNumber, password);
+            if(registered) {
+                console.log('registered')
+                setUsername(username);
+                setPhonenumber(phoneNumber);
+            }
             return true;
         } catch {
             return false;
@@ -54,7 +62,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     return(
         <AuthContext.Provider value={{ 
-            userId: session?.userId ?? null,  
+            userId: session?.userId ?? '',  
+            username: username ?? '',
+            phonenumber: phonenumber ?? '',
             isAuthenticated: session !== null, 
             loading, 
             chatStorage,

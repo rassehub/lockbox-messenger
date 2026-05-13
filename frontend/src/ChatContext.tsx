@@ -1,9 +1,10 @@
-import { createContext, useContext, useEffect, useState } from "react"
+import { createContext, use, useContext, useEffect, useState } from "react"
 import { Message } from "./types/Message";
 import { useSession } from "./SessionContext";
 import { ChatStorage } from "./chat/chatStorage";
 import { EncryptedMessage } from "./crypto/types";
 import { AppSession } from "./bootstrap";
+import { useAuthentication } from "./AuthContext";
 
 type ChatContextType = {
   messages: Message[];
@@ -13,21 +14,26 @@ type ChatContextType = {
   sendMessage: (chatId: string, recipientId: string, text: string) => Promise<void>;
   searchUsers: (searchText: string) => Promise<string[]>;
   getUserId: (username: string) => Promise<string>;
-  connect: () => void;
+  connectWs: (s: AppSession) => void;
   disconnect: () => void;
+  refreshChats: () => void;
+  refreshKey: number;
 };
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
 export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { session } = useSession();
+  const { userId, username, phonenumber } = useAuthentication();
   const [storage, setStorage] = useState<ChatStorage>();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isConnected, setIsConnected] = useState(false);
-  const connectWs = async(s: AppSession) => {
-      const t = await s.auth.getWsTicket();
-      s.ws.connect(t);
-    }
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const refreshChats = () => {
+    setRefreshKey((v) => v +1);
+  };
+
   useEffect(() => {
     if (!session) {
       setIsConnected(false);
@@ -36,31 +42,51 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
+    const saveMyInfo = async () => {
+      console.log('userId:', userId, 'username:', username, 'phonenumber:', phonenumber)
+        if(!storage) return;
+        if(!username || !phonenumber || !userId) return;
+        console.log('save my info')
+        console.log('save my info');
+        storage.saveMyInfo(userId, username, phonenumber);
+    }
 
-    connectWs(session);
-    
-    setIsConnected(true);
-    setStorage(session.chatStorage);
+    saveMyInfo();
 
-    session.ws.onMessage(async (raw: any) => {
-      const plaintext = await session.cryptoManager.decryptMessage(raw.sender, raw.ciphertext);
-      const message: Message = {
-        messageID: raw.messageID || raw.messageId,
-        chatID: raw.chatID || raw.chatId,
-        senderID: raw.senderID || raw.sender,
-        contactID: raw.senderID || raw.sender,
-        contents: plaintext,
-        timeStamp: raw.timeStamp || raw.timeSent,
-        timeRead: undefined,
-      };
+    const setupChat = async () => {
+      try {
+        await connectWs(session);
+        setIsConnected(true);
+        setStorage(session.chatStorage);
 
-      if (!message.messageID) return;
+        if (session.ws) {
+          session.ws.onMessage(async (raw: any) => {
+            const plaintext = await session.cryptoManager.decryptMessage(raw.sender, raw.ciphertext);
+            const message: Message = {
+              messageID: raw.messageID || raw.messageId,
+              chatID: raw.chatID || raw.chatId,
+              senderID: raw.senderID || raw.sender,
+              contactID: raw.senderID || raw.sender,
+              contents: plaintext,
+              timeStamp: raw.timeStamp || raw.timeSent,
+              timeRead: undefined,
+            };
 
-      setMessages((prev) => [...prev, message]);
-    });
+            if (!message.messageID) return;
+
+            setMessages((prev) => [...prev, message]);
+          });
+        }
+      } catch (err) {
+        console.error('Failed to setup chat:', err);
+        setIsConnected(false);
+      }
+    };
+
+    setupChat();
 
     return () => {
-      session.ws.disconnect();
+      session?.ws?.disconnect();
       setIsConnected(false);
     };
   }, [session]);
@@ -98,13 +124,13 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return next;
     });
 
-    /*let encrypted;
+    let encrypted;
     try {
       encrypted = await session.cryptoManager.encryptMessage(recipientId, text);
     } catch(err) {
       console.error('encryptMessage failed', err);
       throw err;
-    }*/
+    }
     const test: EncryptedMessage = {
       type: 12,
       body: text,
@@ -112,7 +138,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
-      session.ws.sendMessage(recipientId, test);
+      session.ws.sendMessage(recipientId, encrypted);
     } catch (err) {
       console.warn('ws.sendMessage failed', err);
     }
@@ -135,11 +161,14 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return res.data.userId;
   }
   
-  const connect = () => connectWs(session);
+  const connectWs = async (s: AppSession) => {
+    const t = await s.auth.getWsTicket();
+    s.ws.connect(t);
+  }
   const disconnect = () => session?.ws.disconnect();
 
   return(
-    <ChatContext.Provider value={{ messages, isConnected, storage, loadChat, sendMessage, searchUsers, getUserId, connect, disconnect}}>
+    <ChatContext.Provider value={{ messages, isConnected, storage, loadChat, sendMessage, searchUsers, getUserId, connectWs, disconnect, refreshChats, refreshKey}}>
       {children}
     </ChatContext.Provider>
   );

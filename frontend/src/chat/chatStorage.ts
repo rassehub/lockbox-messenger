@@ -3,6 +3,8 @@ import { chatCodecs } from './chatStorageCodecs';
 import type { ChatStorageSchema } from './chatStorageSchema';
 import type { Contact } from '../types/Contact';
 import type { Message } from '../types/Message';
+import type { Me } from '../types/Me';
+import { ChatItem } from '../types/ChatListItem';
 
 export class ChatStorage {
   private storage;
@@ -14,6 +16,21 @@ export class ChatStorage {
     );
   }
 
+  async saveMyInfo(userId: string, username: string, phonenumber: string): Promise<void> {
+    const me: Me = {
+      userId: userId,
+      name: username,
+      phonenumber: phonenumber,
+    }
+    await this.storage.setItem('me', me);
+  }
+
+  async getMyInfo(): Promise<Me | undefined> {
+    const me = this.storage.getItem('me');
+    console.log('storage:', me)
+    return me;
+  }
+
   // ==================== Contacts ====================
 
   async saveContact(contact: Contact): Promise<void> {
@@ -23,6 +40,11 @@ export class ChatStorage {
   async getContact(userId: string): Promise<Contact | undefined> {
     return this.storage.getRecordItem('contacts', userId);
   }
+
+  async updateContact(contact: Contact): Promise<void> {
+    await this.storage.upsertRecordItem('contacts', contact.userId, contact);
+  }
+
 
   async getAllContacts(): Promise<Contact[]> {
     const record = await this.storage.getFullRecord('contacts');
@@ -41,7 +63,7 @@ export class ChatStorage {
     await this.storage.upsertRecordItem('messages', chatId, existing);
   }
 
-  async getChatList() {
+  async getChatList(): Promise<ChatItem[]> {
     const messagesByChat = await this.storage.getFullRecord('messages');
     if (!messagesByChat) return [];
 
