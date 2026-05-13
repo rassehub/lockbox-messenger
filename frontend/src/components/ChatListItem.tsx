@@ -3,7 +3,6 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { ChatItem } from "../types/ChatListItem";
 import { StackParams } from "../../App";
-import { dummyContacts } from "../mockData/Contatcs";
 import { useTheme } from "../ThemeContext";
 import { useEffect, useState } from "react";
 import { useChat } from "../ChatContext";
@@ -13,28 +12,43 @@ type ChatListItemProps = {
 }
 
 const ChatListItem: React.FC<ChatListItemProps> = ({chat}) => {
+    const { storage } = useChat();
     const { isDarkTheme } = useTheme();
     const navigation = useNavigation<NativeStackNavigationProp<StackParams>>();
+
+    const [recipientName, setRecipientName] = useState<string>();
     const avatarSource = chat.avatarUrl
         ? { uri: chat.avatarUrl}
         : isDarkTheme ? require('../assets/avatar-dark.png') : require('../assets/avatar.png');
 
     const userId = chat.recipient;
+    const chatId = chat.chatId;
 
     const lastMessage = chat.message[chat.message.length - 1]?.contents ?? '';
-    const recipientName = chat.name ?? chat.recipient;
+    
+
+    useEffect(() => {
+        const getContact = async () => {
+            if(!storage) return;
+            const contact = await storage.getContact(chat.recipient);
+            setRecipientName(contact?.name);
+        }
+
+        getContact();
+    }, []); 
 
     return (
         <View style={styles.chatListItem}>
             <Pressable
                 onPress={() => {
-                    navigation.navigate('FriendProfile', { userId })
+                    navigation.navigate('FriendProfile', { userId, chatId })
                 }}>
                 <Image source={avatarSource} style={styles.avatar}/>
             </Pressable>
             <Pressable
                 onPress={() => {
                     navigation.navigate('Chat', {
+                        userId: userId,
                         chatId: chat.chatId
                     })
                 }}>

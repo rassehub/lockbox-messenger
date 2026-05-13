@@ -24,13 +24,13 @@ export type StackParams = {
   SignUp: undefined;
   Home: undefined;
   Profile: {userId: string};
-  Chat: {chatId: string};
+  Chat: {userId: string, chatId: string};
   NewChat: undefined;
-  FriendProfile: {userId: string};
-  AccountSettings: undefined;
-  PrivacySettings: undefined;
-  NotificationSettings: undefined;
-  ChatSettings: undefined;
+  FriendProfile: {userId: string, chatId: string};
+  AccountSettings: {userId: string, username: string};
+  PrivacySettings: {userId: string};
+  NotificationSettings: {userId: string};
+  ChatSettings: {userId: string};
 }
 
 const Stack = createNativeStackNavigator<StackParams>();
@@ -79,7 +79,7 @@ function App(): React.JSX.Element {
           name="Chat"
           component={ChatScreen}
           options={({ route }) => ({
-            headerTitle: () => <ChatHeaderTitle chatId={route.params.chatId} />
+            headerTitle: () => <ChatHeaderTitle userId={route.params.userId} chatId={route.params.chatId}/>
           })}
         />
         <Stack.Screen
@@ -104,7 +104,7 @@ function App(): React.JSX.Element {
         <Stack.Screen
           name='AccountSettings'
           component={AccountSettings}
-          options={{ headerTitle: "Account settings" }}
+          options={{headerTitle: "Privacy settings"}}
         />
         <Stack.Screen
           name='PrivacySettings'

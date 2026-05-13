@@ -1,10 +1,11 @@
 import { Image, StyleSheet, View, Text, Pressable } from "react-native";
 import { useEffect, useState } from "react";
 import DropdownRadio from "../components/DropdownRadio";
-import { dummyContacts } from "../mockData/Contatcs";
 import { useTheme } from "../ThemeContext";
 import { useChat } from "../ChatContext";
-import { Contact } from "../types/Contact";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { StackParams } from "../../App";
 
 const profilePicture = require('../assets/avatar-big.png');
 const profilePictureDark = require('../assets/avatar-big-dark.png');
@@ -12,20 +13,20 @@ const trash = require('../assets/delete.png');
 const trashDark = require('../assets/delete-dark.png');
 
 const FriendProfileScreen = ({route}: any) => {
-    const { storage } = useChat();
+    const { storage, refreshChats } = useChat();
     const { isDarkTheme } = useTheme();
-    const senderId = route.params.userId;
+    const navigation = useNavigation<NativeStackNavigationProp<StackParams>>();
+    
+    const contactId = route.params.userId;
     const [name, setName] = useState<string>();
 
     useEffect(() => {
         const loadContact = async () => {
             if(!storage) return;
-            const contact = await storage.getContact(senderId);
-            console.log('id:', senderId)
+            const contact = await storage.getContact(contactId);
             console.log(contact)
             setName(contact?.name);
         }
-
         loadContact();
     }, []);
 
@@ -53,7 +54,13 @@ const FriendProfileScreen = ({route}: any) => {
 
     const handleRemoveContact = async () => {
         if(!storage) return;
-        await storage.removeContact(senderId);
+        if(!contactId) console.log('vittu')
+
+        await storage.clearChat(route.params.chatId)
+        await storage.removeContact(contactId);
+        
+        refreshChats();
+        navigation.navigate('Home');
     }
 
     return (

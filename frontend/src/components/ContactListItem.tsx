@@ -6,20 +6,21 @@ import { StackParams } from "../../App";
 import { useTheme } from "../ThemeContext";
 import PlusButton from "./PlusButton";
 import { useChat } from "../ChatContext";
-import { opacity } from "react-native-reanimated/lib/typescript/Colors";
 import { useState } from "react";
 
 type ContactListItemProps = {
     usage: string;
     contact: Contact;
+    chatId: string;
 }
 
-const ContactListItem: React.FC<ContactListItemProps> = ({usage, contact}) => {
+const ContactListItem: React.FC<ContactListItemProps> = ({usage, contact, chatId}) => {
     const { isDarkTheme } = useTheme();
     const { storage } = useChat();
     const navigation = useNavigation<NativeStackNavigationProp<StackParams>>();
 
     const [newOrOwn, setNewOrOwn] = useState(usage);
+    const [id, setId] = useState<string>(chatId);
 
     const avatarSource = contact.avatarUrl
         ? { uri: contact.avatarUrl }
@@ -29,18 +30,14 @@ const ContactListItem: React.FC<ContactListItemProps> = ({usage, contact}) => {
         : '';
         
     const createChatId = () => {
+        console.log('is this called')
         let result = '';
         const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-        const charactersLength = characters.length;
-        let counter = 0;
-        while (counter < 5) {
-            result += characters.charAt(Math.floor(Math.random() * charactersLength));
-            counter += 1;
-        }
+        for (let counter = 0; counter < 5; counter++) {
+            result += characters.charAt(Math.floor(Math.random() * characters.length));
+        }        
         return result;
     };
-
-    const chatId = contact.chatId ? contact.chatId : createChatId();
 
     const handleAddContact = async (contact: Contact) => {
         if(!storage) return;
@@ -53,8 +50,11 @@ const ContactListItem: React.FC<ContactListItemProps> = ({usage, contact}) => {
     return (
         <Pressable 
             onPress={() => {
+                console.log(chatId)
+                if(!chatId) setId(createChatId());
                 navigation.navigate('Chat', {
-                    chatId: chatId
+                    userId: contact.userId,
+                    chatId: id
                 })
             }}
             >
@@ -63,10 +63,10 @@ const ContactListItem: React.FC<ContactListItemProps> = ({usage, contact}) => {
                 <View style={styles.contactInfo}>
                     <Text style={[styles.name, { color: isDarkTheme ? '#A8A5FF' : '#594EFF' }]}>{contact.name}</Text>
                     <Text style={styles.lastSeen}>
-                        {new Date(lastSeen).toLocaleDateString([], {
+                        {lastSeen === '' ? '' : (new Date(lastSeen).toLocaleDateString([], {
                             hour: '2-digit',
                             minute: '2-digit',
-                        })}</Text>
+                        }))}</Text>
                 </View>
                 <View style={{ opacity: newOrOwn === "new" ? 0 : 1, height: newOrOwn === "new" ? 0 : 'auto'}}>
                     <PlusButton onPress={() => handleAddContact(contact)} styleProp={styles.plusButton} iconStyleProp={styles.plusIcon} />

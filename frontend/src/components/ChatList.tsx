@@ -21,7 +21,7 @@ const ChatList = ({chats}: ChatListProps) => {
 
 const styles = StyleSheet.create({
     chatList: {
-        paddingTop: '5%',
+        flex: 1,
     },
 });
 

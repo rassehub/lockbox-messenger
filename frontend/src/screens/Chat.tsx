@@ -5,10 +5,11 @@ import { Message } from "../types/Message";
 import { useChat } from "../ChatContext";
 
 const ChatScreen = ({route}: any) => {
-    const { messages, sendMessage, loadChat } = useChat();
+    const { storage, messages, sendMessage } = useChat();
     const [text, setText] = useState('');
     const listRef = useRef<FlatList<Message>>(null);
 
+    const contactId = route.params.userId;
     const chatId = route.params.chatId;
     const [recipient, setRecipient] = useState<string>();
 
@@ -30,9 +31,10 @@ const ChatScreen = ({route}: any) => {
         );
 
         const init = async () => {
-            const chat = await loadChat(chatId);
+            const chat = await storage?.getMessages(chatId);
             if (chat) {
-                setRecipient('aeb4193e-372a-46c4-889f-a475528a14bb');
+                console.log('test')
+                setRecipient(contactId);
                 return;
             }
             const fromContext = messages.find(m => m.chatID === chatId);
@@ -47,8 +49,6 @@ const ChatScreen = ({route}: any) => {
         }
     }, [chatId]);
 
-    const chatMessages = messages.filter((m) => m.chatID === chatId);
-
     const scrollToBottom = (animated = true) => {
         requestAnimationFrame(() => {
             listRef.current?.scrollToEnd({ animated });
@@ -57,7 +57,7 @@ const ChatScreen = ({route}: any) => {
 
     useEffect(() => {
         listRef.current?.scrollToEnd({ animated: true });
-    }, [chatMessages.length]);
+    }, [messages.length]);
 
     const renderMessage = ({ item }: { item: Message }) => (
         <ChatBubble message={item} senderID={recipient ?? ''} />
@@ -80,7 +80,7 @@ const ChatScreen = ({route}: any) => {
             <FlatList
                 ref={listRef}
                 style={styles.list}
-                data={chatMessages}
+                data={messages}
                 extraData={messages}
                 renderItem={renderMessage}
                 keyExtractor={(item) => item.messageID}
