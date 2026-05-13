@@ -16,7 +16,7 @@ export class ChatStorage {
     );
   }
 
-  async saveMyInfo(userId: string, username: string, phonenumber: string): Promise<void> {
+  async saveMyInfo(userId: string, username: string, phonenumber?: string): Promise<void> {
     const me: Me = {
       userId: userId,
       name: username,
