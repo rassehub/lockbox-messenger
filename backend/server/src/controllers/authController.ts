@@ -101,5 +101,8 @@ export const wsTicket = async (req: Request, res: Response) => {
 };
 
 export const me = async (req: Request, res: Response) => {
-  res.json({ userId: req.user.id });
+  const repo = getRepository(User);
+  const user = await repo.findOne({ where: {  id: req.user.id } });
+
+  res.json({ userId: req.user.id, username: user?.username });
 }
