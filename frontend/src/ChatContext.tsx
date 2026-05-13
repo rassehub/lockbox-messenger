@@ -1,8 +1,7 @@
-import { createContext, use, useContext, useEffect, useState } from "react"
+import { createContext, useContext, useEffect, useState } from "react"
 import { Message } from "./types/Message";
 import { useSession } from "./SessionContext";
 import { ChatStorage } from "./chat/chatStorage";
-import { EncryptedMessage } from "./crypto/types";
 import { AppSession } from "./bootstrap";
 import { useAuthentication } from "./AuthContext";
 
@@ -10,7 +9,6 @@ type ChatContextType = {
   messages: Message[];
   isConnected: boolean;
   storage: ChatStorage | undefined;
-  loadChat: (chatId: string) => Promise<Message[]>;
   sendMessage: (chatId: string, recipientId: string, text: string) => Promise<void>;
   searchUsers: (searchText: string) => Promise<string[]>;
   getUserId: (username: string) => Promise<string>;
@@ -43,11 +41,8 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     const saveMyInfo = async () => {
-      console.log('userId:', userId, 'username:', username, 'phonenumber:', phonenumber)
         if(!storage) return;
-        if(!username || !phonenumber || !userId) return;
-        console.log('save my info')
-        console.log('save my info');
+        if(!username || !phonenumber || !userId) console.error('Missing info, username:', username, 'phonenumber:', phonenumber, 'userId:', userId);
         storage.saveMyInfo(userId, username, phonenumber);
     }
 
@@ -94,12 +89,15 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const loadChat = async (chatId: string) => {
     if (!storage) return [];
     const chat = await storage.getMessages(chatId);
+    console.log(chat);
     const validatedMessages = (chat ?? []).filter(
       (item): item is Message => item !== null && item !== undefined
     );
+    console.log('validated:', validatedMessages)
     const uniqueMessages = Array.from(
       new Map(validatedMessages.map((m) => [m.messageID, m])).values()
     );
+    console.log('unique:', uniqueMessages)
 
     setMessages(uniqueMessages);
     console.log(uniqueMessages)
@@ -131,11 +129,6 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error('encryptMessage failed', err);
       throw err;
     }
-    const test: EncryptedMessage = {
-      type: 12,
-      body: text,
-      registrationId: 1
-    }
 
     try {
       session.ws.sendMessage(recipientId, encrypted);
@@ -147,12 +140,30 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     storage.appendMessage(chatId, message);
   };
 
+  const withTimeout = <T,>(p: Promise<T>, ms = 10000): Promise<T> =>
+    new Promise<T>((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error('timeout')), ms);
+      p.then((v) => { clearTimeout(timer); resolve(v); }, (e) => { clearTimeout(timer); reject(e); });
+    });
+
   const searchUsers = async (searchText: string): Promise<string[]> => {
-    if (!session) return [];
-    console.log('test')
-    const res = await session.api.makeRequest('searchUsers', { userQuery: searchText });
-    console.log('res:', res);
-    return res.data.usernames;
+    if (!session) {
+      console.warn('searchUsers: no session');
+      return [];
+    }
+    if (!session.api || typeof session.api.makeRequest !== 'function') {
+      console.warn('searchUsers: session.api.makeRequest missing', session?.api);
+      return [];
+    }
+
+    try {
+      const res = await withTimeout(session.api.makeRequest('searchUsers', { userQuery: searchText }), 10000);
+      console.log('res:', res);
+      return res?.data?.usernames ?? [];
+    } catch (err) {
+      console.error('searchUsers failed', err);
+      return [];
+    }
   }
 
   const getUserId = async (username: string): Promise<string> => {
@@ -168,7 +179,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const disconnect = () => session?.ws.disconnect();
 
   return(
-    <ChatContext.Provider value={{ messages, isConnected, storage, loadChat, sendMessage, searchUsers, getUserId, connectWs, disconnect, refreshChats, refreshKey}}>
+    <ChatContext.Provider value={{ messages, isConnected, storage, sendMessage, searchUsers, getUserId, connectWs, disconnect, refreshChats, refreshKey}}>
       {children}
     </ChatContext.Provider>
   );
