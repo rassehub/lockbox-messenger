@@ -9,11 +9,10 @@ import { ChatItem } from "../types/ChatListItem";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { StackParams } from "../../App";
-import { Contact } from "../types/Contact";
 
 const HomeScreen = () => {
     const { isDarkTheme } = useTheme();
-    const { storage, messages } = useChat();
+    const { storage, messages, refreshKey } = useChat();
     const navigation = useNavigation<NativeStackNavigationProp<StackParams>>();
 
     const [allChats, setAllChats] = useState<ChatItem[]>([]);
@@ -52,13 +51,13 @@ const HomeScreen = () => {
         return () => {
             cancelled = true;
         };
-    }, [storage, messages]);
+    }, [storage, messages, refreshKey]);
 
     const handleSearch = (searchText: string) => {
         const q = searchText.trim().toLowerCase();
         const updatedChats = !q
             ? allChats
-            : allChats.filter((chat) => chat.recipient.toLowerCase().includes(q));
+            : allChats.filter((chat) => chat.name?.toLowerCase().includes(q));
         setFilteredChats(updatedChats);
     };
 
@@ -70,7 +69,9 @@ const HomeScreen = () => {
         <View style={styles.mainContainer}>
             <Text style={[styles.title, { color: isDarkTheme ? '#A8A5FF' : '#594EFF' }]}>Messages</Text>
             <SearchBar onSearch={handleSearch} />
-            <ChatList chats={filteredChats} />
+            <View style={styles.listContainer}>
+                <ChatList chats={filteredChats} />
+            </View>
             <View style={styles.buttonContainer}>
                 <PlusButton onPress={() => handleNavigation()} />
             </View>
@@ -87,6 +88,10 @@ const styles = StyleSheet.create({
         fontSize: 32,
         fontWeight: 'bold',
         alignSelf: 'center',
+    },
+    listContainer: {
+        paddingTop: '5%',
+        height: '68%',
     },
     buttonContainer: {
         justifyContent: 'flex-end',
