@@ -5,7 +5,7 @@ import { getUserId, searchUsers } from "../controllers/socialControllers";
 const router = Router();
 router.use(isAuthenticated);
 
-router.get('/get-user-id', getUserId);
-router.get('search-users', searchUsers)
+router.post('/get-user-id', getUserId);
+router.post('/search-users', searchUsers)
 
 export default router;
