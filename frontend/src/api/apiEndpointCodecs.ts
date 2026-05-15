@@ -140,9 +140,9 @@ export const apiCodecs: EndpointCodecs = {
     },
 
     fetchCurrentUser: {
-        decode: (raw: unknown): { userId: string } => {
-            const parsed = raw as { userId: string };
-            return { userId: parsed.userId };
+        decode: (raw: unknown): { userId: string, username: string } => {
+            const parsed = raw as { userId: string, username: string };
+            return { userId: parsed.userId, username: parsed.username };
         }
     },
 
@@ -152,9 +152,9 @@ export const apiCodecs: EndpointCodecs = {
                 username: req.userQuery,
             }),
         decode: (raw: unknown): { usernames: string[] } => {
-            const parsed = raw as { usernames: string[] };
+            const parsed = raw as { users: string[] };
             return {
-                usernames: parsed.usernames,
+                usernames: parsed.users,
             };
         }
     },

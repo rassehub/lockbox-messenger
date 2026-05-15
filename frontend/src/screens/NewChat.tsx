@@ -1,34 +1,63 @@
 import { Image, Modal, Pressable, StyleSheet, Text, View } from "react-native";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import SearchBar from "../components/SearchBar";
 import ContactList from "../components/ContactsList";
 import { useTheme } from "../ThemeContext";
-import { dummyContacts } from "../mockData/Contatcs";
 import { Contact } from "../types/Contact";
+import { useChat } from "../ChatContext";
 
 const avatar = require('../assets/new.png');
 const avatarDark = require('../assets/new-dark.png');
 
-const NewChatScreen = () => {
+const NewChatScreen = ({route}: any) => {
+    const { storage, searchUsers, getUserId, refreshContacts, contactRefreshKey } = useChat();
     const { isDarkTheme } = useTheme();
     const [modalVisible, setModalVisible] = useState(false);
-    const initialContacts = dummyContacts;
-    const [contacts, setContacts] = useState(initialContacts);
+    const [initalContacts, setInitialContacts] = useState<Contact[]>();
+    const [contacts, setContacts] = useState<Contact[]>();
 
     const initialNewContacts: Contact[] = [];
     const [newContacts, setNewContacts] = useState(initialNewContacts);
+    const ids = route.params.chatIds;
 
-    const handleModalSearch = (searchText: string) => {
-        console.log('modal search');
-        //setNewContacts(response);
+    useEffect(() => {
+        const loadContacts = async () => {
+            if(!storage) return;
+            const contacts = await storage.getAllContacts();
+            setContacts(contacts);
+            setInitialContacts(contacts);
+        };
+
+        loadContacts();
+    }, [storage, contactRefreshKey])
+
+    const handleSearchNewContacts = async (searchText: string) => {
+        const results = await searchUsers(searchText);
+        console.log(results);
+        const usernames = Array.isArray(results)
+            ? results
+            : [];
+
+        const newContacts: Contact[] = await Promise.all(
+            usernames.map(async (username) => {
+                const userId = await getUserId(username);
+
+                return {
+                    userId: userId,
+                    name: username,
+                } as Contact;
+            })
+        );
+        console.log(newContacts);
+        setNewContacts(newContacts);
     }
 
-    const handleSearch = (searchText: string) => {
+    const handleSearchOwnContacts = (searchText: string) => {
+        if(!initalContacts) return;
         const updatedContacts = !searchText
-            ? initialContacts
-            : initialContacts.filter((contact) => contact.name.toLowerCase().includes(searchText.toLowerCase()));
+            ? initalContacts
+            : initalContacts.filter((contact) => contact.name.toLowerCase().includes(searchText.toLowerCase()));
         setContacts(updatedContacts);
-        console.log(updatedContacts);
     }
 
     return(
@@ -46,17 +75,20 @@ const NewChatScreen = () => {
                         shadowColor: isDarkTheme ? '#A8A5FF' : '#000',
                     }]}>
                         <Text style={[styles.modalText, {color: isDarkTheme ? '#A8A5FF' : '#594EFF'}]}>Add new contact</Text>
-                        <SearchBar onSearch={handleModalSearch}/>
-                        <ContactList contacts={newContacts} />
+                        <SearchBar onSearch={handleSearchNewContacts}/>
+                        <ContactList usage="new" contacts={newContacts} chatIds={ids} />
                         <Pressable
                             style={styles.button}
-                            onPress={() => setModalVisible(!modalVisible)}>
+                            onPress={() => {
+                                refreshContacts();
+                                setModalVisible(!modalVisible);
+                            }}>
                             <Text style={styles.buttonStyle}>Close</Text>
                         </Pressable>
                     </View>
                 </View>
             </Modal>
-            <SearchBar onSearch={handleSearch}/>
+            <SearchBar onSearch={handleSearchOwnContacts}/>
             <Pressable 
                 onPress={() => {
                     setModalVisible(true);
@@ -66,7 +98,7 @@ const NewChatScreen = () => {
                 <Text style={[styles.newContactText, { color: isDarkTheme ? '#A8A5FF' : '#594EFF' }]}>New Contact</Text>
             </Pressable>
             <Text style={styles.title}>My contacts</Text>
-            <ContactList contacts={contacts}/>
+            <ContactList usage="own" contacts={contacts ?? []} chatIds={ids ?? []}/>
         </View>
     )
 }

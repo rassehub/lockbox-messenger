@@ -9,9 +9,8 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "noEmit": true,
-    "baseUrl": ".",
     "paths": {}
   },
   "include": ["src", "index.js", "index.ts", "index.tsx", "__tests__/e2e", "__tests__/integration", "__tests__/unit"],

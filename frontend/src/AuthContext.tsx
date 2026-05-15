@@ -1,90 +1,77 @@
-import { createContext, useCallback, useContext, useEffect, useState } from "react"
-import { User } from "./types/User";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { createContext, useContext, useState } from "react"
+import { useSession } from "./SessionContext";
+import { ChatStorage } from "./chat/chatStorage";
 
 type AuthContextType = {
-    user: User | null;
-    token: string | null;
+    userId: string;
+    username: string;
+    phonenumber: string;
     isAuthenticated: boolean;
     loading: boolean;
-    loadStoredAuth: () => Promise<void>;
-    handleAuthentication: (phonenumber: string, password: string) => Promise<boolean>;
+    chatStorage: ChatStorage | undefined;
+    login: (phoneNumber: string, password: string) => Promise<boolean>;
+    register: (username: string, phoneNumber: string, password: string) => Promise<boolean>;
     logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [user, setUser] = useState<User | null>(null);
-    const [token, setToken] = useState<string | null>(null);
-    const [loading, setLoading] = useState(true);
-    const isAuthenticated = !!token && !!user;
-
-    const loadStoredAuth = useCallback(async () => {
-        try {
-            const [storedToken, storedUser] = await Promise.all([
-                AsyncStorage.getItem('authToken'),
-                AsyncStorage.getItem('userData'),
-            ]);
-
-            if(storedToken && storedUser) {
-                setToken(storedToken);
-                setUser(JSON.parse(storedUser));
-            }
-        } finally {
-            setLoading(false);
+    const { session, partial, loading, setSession, clearSession, getNewPartial } = useSession();
+    const [chatStorage, setChatStorage] = useState<ChatStorage>();
+    const [username, setUsername] = useState<string>();
+    const [phonenumber, setPhonenumber] = useState<string>();
+    
+    const login = async (phoneNumber: string, password: string) : Promise<boolean> => {
+        let currPartial = partial;
+        if(!currPartial) {
+            currPartial = await getNewPartial();
         }
-    }, []);
-
-    useEffect(() => {
-        loadStoredAuth();
-    }, [loadStoredAuth]);
-
-    const handleAuthentication = async (phonenumber: string, password: string) => {
+        if(!currPartial) return false;
         try {
-            setLoading(true);
-
-            // TEMP
-            if(!phonenumber.trim() || !password.trim()) {
-                return false
-            }
-
-            const mockToken = `temp-token-${Date.now()}`;
-            const mockUser = {
-                userID: "temp-user",
-                phonenumber: phonenumber.trim(),
-                userName: "temp",
-                email: "temp@temp.com",
-            } as User;
-
-            await Promise.all([
-                AsyncStorage.setItem("authToken", mockToken),
-                AsyncStorage.setItem("userData", JSON.stringify(mockUser)),
-            ])
-
-            setToken(mockToken);
-            setUser(mockUser);
-            console.log("Phone number: ", phonenumber, " Password: ", password);
+            const userId = await currPartial.auth.login(phoneNumber, password);
+            const fullSession = await currPartial.completeInit(userId);
+            setSession(fullSession);
+            setChatStorage(fullSession.chatStorage);
             return true;
         } catch {
             return false;
-        } finally {
-            setLoading(false);
+        }
+    };
+
+    const register = async (username: string, phoneNumber: string, password: string): Promise<boolean> => {
+        if(!partial) return false;
+        try {
+            const registered = await partial.auth.register(username, phoneNumber, password);
+            if(registered) {
+                console.log('registered')
+                setUsername(username);
+                setPhonenumber(phoneNumber);
+            }
+            return true;
+        } catch {
+            return false;
         }
     };
 
     const logout = async () => {
-        await Promise.all([
-            AsyncStorage.removeItem("authToken"),
-            AsyncStorage.removeItem("userData"),
-            console.log('logout')
-        ]);
-        setToken(null);
-        setUser(null);
+        if(!session) return;
+        await session.auth.logout();
+        clearSession();
     };
     
     return(
-        <AuthContext.Provider value={{ user, token, isAuthenticated, loading, loadStoredAuth, handleAuthentication, logout }}>
+        <AuthContext.Provider value={{ 
+            userId: session?.userId ?? '',  
+            username: username ?? '',
+            phonenumber: phonenumber ?? '',
+            isAuthenticated: session !== null, 
+            loading, 
+            chatStorage,
+            login,
+            register,
+            logout,
+        }}>
             {children}
         </AuthContext.Provider>
     );
@@ -93,7 +80,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 export const useAuthentication = (): AuthContextType => {
     const context = useContext(AuthContext);
     if(!context) {
-        throw new Error('useAuthentication must be used within a AuthProvider');
+        throw new Error('useAuthentication must be used within AuthProvider');
     }
     return context;
 }

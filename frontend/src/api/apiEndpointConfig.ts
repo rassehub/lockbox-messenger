@@ -51,7 +51,8 @@ export const endpointConfig = {
     method: "GET",
     request: undefined,
     response: {} as {
-      userId: string;
+      userId: string,
+      username: string;
     },
   },
 

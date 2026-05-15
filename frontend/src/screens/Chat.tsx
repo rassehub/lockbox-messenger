@@ -1,57 +1,107 @@
-import { FlatList, StyleSheet, TextInput, View } from "react-native";
-import React, { useState } from "react";
+import { FlatList, StyleSheet, TextInput, View, Keyboard } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
 import ChatBubble from "../components/ChatBubble";
 import { Message } from "../types/Message";
-import { dummyChats } from "../mockData/ChatItems";
+import { useChat } from "../ChatContext";
 
 const ChatScreen = ({route}: any) => {
-    const [text, onChangeText] = useState('Message');
+    const { storage, sendMessage, messages, chatRefreshKey } = useChat();
+    const [text, setText] = useState('');
+    const listRef = useRef<FlatList<Message>>(null);
 
-    const createMessageId = () => {
-        let result = '';
-        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-        const charactersLength = characters.length;
-        let counter = 0;
-        while (counter < 5) {
-            result += characters.charAt(Math.floor(Math.random() * charactersLength));
-            counter += 1;
+    const contactId = route.params.userId;
+    const chatId = route.params.chatId;
+    const [recipient, setRecipient] = useState<string>();
+
+    const [keyboardVisible, setKeyboardVisible] = useState(false);
+    const [placeholder, setPlaceholder] = useState('Message');
+    const [chat, setChat] = useState<Message[]>();
+
+    useEffect(() => {
+        const openKeyboardListener = Keyboard.addListener(
+            'keyboardDidShow',
+            () => {
+                setKeyboardVisible(true);
+                scrollToBottom(true);
+                setPlaceholder('');
+            }
+        );
+        const closeKeyboardListener = Keyboard.addListener(
+            'keyboardDidHide',
+            () => setKeyboardVisible(false)
+        );
+
+        const init = async () => {
+            console.log('init:', chatId)
+            const fetchedMessages = await storage?.getMessages(chatId);
+            setChat(fetchedMessages);
+            if (fetchedMessages) {
+                console.log('test')
+                setRecipient(contactId);
+            }
+        };
+        init();
+        scrollToBottom();
+
+        return () => {
+            openKeyboardListener.remove();
+            closeKeyboardListener.remove();
         }
-        return result;
+    }, [chatId, chatRefreshKey]);
+
+    const scrollToBottom = (animated = true) => {
+        requestAnimationFrame(() => {
+            listRef.current?.scrollToEnd({ animated });
+        });
     };
 
-    const chatId = route.params.chatId;
-    const chat = dummyChats.find((chat) => chat.chatId === chatId);
-    const [chatMessages, setChatMessages] = useState(chat ? chat.message : []);
+    useEffect(() => {
+        listRef.current?.scrollToEnd({ animated: true });
+    }, [messages?.length]);
 
-    const renderMessage = ({ item }: { item: Message }) => ( <ChatBubble message={item} senderID={chatMessages[0].senderID} /> );
+    const renderMessage = ({ item }: { item: Message }) => (
+        <ChatBubble message={item} senderID={recipient ?? ''} />
+    );
 
-    const handleSendMessage = () => {
+    const getUpdated = async () => {
+        if (!storage) return;
+        console.log('haloo');
+        const updated = await storage.getMessages(chatId);
+        setChat(updated);
+    }
+
+    const handleSendMessage = async () => {
         if (text.trim() === '') return;
+        if (!recipient) return;
+        try {
+          await sendMessage(chatId, recipient, text);
+          getUpdated();
 
-        setChatMessages(chatMessages => [...chatMessages, {
-            messageID: createMessageId(),
-            chatID: chatId,
-            senderID: '2',
-            contents: text,
-            timeStamp: new Date().toString(),
-        }]);
-
-        onChangeText('Message');
+        } catch (err) {
+          console.warn('sendMessage failed', err);
+        }
+        setText('');
+        setPlaceholder('Message');
     }
 
     return (
         <View style={styles.mainContainer}>
             <FlatList
+                ref={listRef}
                 style={styles.list}
-                data={chatMessages}
+                data={chat}
+                extraData={chat}
                 renderItem={renderMessage}
                 keyExtractor={(item) => item.messageID}
+                keyboardShouldPersistTaps="handled"
+                onLayout={() => scrollToBottom(true)}
             />
             <TextInput 
-                style={styles.textInput}
-                onPress={() => onChangeText('')}
-                onChangeText={onChangeText}
+                style={[styles.textInput, { bottom: keyboardVisible ? 0 : 80, marginTop: keyboardVisible ? -40 : 40 }]}
+                onChangeText={setText}
                 value={text}
+                placeholder={placeholder}
+                placeholderTextColor='#A8A5FF'
                 onSubmitEditing={handleSendMessage}
             />
         </View>
@@ -67,18 +117,12 @@ const styles = StyleSheet.create({
         marginBottom: 60,
     },
     textInput: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
         width: '100%',
         backgroundColor: '#EBEAFF',
         borderRadius: 40,
-        marginTop: '5%',
-        paddingVertical: '4%',
-        paddingHorizontal: '5%',
+        paddingVertical: 14,
+        paddingHorizontal: 14,
         color: '#A8A5FF',
-        position: 'absolute',
-        bottom: 100,
-        alignSelf: 'center'
     },
 });
 

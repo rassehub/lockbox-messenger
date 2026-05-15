@@ -3,7 +3,7 @@ import { Message } from "../types/Message";
 export const dummyMessages: Message[] = [
     {
         messageID: 'trhb',
-        chatID: 'sbgf',
+        //chatID: 'sbgf',
         senderID: '1',
         contents: 'Are we still on for tommorrow?',
         timeStamp: '2025-04-21T13:16:00Z',
@@ -12,7 +12,7 @@ export const dummyMessages: Message[] = [
     },
     {
         messageID: 'rhtd',
-        chatID: 'sbgf',
+        //chatID: 'sbgf',
         senderID: '1',
         contents: 'At 2pm right?',
         timeStamp: '2025-04-21T13:17:00Z',
@@ -21,7 +21,7 @@ export const dummyMessages: Message[] = [
     },
     {
         messageID: 'bhky',
-        chatID: 'sbgf',
+        //chatID: 'sbgf',
         senderID: '2',
         contents: 'Yep!',
         timeStamp: '2025-04-21T13:20:00Z',
@@ -30,7 +30,7 @@ export const dummyMessages: Message[] = [
     },
     {
         messageID: 'thth',
-        chatID: 'hmnb',
+        //chatID: 'hmnb',
         senderID: '1',
         contents: 'Fuck you!',
         timeStamp: '2025-04-21T13:20:00Z',
@@ -39,7 +39,7 @@ export const dummyMessages: Message[] = [
     },
     {
         messageID: 'ghgh',
-        chatID: 'hmnb',
+        //chatID: 'hmnb',
         senderID: '2',
         contents: 'Yep!',
         timeStamp: '2025-04-21T13:20:00Z',

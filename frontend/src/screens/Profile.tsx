@@ -1,30 +1,50 @@
-import { useCallback, useState } from 'react';
-import { Image, View, Text, StyleSheet, Pressable, Modal, Platform, PermissionsAndroid } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { Image, View, Text, StyleSheet, Pressable, Modal, Platform, PermissionsAndroid, Animated } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { CameraOptions, ImageLibraryOptions, launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import SettingItem from '../components/SettingCategoryItem';
 import { StackParams } from '../../App';
-import { dummyUsers } from '../mockData/Users';
 import { useTheme } from '../ThemeContext';
+import { useChat } from '../ChatContext';
+import { useSession } from '../SessionContext';
 
 const profilePictureDark = require('../assets/avatar-big-dark.png');
+const camera = require('../assets/camera.png');
+const gallery = require('../assets/image.png');
 
 const ProfileScreen = ({route}: any) => {
+    const { session } = useSession();
+    const { storage } = useChat();
     const { isDarkTheme } = useTheme();
     const navigation = useNavigation<NativeStackNavigationProp<StackParams>>();
 
     const [profilePicModalVisible, setProfilePicModalVisible] = useState(false);    
     const [selectedImage, setSelectedImage] = useState<any>(profilePictureDark);
     const [response, setResponse] = useState<any>(null);
+    const [name, setName] = useState<string>('');
 
     const userId = route.params.userId;
-    const user = dummyUsers.filter((user) => user.userID === userId);
+
+    useEffect(() => {
+        const getMyInfo = async () => {
+            if(!storage) return;
+            const me = await storage.getMyInfo();
+            if(!me) {
+                if(!session || !storage) return;
+                const user = await session.api.makeRequest('fetchCurrentUser');
+                console.log(me)
+                await storage.saveMyInfo(user.data.userId, user.data.username)
+                setName(user.data.username);
+            }
+            if(me) setName(me.name);
+        }
+
+        getMyInfo();
+    }, []);
 
     const getPermissions = (type : 'capture' | 'library') => {
-        console.log(type);
         const granted = requestAndroidPermissions(type);
-        console.log(granted);
         if(!granted) {
             console.warn('permission not granted');
             return;
@@ -33,7 +53,6 @@ const ProfileScreen = ({route}: any) => {
 
     const onButtonPress = useCallback(async (type: 'capture' | 'library', options: CameraOptions | ImageLibraryOptions) => {
         getPermissions(type);
-        console.log(getPermissions);
 
         const cb = (res: any) => {
             console.log('image-picker response', res);
@@ -44,8 +63,6 @@ const ProfileScreen = ({route}: any) => {
                 console.log(selectedImage);
             }
             setProfilePicModalVisible(false);
-            console.log(res.assets[0].uri);
-            console.log(selectedImage);
         };
 
         if (type === 'capture') {
@@ -82,16 +99,20 @@ const ProfileScreen = ({route}: any) => {
                     setProfilePicModalVisible(!profilePicModalVisible);
                 }}>
                 <View style={styles.profilePictureModal} onTouchEnd={() => setProfilePicModalVisible(false)}>
-                    <View style={styles.buttonContainer}>
-                        {actions.map(({title, type, options}) => {
+                    <View style={[styles.buttonContainer, {
+                    backgroundColor: isDarkTheme ? '#1E1E1E' : '#FFFFFF',
+                    shadowColor: isDarkTheme ? '#A8A5FF' : '#000',
+                }]}>
+                        {actions.map(({title, type, options, image}) => {
                             return (
                                 <Pressable 
                                     style={styles.button}
                                     key={title}
                                     onPress={() => onButtonPress(type, options)}>
+                                    <Animated.Image style={styles.cameraIcons} source={image}/>
                                     <Text style={[
                                         styles.buttonText,
-                                        { color: isDarkTheme ? '#161616' : '#FFFFFF'}
+                                        { color: isDarkTheme ?  '#FFFFFF' : '#161616'}
                                     ]}>{title}</Text>
                                 </Pressable>
                             );
@@ -109,18 +130,18 @@ const ProfileScreen = ({route}: any) => {
                 </View>
             </Pressable>
             
-            <Text style={[styles.name, { color: isDarkTheme ? '#A8A5FF' : '#594EFF' }]}>{user[0].displayName ? user[0].displayName : user[0].userName}</Text>
+            <Text style={[styles.name, { color: isDarkTheme ? '#A8A5FF' : '#594EFF' }]}>{name}</Text>
             <View style={styles.settingsContainer}>
-                <Pressable onPress={() => {navigation.navigate('AccountSettings')}}>
+                <Pressable onPress={() => {navigation.navigate('AccountSettings', {userId: userId, username: name})}}>
                     <SettingItem category='Account' description='Security notifications' />
                 </Pressable>
-                <Pressable onPress={() => {navigation.navigate('PrivacySettings')}}>
+                <Pressable onPress={() => {navigation.navigate('PrivacySettings', {userId: userId})}}>
                     <SettingItem category='Privacy' description='Block contacts, dissapearing messages' />
                 </Pressable>
-                <Pressable onPress={() => {navigation.navigate('NotificationSettings')}}>
+                <Pressable onPress={() => {navigation.navigate('NotificationSettings', {userId: userId})}}>
                     <SettingItem category='Notifications' description='Message sound' />
                 </Pressable>
-                <Pressable onPress={() => {navigation.navigate('ChatSettings')}}>
+                <Pressable onPress={() => {navigation.navigate('ChatSettings', {userId: userId})}}>
                     <SettingItem category='Chats' description='Theme, wallpaper' />
                 </Pressable>
             </View>
@@ -132,6 +153,7 @@ interface Action {
     title: string;
     type: 'capture' | 'library';
     options: CameraOptions | ImageLibraryOptions;
+    image: any;
 }
 
 const actions: Action[] = [
@@ -143,6 +165,7 @@ const actions: Action[] = [
             mediaType: 'photo',
             includeBase64: false,
         },
+        image: camera
     },
     {
         title: 'Select Image',
@@ -152,6 +175,7 @@ const actions: Action[] = [
             mediaType: 'photo',
             includeBase64: false,
         },
+        image: gallery
     },
 ]
 
@@ -169,25 +193,24 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     buttonContainer: {
+        flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
         width: '60%',
-        backgroundColor: '#1C1C1C',
+        backgroundColor: '#212121',
         paddingTop: 30,
         paddingBottom: 30,
         borderRadius: 20,
         shadowOffset: {
-          width: -10,
-          height: 4,
+          width: 50,
+          height: 50,
         },
-        shadowOpacity: 0.5,
-        shadowRadius: 4,
+        shadowOpacity: 1,
+        shadowRadius: 50,
         elevation: 5,
     },
     button: {
-        width: 120,
-        backgroundColor: '#A8A5FF',
-        borderRadius: 20,
+        width: '50%',
         marginTop: 10,
         marginBottom: 10,
         paddingVertical: 10,
@@ -220,7 +243,13 @@ const styles = StyleSheet.create({
     settingsContainer: {
         width: '100%',
         alignItems: 'flex-start',
-    }
+    },
+    cameraIcons: {
+        width: 24,
+        height: 24,
+        alignSelf: 'center',
+        marginBottom: 10,
+    },
 })
 
 export default ProfileScreen;

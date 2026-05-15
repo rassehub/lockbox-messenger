@@ -1,42 +1,39 @@
-import WebSocket from 'ws';
-import { ISessionProvider } from "../api/ISessionProvider";
-
-
 type MessageHandler = (data: any) => void;
 
 type WebSocketEvent =
   | 'open'
   | 'message'
   | 'error'
-  | 'close'
-  | 'ping'
-  | 'pong'
-  | 'unexpected-response';
-
+  | 'close';
 
 export class WebSocketService {
   private ws: WebSocket | null = null;
   private messageHandlers = new Map<string, MessageHandler>();
 
-  constructor(private session: ISessionProvider) { }
+  constructor() { }
 
-  connect() {
-    const cookie = this.session.getSessionToken()
+  connect(ticket: string) {
+    const url = `wss://ydinmarsu.dns.army?token=${encodeURIComponent(ticket ?? '')}`;
+    this.ws = new WebSocket(url);
 
-    this.ws = new WebSocket('ws://127.0.0.1:3000', {
-      headers: {
-        'Content-Type': 'application/json',
-        'Cookie': cookie ? cookie : "",
-      },
-    });
+    this.ws.onopen = () => {
+      console.log('WebSocket connected and authenticated via query param');
+    };
   }
 
   on(event: WebSocketEvent, handler: (...args: any[]) => void) {
-    this.ws?.on(event, handler);
+    if (event === 'open') this.ws!.onopen = handler as any;
+    if (event === 'message') this.ws!.onmessage = handler as any;
+    if (event === 'error') this.ws!.onerror = handler as any;
+    if (event === 'close') this.ws!.onclose = handler as any;
   }
 
   once(event: WebSocketEvent, handler: (...args: any[]) => void) {
-    this.ws?.once(event, handler);
+    const wrappedHandler = (...args: any[]) => {
+      handler(...args);
+      this.on(event, () => { });
+    };
+    this.on(event, wrappedHandler);
   }
 
   sendMessage(recipientId: string, ciphertext: { type: number; body: string }) {
@@ -55,22 +52,10 @@ export class WebSocketService {
   }
 
   onMessage<T = any>(handler: (message: T) => void) {
-    this.ws?.on('message', (raw) => {
-      const text =
-        typeof raw === 'string'
-          ? raw
-          : Buffer.isBuffer(raw)
-            ? raw.toString('utf8')
-            : Array.isArray(raw)
-              ? Buffer.concat(raw).toString('utf8')
-              : Buffer.from(raw).toString('utf8');
-
-      const message = JSON.parse(text);
-
-
-
+    this.ws!.onmessage = (event) => {
+      const message = JSON.parse(event.data);
       handler(message);
-    });
+    };
   }
 
   disconnect() {

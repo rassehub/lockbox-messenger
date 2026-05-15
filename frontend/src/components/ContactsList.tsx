@@ -1,14 +1,17 @@
 import { FlatList, StyleSheet } from "react-native"
 import ContactListItem from "./ContactListItem"
 import { Contact } from "../types/Contact"
+import { useEffect, useState } from "react";
+import { useChat } from "../ChatContext";
 
 type ContactListProps = {
+    usage: string;
     contacts: Contact[];
+    chatIds: string[];
 }
 
-const ContactList = ({contacts}: ContactListProps) => {
-    const renderContact = ({ item } : { item: Contact }) => <ContactListItem contact={item} />
-    console.log('testi: ', contacts);
+const ContactList: React.FC<ContactListProps> = ({usage, contacts, chatIds}) => {
+    const renderContact = ({ item } : { item: Contact }) => <ContactListItem usage={usage} contact={item} chatIds={chatIds}/>
 
     return (
         <FlatList 
@@ -16,6 +19,7 @@ const ContactList = ({contacts}: ContactListProps) => {
             data={contacts}
             renderItem={renderContact}
             keyExtractor={(item) => item.userId}
+            keyboardShouldPersistTaps='always'
         />
     )
 }

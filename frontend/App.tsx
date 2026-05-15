@@ -1,7 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, useColorScheme } from 'react-native';
-
-import { NavigationContainer } from '@react-navigation/native';
+import { Text } from 'react-native';
+import { NavigationContainer} from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import HomeScreen from './src/screens/Home';
@@ -14,29 +12,31 @@ import AccountSettings from './src/screens/settings/Account';
 import PrivacySettings from './src/screens/settings/Privacy';
 import NotificationSettings from './src/screens/settings/Notifications';
 import ChatSettings from './src/screens/settings/Chats';
-import { dummyContacts } from './src/mockData/Contatcs';
 import { useTheme } from './src/ThemeContext';
 import LoginScreen from './src/screens/Login';
 import SignUpScreen from './src/screens/SignUp';
 import { useAuthentication } from './src/AuthContext';
+import { useChat } from './src/ChatContext';
+import ChatHeaderTitle from './src/components/ChatHeaderTitle';
 
 export type StackParams = {
   Login: undefined;
   SignUp: undefined;
   Home: undefined;
   Profile: {userId: string};
-  Chat: {chatId: string};
-  NewChat: undefined;
-  FriendProfile: {userId: string};
-  AccountSettings: undefined;
-  PrivacySettings: undefined;
-  NotificationSettings: undefined;
-  ChatSettings: undefined;
+  Chat: {userId: string, chatId: string};
+  NewChat: {chatIds: string[]};
+  FriendProfile: {userId: string, chatId: string};
+  AccountSettings: {userId: string, username: string};
+  PrivacySettings: {userId: string};
+  NotificationSettings: {userId: string};
+  ChatSettings: {userId: string};
 }
 
 const Stack = createNativeStackNavigator<StackParams>();
 
 function App(): React.JSX.Element {
+  const { storage } = useChat();
   const { isDarkTheme } = useTheme();
   const { isAuthenticated } = useAuthentication();
 
@@ -78,24 +78,8 @@ function App(): React.JSX.Element {
         <Stack.Screen
           name="Chat"
           component={ChatScreen}
-          options={({ navigation, route }) => ({
-            headerTitle: () => {
-              const { chatId } = route.params;
-              const userId = dummyContacts.find(contact => contact.chatId === chatId)?.userId || 'Unknown';
-              const name = dummyContacts.find(contact => contact.chatId === chatId)?.name || 'Unknown';
-
-              return (
-                <TouchableOpacity
-                  onPress={() => {
-                    navigation.navigate('FriendProfile', { userId });
-                  }}
-                >
-                  <Text style={{ color: isDarkTheme ? '#A8A5FF' : '#594EFF', fontWeight: 'bold', fontSize: 18 }}>
-                    {name}
-                  </Text>
-                </TouchableOpacity>
-              );
-            },
+          options={({ route }) => ({
+            headerTitle: () => <ChatHeaderTitle userId={route.params.userId} chatId={route.params.chatId}/>
           })}
         />
         <Stack.Screen
@@ -107,12 +91,12 @@ function App(): React.JSX.Element {
           name='FriendProfile'
           component={FriendProfileScreen}
           options={({ route }) => ({
-            headerTitle: () => {
+            headerTitle: async () => {
               const { userId } = route.params;
-              const name = dummyContacts.find(contact => contact.userId === userId)?.name || 'Unknown';
+              const username = await storage?.getContact(userId)
 
               return (
-                <Text style={{ color: isDarkTheme ? '#A8A5FF' : '#594EFF', fontWeight: 'bold', fontSize: 18 }}>{name}</Text>
+                <Text style={{ color: isDarkTheme ? '#A8A5FF' : '#594EFF', fontWeight: 'bold', fontSize: 18 }}>{username?.name}</Text>
               );
             }
           })}
@@ -120,7 +104,7 @@ function App(): React.JSX.Element {
         <Stack.Screen
           name='AccountSettings'
           component={AccountSettings}
-          options={{ headerTitle: "Account settings" }}
+          options={{headerTitle: "Privacy settings"}}
         />
         <Stack.Screen
           name='PrivacySettings'
@@ -143,10 +127,6 @@ function App(): React.JSX.Element {
   );
 }
 
-const styles = StyleSheet.create({
-  mainContainer: {
-    flex: 1,
-  },
-});
+
 
 export default App;

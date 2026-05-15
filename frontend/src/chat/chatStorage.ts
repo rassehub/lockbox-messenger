@@ -3,6 +3,8 @@ import { chatCodecs } from './chatStorageCodecs';
 import type { ChatStorageSchema } from './chatStorageSchema';
 import type { Contact } from '../types/Contact';
 import type { Message } from '../types/Message';
+import type { Me } from '../types/Me';
+import { ChatItem } from '../types/ChatListItem';
 
 export class ChatStorage {
   private storage;
@@ -14,15 +16,36 @@ export class ChatStorage {
     );
   }
 
+  async saveMyInfo(userId: string, username: string, phonenumber?: string): Promise<void> {
+    const me: Me = {
+      userId: userId,
+      name: username,
+      phonenumber: phonenumber,
+    }
+    await this.storage.setItem('me', me);
+  }
+
+  async getMyInfo(): Promise<Me | undefined> {
+    const me = this.storage.getItem('me');
+    console.log('storage:', me)
+    return me;
+  }
+
   // ==================== Contacts ====================
 
   async saveContact(contact: Contact): Promise<void> {
-    await this.storage.upsertRecordItem('contacts', contact.userId, contact);
-  }
+  console.log("saveContact", contact.userId, contact.name);
+  await this.storage.upsertRecordItem('contacts', contact.userId, contact);
+}
 
   async getContact(userId: string): Promise<Contact | undefined> {
     return this.storage.getRecordItem('contacts', userId);
   }
+
+  async updateContact(contact: Contact): Promise<void> {
+    await this.storage.upsertRecordItem('contacts', contact.userId, contact);
+  }
+
 
   async getAllContacts(): Promise<Contact[]> {
     const record = await this.storage.getFullRecord('contacts');
@@ -39,6 +62,21 @@ export class ChatStorage {
     const existing = await this.storage.getRecordItem('messages', chatId) ?? [];
     existing.push(message);
     await this.storage.upsertRecordItem('messages', chatId, existing);
+  }
+
+  async getChatList(): Promise<ChatItem[]> {
+    const messagesByChat = await this.storage.getFullRecord('messages');
+    if (!messagesByChat) return [];
+
+    return Object.entries(messagesByChat).map(([chatId, message]) => {
+      const latest = message[message.length - 1];
+      return {
+        chatId,
+        recipient: latest?.contactID ?? chatId, 
+        timeStamp: latest?.timeStamp ?? '',
+        message,
+      };
+    });
   }
 
   async getMessages(chatId: string): Promise<Message[]> {

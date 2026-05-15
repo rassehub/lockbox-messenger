@@ -1,4 +1,4 @@
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native"
+import { Alert, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native"
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useRef } from "react";
@@ -6,26 +6,21 @@ import { FormikProps } from "formik";
 import AuthenticationForm from "../components/AuthenticationForm";
 import AuthButton from "../components/AuthButton";
 import { StackParams } from "../../App";
+import { useAuthentication } from "../AuthContext";
 
 const logoPlaceholder = require('../assets/logo-placeholder.png')
 
 const SignUpScreen = () => {
+    const { register } = useAuthentication();
     const navigation = useNavigation<NativeStackNavigationProp<StackParams>>();
-    
-    const formRef = useRef<FormikProps<{ email: string; phonenumber: string; userName: string; password: string; confirmPassword: string; }> | null>(null);
+    const formRef = useRef<FormikProps<{ phonenumber: string; userName: string; password: string; confirmPassword: string; }> | null>(null);
 
     const formConfiguration = {
         fields: [
             {
-                name: "email",
-                label: "Email",
-                icon: require('../assets/email.png'),
-                inputType: "text",
-            },
-            {
                 name: "phonenumber",
                 label: "Phone number",
-                icon: require('../assets/email.png'),
+                icon: require('../assets/phone.png'),
                 inputType: "phonenumber",
             },
             {
@@ -49,7 +44,7 @@ const SignUpScreen = () => {
         ],
     } satisfies {
         fields: {
-            name: "email" | "phonenumber" | "userName" | "password" | "confirmPassword";
+            name: "phonenumber" | "userName" | "password" | "confirmPassword";
             label: string;
             icon: any;
             inputType?: "text" | "phonenumber" | "password";
@@ -57,7 +52,6 @@ const SignUpScreen = () => {
     };
 
     const initialValues = {
-        email: "",
         phonenumber: "",
         userName: "",
         password: "",
@@ -65,7 +59,6 @@ const SignUpScreen = () => {
     }
 
     type SignUpValues = {
-        email: string;
         phonenumber: string;
         userName: string;
         password: string;
@@ -74,12 +67,21 @@ const SignUpScreen = () => {
 
     const handleSignUp = async (values: SignUpValues) => {
         console.log("handle signup");
-        console.log("email: ", values.email);
-        console.log("phone number: ", values.phonenumber);
-        console.log("username: ", values.userName);
+        try {
+            if(values.password !== values.confirmPassword) {
+                Alert.alert("Error", "Passwords do not match");
+                return;
+            }
 
-        // TO DO: some sort of check that response for creating account was succesful
-        navigation.navigate("Login");
+            const registered = await register(values.userName, values.phonenumber, values.password);
+            if(registered) {
+                navigation.navigate("Login");
+            } else {
+                console.log("Registering failed");
+            }
+        } catch (err: any) {
+            Alert.alert("Signup failed", err?.message ?? "Unknown error");
+        }
     }
 
     return(
@@ -92,9 +94,6 @@ const SignUpScreen = () => {
                 onSubmit={handleSignUp}
                 formRef={formRef}
             />
-            <TouchableOpacity>
-                <Text style={styles.forgotPassword}>Forgot Password?</Text>
-            </TouchableOpacity>
             <AuthButton buttonText="Sign up" onPressed={() => formRef.current?.handleSubmit()} />
             <Text style={styles.bottomText}>Already have an account? 
                 <TouchableOpacity

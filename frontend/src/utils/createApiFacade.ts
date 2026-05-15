@@ -1,5 +1,5 @@
-import { EndpointSchema } from "src/api/apiEndpointConfig";
-import { ApiClient } from "src/api/apiClient";
+import { EndpointSchema } from "../api/apiEndpointConfig";
+import { ApiClient } from "../api/apiClient";
 
 type ApiResponse<T> = {
   data: T;

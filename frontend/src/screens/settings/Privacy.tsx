@@ -1,7 +1,5 @@
 import { StyleSheet, Text, View } from "react-native";
-import { useState } from "react";
 import DropdownRadio from "../../components/DropdownRadio";
-import SwitchSetting from "../../components/SwitchSetting";
 
 const PrivacySettings = () => {
     const formConfiguration = {
@@ -29,13 +27,8 @@ const PrivacySettings = () => {
         console.log("Profile picture submit");
     }
 
-    const [disappearingMessagesState, setDisappearingMessagesState] = useState(false);
-
     const handledisappearingMessages = () => {
-        console.log("Switch for disappearing messages");
-        const updatedState = !disappearingMessagesState;
-        setDisappearingMessagesState(updatedState);
-        return updatedState;
+        console.log("Disappearing messages");
     }
  
     return(
@@ -59,11 +52,6 @@ const PrivacySettings = () => {
                 formConfiguration={formConfiguration}
                 initialValues={initialValues}
                 onSubmit={handledisappearingMessages}
-            />
-            <SwitchSetting 
-                initialState={false}
-                settingText="Disappearing messages"
-                onHandlePressed={handledisappearingMessages}
             />
         </View>
     )

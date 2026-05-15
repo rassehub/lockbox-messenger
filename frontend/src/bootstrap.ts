@@ -64,7 +64,7 @@ async function completeInit(
 
   // ── 4. API clients ─────────────────────────────────────────────────────────
   const api = new ApiClient(auth, transport);
-  const ws = new WebSocketService(auth);
+  const ws = new WebSocketService();
   const keyApi = new KeyApiService(api);
 
   // ── 5. Per-user storage ────────────────────────────────────────────────────

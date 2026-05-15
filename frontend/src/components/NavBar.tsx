@@ -4,6 +4,7 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { StackParams } from "../../App";
 import { useTheme } from "../ThemeContext";
+import { useAuthentication } from "../AuthContext";
 
 const chat = require('../assets/chat.png');
 const profile = require('../assets/profile.png');
@@ -12,6 +13,7 @@ const activeBackgroundDark = require('../assets/active-background-dark.png');
 
 const NavBar = () => {
     const { isDarkTheme } = useTheme();
+    const { userId, chatStorage } = useAuthentication();
     const navigation = useNavigation<NativeStackNavigationProp<StackParams>>()
 
     const [selected, setSelected] = useState('home');
@@ -108,7 +110,7 @@ const NavBar = () => {
                         onPress={() => {
                             setSelected('profile');
                             navigation.navigate('Profile', {
-                                userId: 'tttt',
+                                userId: userId,
                             });
                         }}>
                         <Animated.Image style={{ bottom: profileBottom }} source={profile} />
