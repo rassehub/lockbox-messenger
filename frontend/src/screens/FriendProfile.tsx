@@ -25,6 +25,7 @@ const FriendProfileScreen = ({route}: any) => {
             if(!storage) return;
             const contact = await storage.getContact(contactId);
             console.log(contact)
+            console.log(route.params.chatId)
             setName(contact?.name);
         }
         loadContact();
@@ -55,6 +56,8 @@ const FriendProfileScreen = ({route}: any) => {
     const handleRemoveContact = async () => {
         if(!storage) return;
         if(!contactId) console.log('vittu')
+
+        console.log('poisto id:', route.params.chatId)
 
         await storage.clearChat(route.params.chatId)
         await storage.removeContact(contactId);

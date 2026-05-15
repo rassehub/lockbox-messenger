@@ -5,7 +5,7 @@ import { Message } from "../types/Message";
 import { useChat } from "../ChatContext";
 
 const ChatScreen = ({route}: any) => {
-    const { storage, messages, sendMessage } = useChat();
+    const { storage, sendMessage, messages, chatRefreshKey } = useChat();
     const [text, setText] = useState('');
     const listRef = useRef<FlatList<Message>>(null);
 
@@ -15,6 +15,7 @@ const ChatScreen = ({route}: any) => {
 
     const [keyboardVisible, setKeyboardVisible] = useState(false);
     const [placeholder, setPlaceholder] = useState('Message');
+    const [chat, setChat] = useState<Message[]>();
 
     useEffect(() => {
         const openKeyboardListener = Keyboard.addListener(
@@ -31,14 +32,13 @@ const ChatScreen = ({route}: any) => {
         );
 
         const init = async () => {
-            const chat = await storage?.getMessages(chatId);
-            if (chat) {
+            console.log('init:', chatId)
+            const fetchedMessages = await storage?.getMessages(chatId);
+            setChat(fetchedMessages);
+            if (fetchedMessages) {
                 console.log('test')
                 setRecipient(contactId);
-                return;
             }
-            const fromContext = messages.find(m => m.chatID === chatId);
-            if (fromContext) setRecipient(fromContext.senderID);
         };
         init();
         scrollToBottom();
@@ -47,7 +47,7 @@ const ChatScreen = ({route}: any) => {
             openKeyboardListener.remove();
             closeKeyboardListener.remove();
         }
-    }, [chatId]);
+    }, [chatId, chatRefreshKey]);
 
     const scrollToBottom = (animated = true) => {
         requestAnimationFrame(() => {
@@ -57,17 +57,26 @@ const ChatScreen = ({route}: any) => {
 
     useEffect(() => {
         listRef.current?.scrollToEnd({ animated: true });
-    }, [messages.length]);
+    }, [messages?.length]);
 
     const renderMessage = ({ item }: { item: Message }) => (
         <ChatBubble message={item} senderID={recipient ?? ''} />
     );
+
+    const getUpdated = async () => {
+        if (!storage) return;
+        console.log('haloo');
+        const updated = await storage.getMessages(chatId);
+        setChat(updated);
+    }
 
     const handleSendMessage = async () => {
         if (text.trim() === '') return;
         if (!recipient) return;
         try {
           await sendMessage(chatId, recipient, text);
+          getUpdated();
+
         } catch (err) {
           console.warn('sendMessage failed', err);
         }
@@ -80,8 +89,8 @@ const ChatScreen = ({route}: any) => {
             <FlatList
                 ref={listRef}
                 style={styles.list}
-                data={messages}
-                extraData={messages}
+                data={chat}
+                extraData={chat}
                 renderItem={renderMessage}
                 keyExtractor={(item) => item.messageID}
                 keyboardShouldPersistTaps="handled"

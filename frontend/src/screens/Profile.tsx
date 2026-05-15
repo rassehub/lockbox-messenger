@@ -33,6 +33,7 @@ const ProfileScreen = ({route}: any) => {
             if(!me) {
                 if(!session || !storage) return;
                 const user = await session.api.makeRequest('fetchCurrentUser');
+                console.log(me)
                 await storage.saveMyInfo(user.data.userId, user.data.username)
                 setName(user.data.username);
             }

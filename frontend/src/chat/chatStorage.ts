@@ -34,8 +34,9 @@ export class ChatStorage {
   // ==================== Contacts ====================
 
   async saveContact(contact: Contact): Promise<void> {
-    await this.storage.upsertRecordItem('contacts', contact.userId, contact);
-  }
+  console.log("saveContact", contact.userId, contact.name);
+  await this.storage.upsertRecordItem('contacts', contact.userId, contact);
+}
 
   async getContact(userId: string): Promise<Contact | undefined> {
     return this.storage.getRecordItem('contacts', userId);

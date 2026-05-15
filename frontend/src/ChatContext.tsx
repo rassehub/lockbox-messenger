@@ -16,6 +16,9 @@ type ChatContextType = {
   disconnect: () => void;
   refreshChats: () => void;
   refreshKey: number;
+  refreshContacts: () => void;
+  contactRefreshKey: number;
+  chatRefreshKey: number;
 };
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -27,9 +30,20 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [messages, setMessages] = useState<Message[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [contactRefreshKey, setContactRefreshKey] = useState(0);
+  const [chatRefreshKey, setChatRefreshKey] = useState(0);
+
+  const refreshChat = () => {
+    setChatRefreshKey((v) => v + 1);
+  }
 
   const refreshChats = () => {
     setRefreshKey((v) => v +1);
+  };
+
+  const refreshContacts = () => {
+    console.log('refresh contacts');
+    setContactRefreshKey((v) => v + 1);
   };
 
   useEffect(() => {
@@ -56,20 +70,33 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (session.ws) {
           session.ws.onMessage(async (raw: any) => {
-            const plaintext = await session.cryptoManager.decryptMessage(raw.sender, raw.ciphertext);
-            const message: Message = {
-              messageID: raw.messageID || raw.messageId,
-              chatID: raw.chatID || raw.chatId,
-              senderID: raw.senderID || raw.sender,
-              contactID: raw.senderID || raw.sender,
-              contents: plaintext,
-              timeStamp: raw.timeStamp || raw.timeSent,
-              timeRead: undefined,
-            };
+            console.log('full message object:', JSON.stringify(raw, null, 2))
+            
+            if (raw.type !== 'MESSAGE') {
+              console.log('Skipping non-message type:', raw.type);
+              return;
+            }
 
-            if (!message.messageID) return;
+            try {
+              const plaintext = await session.cryptoManager.decryptMessage(raw.sender, raw.ciphertext);
+              console.log('message:', plaintext)
+              const message: Message = {
+                messageID: raw.messageID || raw.messageId,
+                chatID: raw.chatID || raw.chatId,
+                senderID: raw.senderID || raw.sender,
+                contactID: raw.senderID || raw.sender,
+                contents: plaintext,
+                timeStamp: raw.timeStamp || raw.timeSent,
+                timeRead: undefined,
+              };
 
-            setMessages((prev) => [...prev, message]);
+              if (!message.messageID) return;
+
+              setMessages((prev) => [...prev, message]);
+              appendMessageToChat(message);
+            } catch (err) {
+              console.error('onMessage error:', err);
+            }
           });
         }
       } catch (err) {
@@ -86,22 +113,11 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, [session]);
 
-  const loadChat = async (chatId: string) => {
-    if (!storage) return [];
-    const chat = await storage.getMessages(chatId);
-    console.log(chat);
-    const validatedMessages = (chat ?? []).filter(
-      (item): item is Message => item !== null && item !== undefined
-    );
-    console.log('validated:', validatedMessages)
-    const uniqueMessages = Array.from(
-      new Map(validatedMessages.map((m) => [m.messageID, m])).values()
-    );
-    console.log('unique:', uniqueMessages)
-
-    setMessages(uniqueMessages);
-    console.log(uniqueMessages)
-    return uniqueMessages;
+  const appendMessageToChat = async (message: Message) => {
+    if(!storage) return;
+    await storage.appendMessage(message.chatID, message);
+    refreshChat();
+    refreshChats();
   }
 
   const sendMessage = async (chatId: string, recipientId: string, text: string): Promise<void> => {
@@ -137,7 +153,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     if (!storage) return;
-    storage.appendMessage(chatId, message);
+    await storage.appendMessage(chatId, message);
   };
 
   const withTimeout = <T,>(p: Promise<T>, ms = 10000): Promise<T> =>
@@ -159,6 +175,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const res = await withTimeout(session.api.makeRequest('searchUsers', { userQuery: searchText }), 10000);
       console.log('res:', res);
+      console.log(res.data.usernames);
       return res?.data?.usernames ?? [];
     } catch (err) {
       console.error('searchUsers failed', err);
@@ -168,8 +185,17 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const getUserId = async (username: string): Promise<string> => {
     if(!session) return '';
-    const res = await session.api.makeRequest('getUserId', {username: username});
-    return res.data.userId;
+    console.log(session.auth.getSessionToken.toString())
+    console.log('halojata')
+    let res;
+    try {
+      res = await withTimeout(session.api.makeRequest('getUserId', { username: username }), 10000);
+      console.log('res:', res.data.userId)
+
+    } catch(err) {
+      console.error(err)
+    }
+    return res?.data.userId  ?? '';
   }
   
   const connectWs = async (s: AppSession) => {
@@ -179,7 +205,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const disconnect = () => session?.ws.disconnect();
 
   return(
-    <ChatContext.Provider value={{ messages, isConnected, storage, sendMessage, searchUsers, getUserId, connectWs, disconnect, refreshChats, refreshKey}}>
+    <ChatContext.Provider value={{ messages, isConnected, storage, sendMessage, searchUsers, getUserId, connectWs, disconnect, refreshChats, refreshKey, refreshContacts, contactRefreshKey, chatRefreshKey}}>
       {children}
     </ChatContext.Provider>
   );

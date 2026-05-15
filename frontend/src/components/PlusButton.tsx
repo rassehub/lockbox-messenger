@@ -1,12 +1,12 @@
-import { Image, ImageStyle, Pressable, StyleSheet, TextStyle } from "react-native";
+import { GestureResponderEvent, Image, ImageStyle, Pressable, StyleSheet, ViewStyle } from "react-native";
 import { useTheme } from "../ThemeContext";
 
 const plus = require('../assets/plus.png');
 const plusDark = require('../assets/plus-dark.png');
 
 interface PlusButtonProps {
-    onPress: () => void;
-    styleProp?: TextStyle;
+    onPress: (e: GestureResponderEvent) => void;
+    styleProp?: ViewStyle;
     iconStyleProp?: ImageStyle;
 }
 
@@ -14,13 +14,14 @@ const PlusButton: React.FC<PlusButtonProps> = ({ onPress, styleProp, iconStylePr
     const { isDarkTheme } = useTheme();
 
     return (
-        <Pressable 
+        <Pressable
             style={[styles.button, styleProp]}
-            onPress={onPress}>
-            <Image source={isDarkTheme ? plusDark : plus} style={[styles.buttonIcon, iconStyleProp]}/>
+            onPress={(e) => onPress(e)}
+        >
+            <Image source={isDarkTheme ? plusDark : plus} style={[styles.buttonIcon, iconStyleProp]} />
         </Pressable>
-    )
-}
+    );
+};
 
 const styles = StyleSheet.create({
     button: {

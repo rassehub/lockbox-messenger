@@ -17,6 +17,7 @@ const HomeScreen = () => {
 
     const [allChats, setAllChats] = useState<ChatItem[]>([]);
     const [filteredChats, setFilteredChats] = useState<ChatItem[]>([]);
+    const [chatIds, setChatIds] = useState<string[]>();
 
     useEffect(() => {
         let cancelled = false;
@@ -25,6 +26,9 @@ const HomeScreen = () => {
             if (!storage) return;
 
             const chats = await storage.getChatList();
+            console.log(chats)
+            const allChatIds = chats.map(c => c.chatId);
+            setChatIds(allChatIds);
             const contacts = await storage.getAllContacts();
 
             const contactById = new Map(
@@ -62,7 +66,7 @@ const HomeScreen = () => {
     };
 
     const handleNavigation = () => {
-        navigation.navigate('NewChat');
+        navigation.navigate('NewChat', {chatIds: chatIds ?? []});
     }
 
     return (

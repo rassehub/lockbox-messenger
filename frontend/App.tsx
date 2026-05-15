@@ -25,7 +25,7 @@ export type StackParams = {
   Home: undefined;
   Profile: {userId: string};
   Chat: {userId: string, chatId: string};
-  NewChat: undefined;
+  NewChat: {chatIds: string[]};
   FriendProfile: {userId: string, chatId: string};
   AccountSettings: {userId: string, username: string};
   PrivacySettings: {userId: string};

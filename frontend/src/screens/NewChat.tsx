@@ -9,8 +9,8 @@ import { useChat } from "../ChatContext";
 const avatar = require('../assets/new.png');
 const avatarDark = require('../assets/new-dark.png');
 
-const NewChatScreen = () => {
-    const { storage, searchUsers, getUserId } = useChat();
+const NewChatScreen = ({route}: any) => {
+    const { storage, searchUsers, getUserId, refreshContacts, contactRefreshKey } = useChat();
     const { isDarkTheme } = useTheme();
     const [modalVisible, setModalVisible] = useState(false);
     const [initalContacts, setInitialContacts] = useState<Contact[]>();
@@ -18,6 +18,7 @@ const NewChatScreen = () => {
 
     const initialNewContacts: Contact[] = [];
     const [newContacts, setNewContacts] = useState(initialNewContacts);
+    const ids = route.params.chatIds;
 
     useEffect(() => {
         const loadContacts = async () => {
@@ -28,8 +29,7 @@ const NewChatScreen = () => {
         };
 
         loadContacts();
-        console.log(contacts);
-    }, [])
+    }, [storage, contactRefreshKey])
 
     const handleSearchNewContacts = async (searchText: string) => {
         const results = await searchUsers(searchText);
@@ -58,7 +58,6 @@ const NewChatScreen = () => {
             ? initalContacts
             : initalContacts.filter((contact) => contact.name.toLowerCase().includes(searchText.toLowerCase()));
         setContacts(updatedContacts);
-        console.log(updatedContacts);
     }
 
     return(
@@ -77,10 +76,13 @@ const NewChatScreen = () => {
                     }]}>
                         <Text style={[styles.modalText, {color: isDarkTheme ? '#A8A5FF' : '#594EFF'}]}>Add new contact</Text>
                         <SearchBar onSearch={handleSearchNewContacts}/>
-                        <ContactList usage="new" contacts={newContacts} />
+                        <ContactList usage="new" contacts={newContacts} chatIds={ids} />
                         <Pressable
                             style={styles.button}
-                            onPress={() => setModalVisible(!modalVisible)}>
+                            onPress={() => {
+                                refreshContacts();
+                                setModalVisible(!modalVisible);
+                            }}>
                             <Text style={styles.buttonStyle}>Close</Text>
                         </Pressable>
                     </View>
@@ -96,7 +98,7 @@ const NewChatScreen = () => {
                 <Text style={[styles.newContactText, { color: isDarkTheme ? '#A8A5FF' : '#594EFF' }]}>New Contact</Text>
             </Pressable>
             <Text style={styles.title}>My contacts</Text>
-            <ContactList usage="own" contacts={contacts ?? []}/>
+            <ContactList usage="own" contacts={contacts ?? []} chatIds={ids ?? []}/>
         </View>
     )
 }
